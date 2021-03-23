@@ -3,13 +3,28 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/XSAM/otelsql)](https://goreportcard.com/report/github.com/XSAM/otelsql)
 [![Documentation](https://godoc.org/github.com/XSAM/otelsql?status.svg)](https://pkg.go.dev/mod/github.com/XSAM/otelsql)
 
-It is an OpenTelemetry instrumentation for `database/sql`, a port from https://github.com/open-telemetry/opentelemetry-go-contrib/pull/505.
+It is an OpenTelemetry instrumentation for Golang `database/sql`, a port from https://github.com/open-telemetry/opentelemetry-go-contrib/pull/505.
+
+It can only instrument traces for the present.
 
 ## Install
 
 ```bash
 $ go get github.com/XSAM/otelsql
 ```
+
+## Features
+
+| Feature                    | Description                                                                                                | Status                      | Reason                                                                                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rows, RowsClose            | If set to true, will enable the creation of spans on corresponding calls.                                  | Enabled by default | We need to know the status of `Rows`                                                                                                                                                        |
+| Query                      | If set to true, will enable recording of sql queries in spans.                                             | Enabled by default | `db.statement` will need this, which is a required attribute. https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/semantic_conventions/database.md |
+| Ping                       | If set to true, will enable the creation of spans on Ping requests.                                        | Implemented                    | Ping has context argument, but it might no needs to record.                                                                                                                                 |
+| RowsNext                   | If set to true, will enable the creation of events on corresponding calls. This can result in many events. | Implemented                    | It provides more visibility.                                                                                                                                                                |
+| DisableErrSkip             | If set to true, will suppress driver.ErrSkip errors in spans.                                              | Implemented                    | ErrSkip error might annoying                                                                                                                                                                |
+| RowsAffected, LastInsertID | If set to true, will enable the creation of spans on RowsAffected/LastInsertId calls.                      | Dropped                     | Don't know its use cases. We might add this later based on the users' feedback.                                                                                                             |
+| QueryParams                | If set to true, will enable recording of parameters used with parametrized queries.                        | Dropped                     | It will cause high cardinality values and security problems.                                                                                                                                |
+| AllowRoot                  | If set to true, will allow ocsql to create root spans in absence of existing spans or even context.        | Dropped                     | I don't think traces data have meaning without context.                                                                                                                                     |
 
 ## Example
 
