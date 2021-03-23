@@ -7,3 +7,4 @@ Thumbs.db
 *.iml
 *.so
 coverage.*
+bin/
