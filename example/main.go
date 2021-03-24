@@ -40,11 +40,8 @@ func initTracer() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfg := sdktrace.Config{
-		DefaultSampler: sdktrace.AlwaysSample(),
-	}
 	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithConfig(cfg),
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithSyncer(exporter),
 	)
 

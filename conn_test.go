@@ -187,8 +187,8 @@ func TestOtConn_Ping(t *testing.T) {
 				assert.Equal(t, trace.SpanKindClient, span.SpanKind())
 				assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
 				assert.Equal(t, string(MethodConnPing), span.Name())
-				assert.Equal(t, dummySpan.SpanContext().TraceID, span.SpanContext().TraceID)
-				assert.Equal(t, dummySpan.SpanContext().SpanID, span.ParentSpanID())
+				assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
+				assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
 
 				assert.Equal(t, 1, mc.pingCount)
 				assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.pingCtx))
@@ -239,8 +239,8 @@ func TestOtConn_ExecContext(t *testing.T) {
 			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
 				cfg.Attributes...)), span.Attributes())
 			assert.Equal(t, string(MethodConnExec), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID, span.SpanContext().TraceID)
-			assert.Equal(t, dummySpan.SpanContext().SpanID, span.ParentSpanID())
+			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
+			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
 
 			assert.Equal(t, 1, mc.execContextCount)
 			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.execContextCtx))
@@ -294,8 +294,8 @@ func TestOtConn_QueryContext(t *testing.T) {
 			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
 				cfg.Attributes...)), span.Attributes())
 			assert.Equal(t, string(MethodConnQuery), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID, span.SpanContext().TraceID)
-			assert.Equal(t, dummySpan.SpanContext().SpanID, span.ParentSpanID())
+			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
+			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
 
 			assert.Equal(t, 1, mc.queryContextCount)
 			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.queryContextCtx))
@@ -310,9 +310,9 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 				otelRows, ok := rows.(*otRows)
 				require.True(t, ok)
-				assert.Equal(t, dummySpan.SpanContext().TraceID, otelRows.span.SpanContext().TraceID)
+				assert.Equal(t, dummySpan.SpanContext().TraceID(), otelRows.span.SpanContext().TraceID())
 				// Span that creates in newRows() is the child of the dummySpan
-				assert.Equal(t, dummySpan.SpanContext().SpanID, otelRows.span.(*oteltest.Span).ParentSpanID())
+				assert.Equal(t, dummySpan.SpanContext().SpanID(), otelRows.span.(*oteltest.Span).ParentSpanID())
 			}
 		})
 	}
@@ -355,8 +355,8 @@ func TestOtConn_PrepareContext(t *testing.T) {
 			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
 				cfg.Attributes...)), span.Attributes())
 			assert.Equal(t, string(MethodConnPrepare), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID, span.SpanContext().TraceID)
-			assert.Equal(t, dummySpan.SpanContext().SpanID, span.ParentSpanID())
+			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
+			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
 
 			assert.Equal(t, 1, mc.prepareContextCount)
 			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.prepareContextCtx))
@@ -413,8 +413,8 @@ func TestOtConn_BeginTx(t *testing.T) {
 			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
 			assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
 			assert.Equal(t, string(MethodConnBeginTx), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID, span.SpanContext().TraceID)
-			assert.Equal(t, dummySpan.SpanContext().SpanID, span.ParentSpanID())
+			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
+			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
 
 			assert.Equal(t, 1, mc.beginTxCount)
 			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.beginTxCtx))
@@ -470,8 +470,8 @@ func TestOtConn_ResetSession(t *testing.T) {
 			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
 			assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
 			assert.Equal(t, string(MethodConnResetSession), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID, span.SpanContext().TraceID)
-			assert.Equal(t, dummySpan.SpanContext().SpanID, span.ParentSpanID())
+			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
+			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
 
 			assert.Equal(t, 1, mc.resetSessionCount)
 			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.resetSessionCtx))

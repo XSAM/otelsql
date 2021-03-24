@@ -113,8 +113,8 @@ func TestOtStmt_ExecContext(t *testing.T) {
 			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
 				cfg.Attributes...)), span.Attributes())
 			assert.Equal(t, string(MethodStmtExec), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID, span.SpanContext().TraceID)
-			assert.Equal(t, dummySpan.SpanContext().SpanID, span.ParentSpanID())
+			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
+			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
 
 			assert.Equal(t, 1, ms.execCount)
 			assert.Equal(t, []driver.NamedValue{{Name: "test"}}, ms.ExecContextArgs)
@@ -166,8 +166,8 @@ func TestOtStmt_QueryContext(t *testing.T) {
 			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
 				cfg.Attributes...)), span.Attributes())
 			assert.Equal(t, string(MethodStmtQuery), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID, span.SpanContext().TraceID)
-			assert.Equal(t, dummySpan.SpanContext().SpanID, span.ParentSpanID())
+			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
+			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
 
 			assert.Equal(t, 1, ms.queryCount)
 			assert.Equal(t, []driver.NamedValue{{Name: "test"}}, ms.queryContextArgs)
