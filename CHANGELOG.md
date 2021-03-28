@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- otelsql does not set the status of span to Error while recording error. (#5)
+
 ## [0.2.0] - 2021-03-24
 
 ### Changed
