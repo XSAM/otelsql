@@ -16,7 +16,8 @@ package otelsql
 
 import (
 	"database/sql/driver"
-
+	
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -27,8 +28,10 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 	case driver.ErrSkip:
 		if !opts.DisableErrSkip {
 			span.RecordError(err)
+			span.SetStatus(codes.Error, "")
 		}
 	default:
 		span.RecordError(err)
+		span.SetStatus(codes.Error, "")
 	}
 }
