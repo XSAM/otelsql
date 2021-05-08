@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade to v0.20.0 of `go.opentelemetry.io/otel`. (#8)
+
 ## [0.2.1] - 2021-03-28
 
 ### Fixed
@@ -18,12 +22,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
-- Upgrade to 0.19.0 of `go.opentelemetry.io/otel`. (#3)
+- Upgrade to v0.19.0 of `go.opentelemetry.io/otel`. (#3)
 
 ## [0.1.0] - 2021-03-23
 
 This is the first release of otelsql.
-It contains instrumentation for trace and depends on OTel `0.18.0`.
+It contains instrumentation for trace and depends on OTel `v0.18.0`.
 
 ### Added
 
