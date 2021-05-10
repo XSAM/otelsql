@@ -93,7 +93,7 @@ func TestOtTx_Commit(t *testing.T) {
 			span := spanList[1]
 			assert.True(t, span.Ended())
 			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-			assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
+			assert.Equal(t, attributesListToMap(cfg.StaticAttributes), span.Attributes())
 			assert.Equal(t, string(MethodTxCommit), span.Name())
 			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
@@ -144,7 +144,7 @@ func TestOtTx_Rollback(t *testing.T) {
 			span := spanList[1]
 			assert.True(t, span.Ended())
 			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-			assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
+			assert.Equal(t, attributesListToMap(cfg.StaticAttributes), span.Attributes())
 			assert.Equal(t, string(MethodTxRollback), span.Name())
 			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())

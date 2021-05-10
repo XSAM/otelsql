@@ -46,7 +46,7 @@ func TestRegister(t *testing.T) {
 	assert.ElementsMatch(t, []attribute.KeyValue{
 		semconv.DBSystemKey.String("test-db"),
 		attribute.String("foo", "bar"),
-	}, otelDriver.cfg.Attributes)
+	}, otelDriver.cfg.StaticAttributes)
 
 	// Exceed max slot count
 	_, err = Register("test-driver", "test-db")
@@ -65,5 +65,5 @@ func TestWrapDriver(t *testing.T) {
 	assert.ElementsMatch(t, []attribute.KeyValue{
 		semconv.DBSystemKey.String("test-db"),
 		attribute.String("foo", "bar"),
-	}, otelDriver.cfg.Attributes)
+	}, otelDriver.cfg.StaticAttributes)
 }

@@ -40,8 +40,11 @@ type config struct {
 
 	DBSystem string
 
-	// Attributes will be set to each span.
-	Attributes []attribute.KeyValue
+	// StaticAttributes will be set to each span.
+	StaticAttributes []attribute.KeyValue
+
+	// ContextualAttributes will be set to each span based on the context.
+	ContextualAttributes []func(context.Context) []attribute.KeyValue
 
 	// SpanNameFormatter will be called to produce span's name.
 	// Default use method as span name
@@ -83,7 +86,7 @@ func newConfig(dbSystem string, options ...Option) config {
 	}
 
 	if cfg.DBSystem != "" {
-		cfg.Attributes = append(cfg.Attributes,
+		cfg.StaticAttributes = append(cfg.StaticAttributes,
 			semconv.DBSystemKey.String(cfg.DBSystem),
 		)
 	}
@@ -93,4 +96,15 @@ func newConfig(dbSystem string, options ...Option) config {
 	)
 
 	return cfg
+}
+
+// BuildAttributes combines static and contextual attributes.
+func (c *config) BuildAttributes(ctx context.Context) []attribute.KeyValue {
+	attrs := c.StaticAttributes
+
+	for _, f := range c.ContextualAttributes {
+		attrs = append(attrs, f(ctx)...)
+	}
+
+	return attrs
 }

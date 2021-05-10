@@ -185,7 +185,7 @@ func TestOtConn_Ping(t *testing.T) {
 				span := spanList[1]
 				assert.True(t, span.Ended())
 				assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-				assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
+				assert.Equal(t, attributesListToMap(cfg.StaticAttributes), span.Attributes())
 				assert.Equal(t, string(MethodConnPing), span.Name())
 				assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 				assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
@@ -237,7 +237,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 			assert.True(t, span.Ended())
 			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
 			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-				cfg.Attributes...)), span.Attributes())
+				cfg.StaticAttributes...)), span.Attributes())
 			assert.Equal(t, string(MethodConnExec), span.Name())
 			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
@@ -292,7 +292,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 			assert.True(t, span.Ended())
 			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
 			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-				cfg.Attributes...)), span.Attributes())
+				cfg.StaticAttributes...)), span.Attributes())
 			assert.Equal(t, string(MethodConnQuery), span.Name())
 			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
@@ -353,7 +353,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 			assert.True(t, span.Ended())
 			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
 			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-				cfg.Attributes...)), span.Attributes())
+				cfg.StaticAttributes...)), span.Attributes())
 			assert.Equal(t, string(MethodConnPrepare), span.Name())
 			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
@@ -411,7 +411,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 			span := spanList[1]
 			assert.True(t, span.Ended())
 			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-			assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
+			assert.Equal(t, attributesListToMap(cfg.StaticAttributes), span.Attributes())
 			assert.Equal(t, string(MethodConnBeginTx), span.Name())
 			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
@@ -468,7 +468,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 			span := spanList[1]
 			assert.True(t, span.Ended())
 			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-			assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
+			assert.Equal(t, attributesListToMap(cfg.StaticAttributes), span.Attributes())
 			assert.Equal(t, string(MethodConnResetSession), span.Name())
 			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())

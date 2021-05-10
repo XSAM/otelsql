@@ -95,7 +95,7 @@ func createDummySpan(ctx context.Context, tracer trace.Tracer) (context.Context,
 func newMockConfig(tracer trace.Tracer) config {
 	return config{
 		Tracer:            tracer,
-		Attributes:        []attribute.KeyValue{defaultattribute},
+		StaticAttributes:        []attribute.KeyValue{defaultattribute},
 		SpanNameFormatter: &defaultSpanNameFormatter{},
 	}
 }

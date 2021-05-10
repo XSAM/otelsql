@@ -111,7 +111,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 			assert.True(t, span.Ended())
 			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
 			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-				cfg.Attributes...)), span.Attributes())
+				cfg.StaticAttributes...)), span.Attributes())
 			assert.Equal(t, string(MethodStmtExec), span.Name())
 			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
@@ -164,7 +164,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 			assert.True(t, span.Ended())
 			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
 			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-				cfg.Attributes...)), span.Attributes())
+				cfg.StaticAttributes...)), span.Attributes())
 			assert.Equal(t, string(MethodStmtQuery), span.Name())
 			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())

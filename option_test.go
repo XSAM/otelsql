@@ -15,6 +15,7 @@
 package otelsql
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -42,7 +43,7 @@ func TestOptions(t *testing.T) {
 				attribute.String("foo", "bar"),
 				attribute.String("foo2", "bar2"),
 			),
-			expectedConfig: config{Attributes: []attribute.KeyValue{
+			expectedConfig: config{StaticAttributes: []attribute.KeyValue{
 				attribute.String("foo", "bar"),
 				attribute.String("foo2", "bar2"),
 			}},
@@ -68,4 +69,19 @@ func TestOptions(t *testing.T) {
 			assert.Equal(t, tc.expectedConfig, cfg)
 		})
 	}
+}
+
+func TestWithContextualAttributes(t *testing.T) {
+	var cfg config
+
+	WithContextualAttributes(func(ctx context.Context) []attribute.KeyValue {
+		return []attribute.KeyValue{attribute.Any("ctx.foo", ctx.Value("foo"))}
+	}).Apply(&cfg)
+
+	assert.Equal(t, 1, len(cfg.ContextualAttributes))
+
+	ctx := context.WithValue(context.Background(), "foo", "bar")
+	attrs := cfg.ContextualAttributes[0](ctx)
+
+	assert.Equal(t, []attribute.KeyValue{attribute.Any("ctx.foo", "bar")}, attrs)
 }

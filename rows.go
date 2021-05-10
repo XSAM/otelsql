@@ -41,7 +41,7 @@ type otRows struct {
 func newRows(ctx context.Context, rows driver.Rows, cfg config) *otRows {
 	_, span := cfg.Tracer.Start(ctx, cfg.SpanNameFormatter.Format(ctx, MethodRows, ""),
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(cfg.Attributes...),
+		trace.WithAttributes(cfg.BuildAttributes(ctx)...),
 	)
 
 	return &otRows{

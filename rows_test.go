@@ -188,7 +188,7 @@ func TestNewRows(t *testing.T) {
 	span := spanList[1]
 	assert.False(t, span.Ended())
 	assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-	assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
+	assert.Equal(t, attributesListToMap(cfg.StaticAttributes), span.Attributes())
 	assert.Equal(t, string(MethodRows), span.Name())
 	assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 	assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())

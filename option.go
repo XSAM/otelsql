@@ -15,6 +15,8 @@
 package otelsql
 
 import (
+	"context"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -45,7 +47,15 @@ func WithTracerProvider(provider trace.TracerProvider) Option {
 // WithAttributes specifies attributes that will be set to each span.
 func WithAttributes(attributes ...attribute.KeyValue) Option {
 	return OptionFunc(func(cfg *config) {
-		cfg.Attributes = attributes
+		cfg.StaticAttributes = attributes
+	})
+}
+
+// WithContextualAttributes specifies functions that generate trace attributes
+// from a context.
+func WithContextualAttributes(funcs ...func(context.Context) []attribute.KeyValue) Option {
+	return OptionFunc(func(cfg *config) {
+		cfg.ContextualAttributes = funcs
 	})
 }
 

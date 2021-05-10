@@ -40,7 +40,7 @@ func newTx(ctx context.Context, tx driver.Tx, cfg config) *otTx {
 func (t *otTx) Commit() (err error) {
 	_, span := t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, MethodTxCommit, ""),
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(t.cfg.Attributes...),
+		trace.WithAttributes(t.cfg.BuildAttributes(t.ctx)...),
 	)
 	defer span.End()
 
@@ -55,7 +55,7 @@ func (t *otTx) Commit() (err error) {
 func (t *otTx) Rollback() (err error) {
 	_, span := t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, MethodTxRollback, ""),
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(t.cfg.Attributes...),
+		trace.WithAttributes(t.cfg.BuildAttributes(t.ctx)...),
 	)
 	defer span.End()
 

@@ -57,7 +57,7 @@ func (c *otConn) Ping(ctx context.Context) (err error) {
 		var span trace.Span
 		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnPing, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
-			trace.WithAttributes(c.cfg.Attributes...),
+			trace.WithAttributes(c.cfg.BuildAttributes(ctx)...),
 		)
 		defer func() {
 			if err != nil {
@@ -88,7 +88,7 @@ func (c *otConn) ExecContext(ctx context.Context, query string, args []driver.Na
 	ctx, span := c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnExec, query),
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithAttributes(
-			append(c.cfg.Attributes,
+			append(c.cfg.BuildAttributes(ctx),
 				semconv.DBStatementKey.String(query),
 			)...),
 	)
@@ -119,7 +119,7 @@ func (c *otConn) QueryContext(ctx context.Context, query string, args []driver.N
 	queryCtx, span := c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnQuery, query),
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithAttributes(
-			append(c.cfg.Attributes,
+			append(c.cfg.BuildAttributes(ctx),
 				semconv.DBStatementKey.String(query),
 			)...),
 	)
@@ -142,7 +142,7 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 	ctx, span := c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnPrepare, query),
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithAttributes(
-			append(c.cfg.Attributes,
+			append(c.cfg.BuildAttributes(ctx),
 				semconv.DBStatementKey.String(query),
 			)...),
 	)
@@ -164,7 +164,7 @@ func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.
 
 	beginTxCtx, span := c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnBeginTx, ""),
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(c.cfg.Attributes...),
+		trace.WithAttributes(c.cfg.BuildAttributes(ctx)...),
 	)
 	defer span.End()
 
@@ -184,7 +184,7 @@ func (c *otConn) ResetSession(ctx context.Context) (err error) {
 
 	ctx, span := c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnResetSession, ""),
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(c.cfg.Attributes...),
+		trace.WithAttributes(c.cfg.BuildAttributes(ctx)...),
 	)
 	defer span.End()
 

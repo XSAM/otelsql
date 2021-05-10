@@ -35,7 +35,7 @@ func TestNewConfig(t *testing.T) {
 		),
 		SpanOptions: SpanOptions{Ping: true},
 		DBSystem:    "db",
-		Attributes: []attribute.KeyValue{
+		StaticAttributes: []attribute.KeyValue{
 			semconv.DBSystemKey.String(cfg.DBSystem),
 		},
 		SpanNameFormatter: &defaultSpanNameFormatter{},
