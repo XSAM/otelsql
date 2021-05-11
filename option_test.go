@@ -72,6 +72,8 @@ func TestOptions(t *testing.T) {
 }
 
 func TestWithContextualAttributes(t *testing.T) {
+	type key string
+	const k key = "foo"
 	var cfg config
 
 	WithContextualAttributes(func(ctx context.Context) []attribute.KeyValue {
@@ -80,7 +82,7 @@ func TestWithContextualAttributes(t *testing.T) {
 
 	assert.Equal(t, 1, len(cfg.ContextualAttributes))
 
-	ctx := context.WithValue(context.Background(), "foo", "bar")
+	ctx := context.WithValue(context.Background(), k, "bar")
 	attrs := cfg.ContextualAttributes[0](ctx)
 
 	assert.Equal(t, []attribute.KeyValue{attribute.Any("ctx.foo", "bar")}, attrs)
