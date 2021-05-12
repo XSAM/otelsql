@@ -8,9 +8,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- Add AllowRoot option to prevent backward incompatible. (#13)
+
 ### Changed
 
 - Upgrade to v0.20.0 of `go.opentelemetry.io/otel`. (#8)
+- otelsql will not create root spans in absence of existing spans by default. (#13)
 
 ## [0.2.1] - 2021-03-28
 
