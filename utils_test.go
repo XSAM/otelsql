@@ -34,6 +34,7 @@ func TestRecordSpanError(t *testing.T) {
 		opts          SpanOptions
 		err           error
 		expectedError bool
+		nilSpan       bool
 	}{
 		{
 			name:          "no error",
@@ -62,17 +63,27 @@ func TestRecordSpanError(t *testing.T) {
 			opts:          SpanOptions{DisableErrSkip: true},
 			expectedError: false,
 		},
+		{
+			name:          "nil span",
+			err:           nil,
+			nilSpan:       true,
+			expectedError: false,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			var span oteltest.Span
-			recordSpanError(&span, tc.opts, tc.err)
+			if !tc.nilSpan {
+				var span oteltest.Span
+				recordSpanError(&span, tc.opts, tc.err)
 
-			if tc.expectedError {
-				assert.Equal(t, codes.Error, span.StatusCode())
+				if tc.expectedError {
+					assert.Equal(t, codes.Error, span.StatusCode())
+				} else {
+					assert.Equal(t, codes.Unset, span.StatusCode())
+				}
 			} else {
-				assert.Equal(t, codes.Unset, span.StatusCode())
+				recordSpanError(nil, tc.opts, tc.err)
 			}
 		})
 	}
