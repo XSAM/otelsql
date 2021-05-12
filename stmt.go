@@ -50,14 +50,17 @@ func (s *otStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (res
 		return nil, driver.ErrSkip
 	}
 
-	ctx, span := s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, MethodStmtExec, s.query),
-		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(
-			append(s.cfg.Attributes,
-				semconv.DBStatementKey.String(s.query),
-			)...),
-	)
-	defer span.End()
+	var span trace.Span
+	if s.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
+		ctx, span = s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, MethodStmtExec, s.query),
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(
+				append(s.cfg.Attributes,
+					semconv.DBStatementKey.String(s.query),
+				)...),
+		)
+		defer span.End()
+	}
 
 	result, err = execer.ExecContext(ctx, args)
 	if err != nil {
@@ -73,14 +76,18 @@ func (s *otStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (ro
 		return nil, driver.ErrSkip
 	}
 
-	queryCtx, span := s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, MethodStmtQuery, s.query),
-		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(
-			append(s.cfg.Attributes,
-				semconv.DBStatementKey.String(s.query),
-			)...),
-	)
-	defer span.End()
+	var span trace.Span
+	queryCtx := ctx
+	if s.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
+		queryCtx, span = s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, MethodStmtQuery, s.query),
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(
+				append(s.cfg.Attributes,
+					semconv.DBStatementKey.String(s.query),
+				)...),
+		)
+		defer span.End()
+	}
 
 	rows, err = query.QueryContext(queryCtx, args)
 	if err != nil {
