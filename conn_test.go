@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/oteltest"
 	"go.opentelemetry.io/otel/semconv"
 	"go.opentelemetry.io/otel/trace"
@@ -140,13 +139,27 @@ var (
 
 func TestOtConn_Ping(t *testing.T) {
 	testCases := []struct {
-		name       string
-		error      bool
-		pingOption bool
+		name            string
+		error           bool
+		pingOption      bool
+		allowRootOption bool
+		noParentSpan    bool
 	}{
 		{
 			name:       "ping enabled",
 			pingOption: true,
+		},
+		{
+			name:            "ping enabled with no parent span, allow root span",
+			pingOption:      true,
+			allowRootOption: true,
+			noParentSpan:    true,
+		},
+		{
+			name:            "ping enabled with no parent span, disallow root span",
+			pingOption:      true,
+			allowRootOption: false,
+			noParentSpan:    true,
 		},
 		{
 			name:       "ping enabled with error",
@@ -161,13 +174,12 @@ func TestOtConn_Ping(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			sr, provider := newTracerProvider()
-			tracer := provider.Tracer("test")
-			ctx, dummySpan := createDummySpan(context.Background(), tracer)
+			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
 			cfg := newMockConfig(tracer)
 			cfg.SpanOptions.Ping = tc.pingOption
+			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -178,24 +190,28 @@ func TestOtConn_Ping(t *testing.T) {
 				require.NoError(t, err)
 			}
 
+			spanList := sr.Completed()
 			if tc.pingOption {
-				spanList := sr.Completed()
+				expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 				// One dummy span and one span created in Ping
-				require.Equal(t, 2, len(spanList))
-				span := spanList[1]
-				assert.True(t, span.Ended())
-				assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-				assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
-				assert.Equal(t, string(MethodConnPing), span.Name())
-				assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-				assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
+				require.Equal(t, expectedSpanCount, len(spanList))
 
-				assert.Equal(t, 1, mc.pingCount)
-				assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.pingCtx))
-				if tc.error {
-					assert.Equal(t, codes.Error, span.StatusCode())
-				} else {
-					assert.Equal(t, codes.Unset, span.StatusCode())
+				if tc.pingOption {
+					assertSpanList(t, spanList, spanAssertionParameter{
+						parentSpan:         dummySpan,
+						error:              tc.error,
+						expectedAttributes: cfg.Attributes,
+						expectedMethod:     MethodConnPing,
+						allowRootOption:    tc.allowRootOption,
+						noParentSpan:       tc.noParentSpan,
+						ctx:                mc.pingCtx,
+					})
+
+					assert.Equal(t, 1, mc.pingCount)
+				}
+			} else {
+				if !tc.noParentSpan {
+					require.Equal(t, 1, len(spanList))
 				}
 			}
 		})
@@ -204,8 +220,10 @@ func TestOtConn_Ping(t *testing.T) {
 
 func TestOtConn_ExecContext(t *testing.T) {
 	testCases := []struct {
-		name  string
-		error bool
+		name            string
+		error           bool
+		allowRootOption bool
+		noParentSpan    bool
 	}{
 		{
 			name: "no error",
@@ -214,53 +232,63 @@ func TestOtConn_ExecContext(t *testing.T) {
 			name:  "with error",
 			error: true,
 		},
+		{
+			name:         "no parent span, disallow root span",
+			noParentSpan: true,
+		},
+		{
+			name:            "no parent span, allow root span",
+			noParentSpan:    true,
+			allowRootOption: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			sr, provider := newTracerProvider()
-			tracer := provider.Tracer("test")
-			ctx, dummySpan := createDummySpan(context.Background(), tracer)
+			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
 			cfg := newMockConfig(tracer)
+			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
 			_, err := otelConn.ExecContext(ctx, "query", nil)
-
-			spanList := sr.Completed()
-			// One dummy span and one span created in ExecContext
-			require.Equal(t, 2, len(spanList))
-			span := spanList[1]
-			assert.True(t, span.Ended())
-			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-				cfg.Attributes...)), span.Attributes())
-			assert.Equal(t, string(MethodConnExec), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
-
-			assert.Equal(t, 1, mc.execContextCount)
-			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.execContextCtx))
-			assert.Equal(t, "query", mc.execContextQuery)
-
 			if tc.error {
 				require.Error(t, err)
-				assert.Equal(t, codes.Error, span.StatusCode())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, codes.Unset, span.StatusCode())
 			}
+
+			spanList := sr.Completed()
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			// One dummy span and one span created in ExecContext
+			require.Equal(t, expectedSpanCount, len(spanList))
+
+			assertSpanList(t, spanList, spanAssertionParameter{
+				parentSpan: dummySpan,
+				error:      tc.error,
+				expectedAttributes: append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
+					cfg.Attributes...),
+				expectedMethod:  MethodConnExec,
+				allowRootOption: tc.allowRootOption,
+				noParentSpan:    tc.noParentSpan,
+				ctx:             mc.execContextCtx,
+			})
+
+			assert.Equal(t, 1, mc.execContextCount)
+			assert.Equal(t, "query", mc.execContextQuery)
 		})
 	}
 }
 
 func TestOtConn_QueryContext(t *testing.T) {
 	testCases := []struct {
-		name  string
-		error bool
+		name            string
+		error           bool
+		allowRootOption bool
+		noParentSpan    bool
 	}{
 		{
 			name: "no error",
@@ -269,50 +297,62 @@ func TestOtConn_QueryContext(t *testing.T) {
 			name:  "with error",
 			error: true,
 		},
+		{
+			name:         "no parent span, disallow root span",
+			noParentSpan: true,
+		},
+		{
+			name:            "no parent span, allow root span",
+			noParentSpan:    true,
+			allowRootOption: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			sr, provider := newTracerProvider()
-			tracer := provider.Tracer("test")
-			ctx, dummySpan := createDummySpan(context.Background(), tracer)
+			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
 			cfg := newMockConfig(tracer)
+			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
 			rows, err := otelConn.QueryContext(ctx, "query", nil)
-
-			spanList := sr.Completed()
-			// One dummy span and one span created in QueryContext
-			require.Equal(t, 2, len(spanList))
-			span := spanList[1]
-			assert.True(t, span.Ended())
-			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-				cfg.Attributes...)), span.Attributes())
-			assert.Equal(t, string(MethodConnQuery), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
-
-			assert.Equal(t, 1, mc.queryContextCount)
-			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.queryContextCtx))
-			assert.Equal(t, "query", mc.queryContextQuery)
-
 			if tc.error {
 				require.Error(t, err)
-				assert.Equal(t, codes.Error, span.StatusCode())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, codes.Unset, span.StatusCode())
+			}
 
+			spanList := sr.Completed()
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			// One dummy span and one span created in QueryContext
+			require.Equal(t, expectedSpanCount, len(spanList))
+
+			assertSpanList(t, spanList, spanAssertionParameter{
+				parentSpan: dummySpan,
+				error:      tc.error,
+				expectedAttributes: append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
+					cfg.Attributes...),
+				expectedMethod:  MethodConnQuery,
+				allowRootOption: tc.allowRootOption,
+				noParentSpan:    tc.noParentSpan,
+				ctx:             mc.queryContextCtx,
+			})
+
+			assert.Equal(t, 1, mc.queryContextCount)
+			assert.Equal(t, "query", mc.queryContextQuery)
+
+			if !tc.error {
 				otelRows, ok := rows.(*otRows)
 				require.True(t, ok)
-				assert.Equal(t, dummySpan.SpanContext().TraceID(), otelRows.span.SpanContext().TraceID())
-				// Span that creates in newRows() is the child of the dummySpan
-				assert.Equal(t, dummySpan.SpanContext().SpanID(), otelRows.span.(*oteltest.Span).ParentSpanID())
+				if dummySpan != nil {
+					assert.Equal(t, dummySpan.SpanContext().TraceID(), otelRows.span.SpanContext().TraceID())
+					// Span that creates in newRows() is the child of the dummySpan
+					assert.Equal(t, dummySpan.SpanContext().SpanID(), otelRows.span.(*oteltest.Span).ParentSpanID())
+				}
 			}
 		})
 	}
@@ -320,8 +360,10 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 func TestOtConn_PrepareContext(t *testing.T) {
 	testCases := []struct {
-		name  string
-		error bool
+		name            string
+		error           bool
+		allowRootOption bool
+		noParentSpan    bool
 	}{
 		{
 			name: "no error",
@@ -330,45 +372,55 @@ func TestOtConn_PrepareContext(t *testing.T) {
 			name:  "with error",
 			error: true,
 		},
+		{
+			name:         "no parent span, disallow root span",
+			noParentSpan: true,
+		},
+		{
+			name:            "no parent span, allow root span",
+			noParentSpan:    true,
+			allowRootOption: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			sr, provider := newTracerProvider()
-			tracer := provider.Tracer("test")
-			ctx, dummySpan := createDummySpan(context.Background(), tracer)
+			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
 			cfg := newMockConfig(tracer)
+			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
 			stmt, err := otelConn.PrepareContext(ctx, "query")
-
-			spanList := sr.Completed()
-			// One dummy span and one span created in PrepareContext
-			require.Equal(t, 2, len(spanList))
-			span := spanList[1]
-			assert.True(t, span.Ended())
-			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-				cfg.Attributes...)), span.Attributes())
-			assert.Equal(t, string(MethodConnPrepare), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
-
-			assert.Equal(t, 1, mc.prepareContextCount)
-			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.prepareContextCtx))
-			assert.Equal(t, "query", mc.prepareContextQuery)
-
 			if tc.error {
 				require.Error(t, err)
-				assert.Equal(t, codes.Error, span.StatusCode())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, codes.Unset, span.StatusCode())
+			}
 
+			spanList := sr.Completed()
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			// One dummy span and one span created in PrepareContext
+			require.Equal(t, expectedSpanCount, len(spanList))
+
+			assertSpanList(t, spanList, spanAssertionParameter{
+				parentSpan: dummySpan,
+				error:      tc.error,
+				expectedAttributes: append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
+					cfg.Attributes...),
+				expectedMethod:  MethodConnPrepare,
+				allowRootOption: tc.allowRootOption,
+				noParentSpan:    tc.noParentSpan,
+				ctx:             mc.prepareContextCtx,
+			})
+
+			assert.Equal(t, 1, mc.prepareContextCount)
+			assert.Equal(t, "query", mc.prepareContextQuery)
+
+			if !tc.error {
 				otelStmt, ok := stmt.(*otStmt)
 				require.True(t, ok)
 				assert.Equal(t, "query", otelStmt.query)
@@ -379,8 +431,10 @@ func TestOtConn_PrepareContext(t *testing.T) {
 
 func TestOtConn_BeginTx(t *testing.T) {
 	testCases := []struct {
-		name  string
-		error bool
+		name            string
+		error           bool
+		allowRootOption bool
+		noParentSpan    bool
 	}{
 		{
 			name: "no error",
@@ -389,46 +443,59 @@ func TestOtConn_BeginTx(t *testing.T) {
 			name:  "with error",
 			error: true,
 		},
+		{
+			name:         "no parent span, disallow root span",
+			noParentSpan: true,
+		},
+		{
+			name:            "no parent span, allow root span",
+			noParentSpan:    true,
+			allowRootOption: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			sr, provider := newTracerProvider()
-			tracer := provider.Tracer("test")
-			ctx, dummySpan := createDummySpan(context.Background(), tracer)
+			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
 			cfg := newMockConfig(tracer)
+			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
 			tx, err := otelConn.BeginTx(ctx, driver.TxOptions{})
-
-			spanList := sr.Completed()
-			// One dummy span and one span created in BeginTx
-			require.Equal(t, 2, len(spanList))
-			span := spanList[1]
-			assert.True(t, span.Ended())
-			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-			assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
-			assert.Equal(t, string(MethodConnBeginTx), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
-
-			assert.Equal(t, 1, mc.beginTxCount)
-			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.beginTxCtx))
-
 			if tc.error {
 				require.Error(t, err)
-				assert.Equal(t, codes.Error, span.StatusCode())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, codes.Unset, span.StatusCode())
+			}
 
+			spanList := sr.Completed()
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			// One dummy span and one span created in BeginTx
+			require.Equal(t, expectedSpanCount, len(spanList))
+
+			assertSpanList(t, spanList, spanAssertionParameter{
+				parentSpan:         dummySpan,
+				error:              tc.error,
+				expectedAttributes: cfg.Attributes,
+				expectedMethod:     MethodConnBeginTx,
+				allowRootOption:    tc.allowRootOption,
+				noParentSpan:       tc.noParentSpan,
+				ctx:                mc.beginTxCtx,
+			})
+
+			assert.Equal(t, 1, mc.beginTxCount)
+
+			if !tc.error {
 				otelTx, ok := tx.(*otTx)
 				require.True(t, ok)
-				assert.Equal(t, dummySpan.SpanContext(), trace.SpanContextFromContext(otelTx.ctx))
+
+				if dummySpan != nil {
+					assert.Equal(t, dummySpan.SpanContext(), trace.SpanContextFromContext(otelTx.ctx))
+				}
 			}
 		})
 	}
@@ -436,8 +503,10 @@ func TestOtConn_BeginTx(t *testing.T) {
 
 func TestOtConn_ResetSession(t *testing.T) {
 	testCases := []struct {
-		name  string
-		error bool
+		name            string
+		error           bool
+		allowRootOption bool
+		noParentSpan    bool
 	}{
 		{
 			name: "no error",
@@ -446,43 +515,51 @@ func TestOtConn_ResetSession(t *testing.T) {
 			name:  "with error",
 			error: true,
 		},
+		{
+			name:         "no parent span, disallow root span",
+			noParentSpan: true,
+		},
+		{
+			name:            "no parent span, allow root span",
+			noParentSpan:    true,
+			allowRootOption: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			sr, provider := newTracerProvider()
-			tracer := provider.Tracer("test")
-			ctx, dummySpan := createDummySpan(context.Background(), tracer)
+			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
 			cfg := newMockConfig(tracer)
+			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
 			err := otelConn.ResetSession(ctx)
-
-			spanList := sr.Completed()
-			// One dummy span and one span created in ResetSession
-			require.Equal(t, 2, len(spanList))
-			span := spanList[1]
-			assert.True(t, span.Ended())
-			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-			assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
-			assert.Equal(t, string(MethodConnResetSession), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
-
-			assert.Equal(t, 1, mc.resetSessionCount)
-			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(mc.resetSessionCtx))
-
 			if tc.error {
 				require.Error(t, err)
-				assert.Equal(t, codes.Error, span.StatusCode())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, codes.Unset, span.StatusCode())
 			}
+
+			spanList := sr.Completed()
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			// One dummy span and one span created in ResetSession
+			require.Equal(t, expectedSpanCount, len(spanList))
+
+			assertSpanList(t, spanList, spanAssertionParameter{
+				parentSpan:         dummySpan,
+				error:              tc.error,
+				expectedAttributes: cfg.Attributes,
+				expectedMethod:     MethodConnResetSession,
+				allowRootOption:    tc.allowRootOption,
+				noParentSpan:       tc.noParentSpan,
+				ctx:                mc.resetSessionCtx,
+			})
+
+			assert.Equal(t, 1, mc.resetSessionCount)
 		})
 	}
 }

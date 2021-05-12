@@ -15,7 +15,6 @@
 package otelsql
 
 import (
-	"context"
 	"database/sql/driver"
 	"errors"
 	"testing"
@@ -24,7 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type mockRows struct {
@@ -80,21 +78,20 @@ func TestOtRows_Close(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			sr, provider := newTracerProvider()
-			tracer := provider.Tracer("test")
+			ctx, sr, tracer, _ := prepareTraces(false)
 
 			mr := newMockRows(tc.error)
 			cfg := newMockConfig(tracer)
 
 			// New rows
-			rows := newRows(context.Background(), mr, cfg)
+			rows := newRows(ctx, mr, cfg)
 			// Close
 			err := rows.Close()
 
 			spanList := sr.Completed()
 			// A span created in newRows()
-			require.Equal(t, 1, len(spanList))
-			span := spanList[0]
+			require.Equal(t, 2, len(spanList))
+			span := spanList[1]
 			assert.True(t, span.Ended())
 
 			assert.Equal(t, 1, mr.closeCount)
@@ -132,22 +129,21 @@ func TestOtRows_Next(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			sr, provider := newTracerProvider()
-			tracer := provider.Tracer("test")
+			ctx, sr, tracer, _ := prepareTraces(false)
 
 			mr := newMockRows(tc.error)
 			cfg := newMockConfig(tracer)
 			cfg.SpanOptions.RowsNext = tc.rowsNextOption
 
 			// New rows
-			rows := newRows(context.Background(), mr, cfg)
+			rows := newRows(ctx, mr, cfg)
 			// Next
 			err := rows.Next([]driver.Value{"test"})
 
 			spanList := sr.Started()
 			// A span created in newRows()
-			require.Equal(t, 1, len(spanList))
-			span := spanList[0]
+			require.Equal(t, 2, len(spanList))
+			span := spanList[1]
 			assert.False(t, span.Ended())
 
 			assert.Equal(t, 1, mr.nextCount)
@@ -171,26 +167,53 @@ func TestOtRows_Next(t *testing.T) {
 }
 
 func TestNewRows(t *testing.T) {
-	// Prepare traces
-	sr, provider := newTracerProvider()
-	tracer := provider.Tracer("test")
-	ctx, dummySpan := createDummySpan(context.Background(), tracer)
+	testCases := []struct {
+		name            string
+		allowRootOption bool
+		noParentSpan    bool
+	}{
+		{
+			name: "default config",
+		},
+		{
+			name:         "no parent span, disallow root span",
+			noParentSpan: true,
+		},
+		{
+			name:            "no parent span, allow root span",
+			noParentSpan:    true,
+			allowRootOption: true,
+		},
+	}
 
-	mr := newMockRows(false)
-	cfg := newMockConfig(tracer)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Prepare traces
+			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-	// New rows
-	rows := newRows(ctx, mr, cfg)
+			mr := newMockRows(false)
+			cfg := newMockConfig(tracer)
+			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 
-	spanList := sr.Started()
-	// One dummy span and one span created in newRows()
-	require.Equal(t, 2, len(spanList))
-	span := spanList[1]
-	assert.False(t, span.Ended())
-	assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-	assert.Equal(t, attributesListToMap(cfg.Attributes), span.Attributes())
-	assert.Equal(t, string(MethodRows), span.Name())
-	assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-	assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
-	assert.Equal(t, mr, rows.Rows)
+			// New rows
+			rows := newRows(ctx, mr, cfg)
+
+			spanList := sr.Started()
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			// One dummy span and one span created in newRows()
+			require.Equal(t, expectedSpanCount, len(spanList))
+
+			assertSpanList(t, spanList, spanAssertionParameter{
+				parentSpan:         dummySpan,
+				error:              false,
+				expectedAttributes: cfg.Attributes,
+				expectedMethod:     MethodRows,
+				allowRootOption:    tc.allowRootOption,
+				noParentSpan:       tc.noParentSpan,
+				spanNotEnded:       true,
+			})
+
+			assert.Equal(t, mr, rows.Rows)
+		})
+	}
 }
