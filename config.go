@@ -63,6 +63,9 @@ type SpanOptions struct {
 
 	// DisableErrSkip, if set to true, will suppress driver.ErrSkip errors in spans.
 	DisableErrSkip bool
+
+	// AllowRoot, if set to true, will create root spans in absence of existing spans or even context.
+	AllowRoot bool
 }
 
 type defaultSpanNameFormatter struct{}

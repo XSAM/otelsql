@@ -34,6 +34,7 @@ func TestRecordSpanError(t *testing.T) {
 		opts          SpanOptions
 		err           error
 		expectedError bool
+		nilSpan       bool
 	}{
 		{
 			name:          "no error",
@@ -62,17 +63,27 @@ func TestRecordSpanError(t *testing.T) {
 			opts:          SpanOptions{DisableErrSkip: true},
 			expectedError: false,
 		},
+		{
+			name:          "nil span",
+			err:           nil,
+			nilSpan:       true,
+			expectedError: false,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			var span oteltest.Span
-			recordSpanError(&span, tc.opts, tc.err)
+			if !tc.nilSpan {
+				var span oteltest.Span
+				recordSpanError(&span, tc.opts, tc.err)
 
-			if tc.expectedError {
-				assert.Equal(t, codes.Error, span.StatusCode())
+				if tc.expectedError {
+					assert.Equal(t, codes.Error, span.StatusCode())
+				} else {
+					assert.Equal(t, codes.Unset, span.StatusCode())
+				}
 			} else {
-				assert.Equal(t, codes.Unset, span.StatusCode())
+				recordSpanError(nil, tc.opts, tc.err)
 			}
 		})
 	}
@@ -107,4 +118,72 @@ func attributesListToMap(attributes []attribute.KeyValue) map[attribute.Key]attr
 		attributesMap[v.Key] = v.Value
 	}
 	return attributesMap
+}
+
+type spanAssertionParameter struct {
+	parentSpan         trace.Span
+	error              bool
+	expectedAttributes []attribute.KeyValue
+	expectedMethod     Method
+	allowRootOption    bool
+	noParentSpan       bool
+	ctx                context.Context
+	spanNotEnded       bool
+}
+
+func assertSpanList(t *testing.T, spanList []*oteltest.Span, parameter spanAssertionParameter) {
+	var span *oteltest.Span
+	if !parameter.noParentSpan {
+		span = spanList[1]
+	} else if parameter.allowRootOption {
+		span = spanList[0]
+	}
+
+	if span != nil {
+		if parameter.spanNotEnded {
+			assert.False(t, span.Ended())
+		} else {
+			assert.True(t, span.Ended())
+		}
+		assert.Equal(t, trace.SpanKindClient, span.SpanKind())
+		assert.Equal(t, attributesListToMap(parameter.expectedAttributes), span.Attributes())
+		assert.Equal(t, string(parameter.expectedMethod), span.Name())
+		if parameter.parentSpan != nil {
+			assert.Equal(t, parameter.parentSpan.SpanContext().TraceID(), span.SpanContext().TraceID())
+			assert.Equal(t, parameter.parentSpan.SpanContext().SpanID(), span.ParentSpanID())
+		}
+
+		if parameter.error {
+			assert.Equal(t, codes.Error, span.StatusCode())
+		} else {
+			assert.Equal(t, codes.Unset, span.StatusCode())
+		}
+
+		if parameter.ctx != nil {
+			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(parameter.ctx))
+		}
+	}
+}
+
+func getExpectedSpanCount(allowRootOption bool, noParentSpan bool) int {
+	var expectedSpanCount int
+	if allowRootOption {
+		expectedSpanCount++
+	}
+	if !noParentSpan {
+		expectedSpanCount = 2
+	}
+	return expectedSpanCount
+}
+
+func prepareTraces(noParentSpan bool) (context.Context, *oteltest.SpanRecorder, trace.Tracer, trace.Span) {
+	sr, provider := newTracerProvider()
+	tracer := provider.Tracer("test")
+
+	var dummySpan trace.Span
+	ctx := context.Background()
+	if !noParentSpan {
+		ctx, dummySpan = createDummySpan(context.Background(), tracer)
+	}
+	return ctx, sr, tracer, dummySpan
 }

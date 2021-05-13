@@ -22,6 +22,10 @@ import (
 )
 
 func recordSpanError(span trace.Span, opts SpanOptions, err error) {
+	if span == nil {
+		return
+	}
+
 	switch err {
 	case nil:
 		return

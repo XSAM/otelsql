@@ -39,10 +39,13 @@ type otRows struct {
 }
 
 func newRows(ctx context.Context, rows driver.Rows, cfg config) *otRows {
-	_, span := cfg.Tracer.Start(ctx, cfg.SpanNameFormatter.Format(ctx, MethodRows, ""),
-		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(cfg.Attributes...),
-	)
+	var span trace.Span
+	if cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
+		_, span = cfg.Tracer.Start(ctx, cfg.SpanNameFormatter.Format(ctx, MethodRows, ""),
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(cfg.Attributes...),
+		)
+	}
 
 	return &otRows{
 		Rows: rows,
@@ -62,7 +65,7 @@ func (r otRows) HasNextResultSet() bool {
 	return false
 }
 
-// NextResultsSet calls the implements the driver.RowsNextResultSet for otRows.
+// NextResultSet calls the implements the driver.RowsNextResultSet for otRows.
 // It returns the the underlying result of NextResultSet from the otRows.parent
 // if the parent implements driver.RowsNextResultSet.
 func (r otRows) NextResultSet() error {
@@ -118,7 +121,11 @@ func (r otRows) ColumnTypePrecisionScale(index int) (precision, scale int64, ok 
 }
 
 func (r otRows) Close() (err error) {
-	defer r.span.End()
+	defer func() {
+		if r.span != nil {
+			r.span.End()
+		}
+	}()
 
 	err = r.Rows.Close()
 	if err != nil {
@@ -128,7 +135,7 @@ func (r otRows) Close() (err error) {
 }
 
 func (r otRows) Next(dest []driver.Value) (err error) {
-	if r.cfg.SpanOptions.RowsNext {
+	if r.cfg.SpanOptions.RowsNext && r.span != nil {
 		r.span.AddEvent(string(EventRowsNext))
 	}
 

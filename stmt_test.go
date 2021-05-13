@@ -24,9 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/semconv"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type mockStmt struct {
@@ -78,8 +76,10 @@ var (
 
 func TestOtStmt_ExecContext(t *testing.T) {
 	testCases := []struct {
-		name  string
-		error bool
+		name            string
+		error           bool
+		allowRootOption bool
+		noParentSpan    bool
 	}{
 		{
 			name: "no error",
@@ -88,51 +88,62 @@ func TestOtStmt_ExecContext(t *testing.T) {
 			name:  "with error",
 			error: true,
 		},
+		{
+			name:         "no parent span, disallow root span",
+			noParentSpan: true,
+		},
+		{
+			name:            "no parent span, allow root span",
+			noParentSpan:    true,
+			allowRootOption: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			sr, provider := newTracerProvider()
-			tracer := provider.Tracer("test")
-			ctx, dummySpan := createDummySpan(context.Background(), tracer)
+			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 			ms := newMockStmt(tc.error)
 
 			// New stmt
 			cfg := newMockConfig(tracer)
+			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			stmt := newStmt(ms, cfg, "query")
 			// Exec
 			_, err := stmt.ExecContext(ctx, []driver.NamedValue{{Name: "test"}})
+			if tc.error {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 
 			spanList := sr.Completed()
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 			// One dummy span and a span created in tx
-			require.Equal(t, 2, len(spanList))
-			span := spanList[1]
-			assert.True(t, span.Ended())
-			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-				cfg.Attributes...)), span.Attributes())
-			assert.Equal(t, string(MethodStmtExec), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
+			require.Equal(t, expectedSpanCount, len(spanList))
+
+			assertSpanList(t, spanList, spanAssertionParameter{
+				parentSpan: dummySpan,
+				error:      tc.error,
+				expectedAttributes: append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
+					cfg.Attributes...),
+				expectedMethod:  MethodStmtExec,
+				allowRootOption: tc.allowRootOption,
+				noParentSpan:    tc.noParentSpan,
+			})
 
 			assert.Equal(t, 1, ms.execCount)
 			assert.Equal(t, []driver.NamedValue{{Name: "test"}}, ms.ExecContextArgs)
-			if tc.error {
-				require.Error(t, err)
-				assert.Equal(t, codes.Error, span.StatusCode())
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, codes.Unset, span.StatusCode())
-			}
 		})
 	}
 }
 
 func TestOtStmt_QueryContext(t *testing.T) {
 	testCases := []struct {
-		name  string
-		error bool
+		name            string
+		error           bool
+		allowRootOption bool
+		noParentSpan    bool
 	}{
 		{
 			name: "no error",
@@ -141,42 +152,53 @@ func TestOtStmt_QueryContext(t *testing.T) {
 			name:  "with error",
 			error: true,
 		},
+		{
+			name:         "no parent span, disallow root span",
+			noParentSpan: true,
+		},
+		{
+			name:            "no parent span, allow root span",
+			noParentSpan:    true,
+			allowRootOption: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			sr, provider := newTracerProvider()
-			tracer := provider.Tracer("test")
-			ctx, dummySpan := createDummySpan(context.Background(), tracer)
+			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 			ms := newMockStmt(tc.error)
 
 			// New stmt
 			cfg := newMockConfig(tracer)
+			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			stmt := newStmt(ms, cfg, "query")
 			// Query
 			rows, err := stmt.QueryContext(ctx, []driver.NamedValue{{Name: "test"}})
+			if tc.error {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 
 			spanList := sr.Completed()
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 			// One dummy span and a span created in tx
-			require.Equal(t, 2, len(spanList))
-			span := spanList[1]
-			assert.True(t, span.Ended())
-			assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-			assert.Equal(t, attributesListToMap(append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-				cfg.Attributes...)), span.Attributes())
-			assert.Equal(t, string(MethodStmtQuery), span.Name())
-			assert.Equal(t, dummySpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-			assert.Equal(t, dummySpan.SpanContext().SpanID(), span.ParentSpanID())
+			require.Equal(t, expectedSpanCount, len(spanList))
+
+			assertSpanList(t, spanList, spanAssertionParameter{
+				parentSpan: dummySpan,
+				error:      tc.error,
+				expectedAttributes: append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
+					cfg.Attributes...),
+				expectedMethod:  MethodStmtQuery,
+				allowRootOption: tc.allowRootOption,
+				noParentSpan:    tc.noParentSpan,
+			})
 
 			assert.Equal(t, 1, ms.queryCount)
 			assert.Equal(t, []driver.NamedValue{{Name: "test"}}, ms.queryContextArgs)
-			if tc.error {
-				require.Error(t, err)
-				assert.Equal(t, codes.Error, span.StatusCode())
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, codes.Unset, span.StatusCode())
+			if !tc.error {
 				assert.IsType(t, &otRows{}, rows)
 			}
 		})
