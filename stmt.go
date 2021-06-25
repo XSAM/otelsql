@@ -18,7 +18,7 @@ import (
 	"context"
 	"database/sql/driver"
 
-	"go.opentelemetry.io/otel/semconv"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 )
 

@@ -24,9 +24,9 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/stdout"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
 	"github.com/XSAM/otelsql"
 )
@@ -36,7 +36,7 @@ const instrumentationName = "github.com/XSAM/otelsql/example"
 var mysqlDSN = "root:otel_password@tcp(mysql)/db?parseTime=true"
 
 func initTracer() {
-	exporter, err := stdout.NewExporter(stdout.WithPrettyPrint())
+	exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
 	if err != nil {
 		log.Fatal(err)
 	}
