@@ -25,6 +25,9 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 	if span == nil {
 		return
 	}
+	if opts.RecordError != nil && !opts.RecordError(err) {
+		return
+	}
 
 	switch err {
 	case nil:
