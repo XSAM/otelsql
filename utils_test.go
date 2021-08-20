@@ -64,6 +64,18 @@ func TestRecordSpanError(t *testing.T) {
 			expectedError: false,
 		},
 		{
+			name:          "avoid recording error due to RecordError option",
+			err:           errors.New("error"),
+			opts:          SpanOptions{RecordError: func(err error) bool { return false }},
+			expectedError: false,
+		},
+		{
+			name:          "record error returns true",
+			err:           errors.New("error"),
+			opts:          SpanOptions{RecordError: func(err error) bool { return true }},
+			expectedError: true,
+		},
+		{
 			name:          "nil span",
 			err:           nil,
 			nilSpan:       true,

@@ -64,6 +64,13 @@ type SpanOptions struct {
 	// DisableErrSkip, if set to true, will suppress driver.ErrSkip errors in spans.
 	DisableErrSkip bool
 
+	// RecordError, if set, will be invoked with the current error, and if the func returns true
+	// the record will be recorded on the current span.
+	//
+	// If this is not set it will default to record all errors (possible not ErrSkip, see option
+	// DisableErrSkip).
+	RecordError func(err error) bool
+
 	// AllowRoot, if set to true, will create root spans in absence of existing spans or even context.
 	AllowRoot bool
 }
