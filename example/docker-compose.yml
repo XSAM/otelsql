@@ -24,6 +24,6 @@ services:
   client:
     build:
       dockerfile: $PWD/Dockerfile
-      context: ../../../../..
+      context: ..
     depends_on:
     - mysql

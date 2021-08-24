@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 FROM golang:alpine AS base
-COPY . /src/
-WORKDIR /src/instrumentation/database/sql/otelsql/example
+COPY . /src/otelsql
+WORKDIR /src/otelsql/example
 
 FROM base
 RUN go install main.go
