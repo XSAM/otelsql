@@ -17,7 +17,7 @@ package otelsql
 // Method specifics operation in the database/sql package.
 type Method string
 
-// Method specifics events in the database/sql package.
+// Event specifics events in the database/sql package.
 type Event string
 
 const (
