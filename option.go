@@ -63,3 +63,15 @@ func WithSpanOptions(opts SpanOptions) Option {
 		cfg.SpanOptions = opts
 	})
 }
+
+// WithSpanMethodOptions specifies database operations for tracing.
+func WithSpanMethodOptions(opts ...Method) Option {
+	methods := make(SpanMethodOptions, len(opts))
+	return OptionFunc(func(cfg *config) {
+		for _, opt := range opts {
+			methods[opt] = true
+		}
+		cfg.Methods = methods
+	})
+}
+

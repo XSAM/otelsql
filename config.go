@@ -32,6 +32,9 @@ type SpanNameFormatter interface {
 	Format(ctx context.Context, method Method, query string) string
 }
 
+// SpanMethodOptions holds a list of span-able Method(s), those are operations in the database/sql
+type SpanMethodOptions map[Method]bool
+
 type config struct {
 	TracerProvider trace.TracerProvider
 	Tracer         trace.Tracer
@@ -46,6 +49,9 @@ type config struct {
 	// SpanNameFormatter will be called to produce span's name.
 	// Default use method as span name
 	SpanNameFormatter SpanNameFormatter
+
+	// Methods configure which Method should be traced
+	Methods SpanMethodOptions
 }
 
 // SpanOptions holds configuration of tracing span to decide

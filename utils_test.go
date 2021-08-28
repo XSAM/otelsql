@@ -120,6 +120,11 @@ func newMockConfig(tracer trace.Tracer) config {
 		Tracer:            tracer,
 		Attributes:        []attribute.KeyValue{defaultattribute},
 		SpanNameFormatter: &defaultSpanNameFormatter{},
+		Methods: SpanMethodOptions{
+			MethodConnExec: true,
+			MethodConnQuery: true,
+			MethodRows: true,
+		},
 	}
 }
 

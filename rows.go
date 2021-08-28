@@ -40,7 +40,7 @@ type otRows struct {
 
 func newRows(ctx context.Context, rows driver.Rows, cfg config) *otRows {
 	var span trace.Span
-	if cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
+	if traceMethod(ctx, cfg, MethodRows) {
 		_, span = cfg.Tracer.Start(ctx, cfg.SpanNameFormatter.Format(ctx, MethodRows, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(cfg.Attributes...),

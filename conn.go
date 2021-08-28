@@ -86,7 +86,7 @@ func (c *otConn) ExecContext(ctx context.Context, query string, args []driver.Na
 	}
 
 	var span trace.Span
-	if c.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
+	if traceMethod(ctx, c.cfg, MethodConnExec) {
 		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnExec, query),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(
@@ -113,6 +113,13 @@ func (c *otConn) Query(query string, args []driver.Value) (driver.Rows, error) {
 	return queryer.Query(query, args)
 }
 
+func traceMethod(ctx context.Context, cfg config, method Method) bool {
+	if !cfg.Methods[method] {
+		return false
+	}
+	return cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid()
+}
+
 func (c *otConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (rows driver.Rows, err error) {
 	queryer, ok := c.Conn.(driver.QueryerContext)
 	if !ok {
@@ -121,7 +128,7 @@ func (c *otConn) QueryContext(ctx context.Context, query string, args []driver.N
 
 	var span trace.Span
 	queryCtx := ctx
-	if c.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
+	if traceMethod(ctx, c.cfg, MethodConnQuery) {
 		queryCtx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnQuery, query),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(
