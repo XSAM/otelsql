@@ -64,6 +64,9 @@ type SpanOptions struct {
 	// DisableErrSkip, if set to true, will suppress driver.ErrSkip errors in spans.
 	DisableErrSkip bool
 
+	// DisableQuery if set to true, will suppress db.statement in spans
+	DisableQuery bool
+
 	// RecordError, if set, will be invoked with the current error, and if the func returns true
 	// the record will be recorded on the current span.
 	//
@@ -103,4 +106,11 @@ func newConfig(dbSystem string, options ...Option) config {
 	)
 
 	return cfg
+}
+
+func withDBStatement(cfg config, query string) []attribute.KeyValue {
+	if cfg.SpanOptions.DisableQuery {
+		return cfg.Attributes
+	}
+	return append(cfg.Attributes, semconv.DBStatementKey.String(query))
 }
