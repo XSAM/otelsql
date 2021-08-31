@@ -219,27 +219,38 @@ func TestOtConn_Ping(t *testing.T) {
 }
 
 func TestOtConn_ExecContext(t *testing.T) {
+	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
 	testCases := []struct {
 		name            string
 		error           bool
 		allowRootOption bool
 		noParentSpan    bool
+		disableQuery    bool
+		attrs           []attribute.KeyValue
 	}{
 		{
-			name: "no error",
+			name:  "no error",
+			attrs: expectedAttrs,
+		},
+		{
+			name:         "no query db.statement",
+			disableQuery: true,
 		},
 		{
 			name:  "with error",
 			error: true,
+			attrs: expectedAttrs,
 		},
 		{
 			name:         "no parent span, disallow root span",
 			noParentSpan: true,
+			attrs:        expectedAttrs,
 		},
 		{
 			name:            "no parent span, allow root span",
 			noParentSpan:    true,
 			allowRootOption: true,
+			attrs:           expectedAttrs,
 		},
 	}
 
@@ -251,6 +262,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 			// New conn
 			cfg := newMockConfig(tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
+			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -267,14 +279,13 @@ func TestOtConn_ExecContext(t *testing.T) {
 			require.Equal(t, expectedSpanCount, len(spanList))
 
 			assertSpanList(t, spanList, spanAssertionParameter{
-				parentSpan: dummySpan,
-				error:      tc.error,
-				expectedAttributes: append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-					cfg.Attributes...),
-				expectedMethod:  MethodConnExec,
-				allowRootOption: tc.allowRootOption,
-				noParentSpan:    tc.noParentSpan,
-				ctx:             mc.execContextCtx,
+				parentSpan:         dummySpan,
+				error:              tc.error,
+				expectedAttributes: append(cfg.Attributes, tc.attrs...),
+				expectedMethod:     MethodConnExec,
+				allowRootOption:    tc.allowRootOption,
+				noParentSpan:       tc.noParentSpan,
+				ctx:                mc.execContextCtx,
 			})
 
 			assert.Equal(t, 1, mc.execContextCount)
@@ -284,27 +295,38 @@ func TestOtConn_ExecContext(t *testing.T) {
 }
 
 func TestOtConn_QueryContext(t *testing.T) {
+	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
 	testCases := []struct {
 		name            string
 		error           bool
 		allowRootOption bool
 		noParentSpan    bool
+		disableQuery    bool
+		attrs           []attribute.KeyValue
 	}{
 		{
-			name: "no error",
+			name:  "no error",
+			attrs: expectedAttrs,
+		},
+		{
+			name:         "no query db.statement",
+			disableQuery: true,
 		},
 		{
 			name:  "with error",
 			error: true,
+			attrs: expectedAttrs,
 		},
 		{
 			name:         "no parent span, disallow root span",
 			noParentSpan: true,
+			attrs:        expectedAttrs,
 		},
 		{
 			name:            "no parent span, allow root span",
 			noParentSpan:    true,
 			allowRootOption: true,
+			attrs:           expectedAttrs,
 		},
 	}
 
@@ -316,6 +338,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 			// New conn
 			cfg := newMockConfig(tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
+			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -332,14 +355,13 @@ func TestOtConn_QueryContext(t *testing.T) {
 			require.Equal(t, expectedSpanCount, len(spanList))
 
 			assertSpanList(t, spanList, spanAssertionParameter{
-				parentSpan: dummySpan,
-				error:      tc.error,
-				expectedAttributes: append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-					cfg.Attributes...),
-				expectedMethod:  MethodConnQuery,
-				allowRootOption: tc.allowRootOption,
-				noParentSpan:    tc.noParentSpan,
-				ctx:             mc.queryContextCtx,
+				parentSpan:         dummySpan,
+				error:              tc.error,
+				expectedAttributes: append(cfg.Attributes, tc.attrs...),
+				expectedMethod:     MethodConnQuery,
+				allowRootOption:    tc.allowRootOption,
+				noParentSpan:       tc.noParentSpan,
+				ctx:                mc.queryContextCtx,
 			})
 
 			assert.Equal(t, 1, mc.queryContextCount)
@@ -359,27 +381,38 @@ func TestOtConn_QueryContext(t *testing.T) {
 }
 
 func TestOtConn_PrepareContext(t *testing.T) {
+	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
 	testCases := []struct {
 		name            string
 		error           bool
 		allowRootOption bool
 		noParentSpan    bool
+		disableQuery    bool
+		attrs           []attribute.KeyValue
 	}{
 		{
-			name: "no error",
+			name:  "no error",
+			attrs: expectedAttrs,
+		},
+		{
+			name:         "no query db.statement",
+			disableQuery: true,
 		},
 		{
 			name:  "with error",
 			error: true,
+			attrs: expectedAttrs,
 		},
 		{
 			name:         "no parent span, disallow root span",
 			noParentSpan: true,
+			attrs:        expectedAttrs,
 		},
 		{
 			name:            "no parent span, allow root span",
 			noParentSpan:    true,
 			allowRootOption: true,
+			attrs:           expectedAttrs,
 		},
 	}
 
@@ -391,6 +424,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 			// New conn
 			cfg := newMockConfig(tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
+			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -407,14 +441,13 @@ func TestOtConn_PrepareContext(t *testing.T) {
 			require.Equal(t, expectedSpanCount, len(spanList))
 
 			assertSpanList(t, spanList, spanAssertionParameter{
-				parentSpan: dummySpan,
-				error:      tc.error,
-				expectedAttributes: append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-					cfg.Attributes...),
-				expectedMethod:  MethodConnPrepare,
-				allowRootOption: tc.allowRootOption,
-				noParentSpan:    tc.noParentSpan,
-				ctx:             mc.prepareContextCtx,
+				parentSpan:         dummySpan,
+				error:              tc.error,
+				expectedAttributes: append(cfg.Attributes, tc.attrs...),
+				expectedMethod:     MethodConnPrepare,
+				allowRootOption:    tc.allowRootOption,
+				noParentSpan:       tc.noParentSpan,
+				ctx:                mc.prepareContextCtx,
 			})
 
 			assert.Equal(t, 1, mc.prepareContextCount)
