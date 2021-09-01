@@ -160,7 +160,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 		attrs           []attribute.KeyValue
 	}{
 		{
-			name: "no error",
+			name:  "no error",
 			attrs: expectedAttrs,
 		},
 		{
@@ -175,13 +175,13 @@ func TestOtStmt_QueryContext(t *testing.T) {
 		{
 			name:         "no parent span, disallow root span",
 			noParentSpan: true,
-			attrs: expectedAttrs,
+			attrs:        expectedAttrs,
 		},
 		{
 			name:            "no parent span, allow root span",
 			noParentSpan:    true,
 			allowRootOption: true,
-			attrs: expectedAttrs,
+			attrs:           expectedAttrs,
 		},
 	}
 
