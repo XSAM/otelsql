@@ -64,7 +64,7 @@ type SpanOptions struct {
 	// DisableErrSkip, if set to true, will suppress driver.ErrSkip errors in spans.
 	DisableErrSkip bool
 
-	// DisableQuery if set to true, will suppress db.statement in spans
+	// DisableQuery if set to true, will suppress db.statement in spans.
 	DisableQuery bool
 
 	// RecordError, if set, will be invoked with the current error, and if the func returns true
