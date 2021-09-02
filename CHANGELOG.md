@@ -10,11 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-- Added DisableQuery to SpanOption. (#26)
-
-### Added
-
 - Added RecordError to SpanOption. (#23)
+- Added DisableQuery to SpanOption. (#26)
 
 ## [0.5.0] - 2021-08-02
 
