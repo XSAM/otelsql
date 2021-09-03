@@ -18,7 +18,6 @@ import (
 	"context"
 	"database/sql/driver"
 
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -54,10 +53,7 @@ func (s *otStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (res
 	if s.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
 		ctx, span = s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, MethodStmtExec, s.query),
 			trace.WithSpanKind(trace.SpanKindClient),
-			trace.WithAttributes(
-				append(s.cfg.Attributes,
-					semconv.DBStatementKey.String(s.query),
-				)...),
+			trace.WithAttributes(withDBStatement(s.cfg, s.query)...),
 		)
 		defer span.End()
 	}
@@ -81,10 +77,7 @@ func (s *otStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (ro
 	if s.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
 		queryCtx, span = s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, MethodStmtQuery, s.query),
 			trace.WithSpanKind(trace.SpanKindClient),
-			trace.WithAttributes(
-				append(s.cfg.Attributes,
-					semconv.DBStatementKey.String(s.query),
-				)...),
+			trace.WithAttributes(withDBStatement(s.cfg, s.query)...),
 		)
 		defer span.End()
 	}

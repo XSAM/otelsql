@@ -42,14 +42,14 @@ func newMockStmt(shouldError bool) *mockStmt {
 	return &mockStmt{shouldError: shouldError}
 }
 
-func (m *mockStmt) CheckNamedValue(value *driver.NamedValue) error {
+func (m *mockStmt) CheckNamedValue(_ *driver.NamedValue) error {
 	if m.shouldError {
 		return errors.New("checkNamedValue")
 	}
 	return nil
 }
 
-func (m *mockStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
+func (m *mockStmt) QueryContext(_ context.Context, args []driver.NamedValue) (driver.Rows, error) {
 	m.queryContextArgs = args
 	m.queryCount++
 	if m.shouldError {
@@ -58,7 +58,7 @@ func (m *mockStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (
 	return nil, nil
 }
 
-func (m *mockStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
+func (m *mockStmt) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
 	m.ExecContextArgs = args
 	m.execCount++
 	if m.shouldError {
@@ -75,27 +75,38 @@ var (
 )
 
 func TestOtStmt_ExecContext(t *testing.T) {
+	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
 	testCases := []struct {
 		name            string
 		error           bool
 		allowRootOption bool
 		noParentSpan    bool
+		disableQuery    bool
+		attrs           []attribute.KeyValue
 	}{
 		{
-			name: "no error",
+			name:  "no error",
+			attrs: expectedAttrs,
+		},
+		{
+			name:         "no query db.statement",
+			disableQuery: true,
 		},
 		{
 			name:  "with error",
 			error: true,
+			attrs: expectedAttrs,
 		},
 		{
 			name:         "no parent span, disallow root span",
 			noParentSpan: true,
+			attrs:        expectedAttrs,
 		},
 		{
 			name:            "no parent span, allow root span",
 			noParentSpan:    true,
 			allowRootOption: true,
+			attrs:           expectedAttrs,
 		},
 	}
 
@@ -108,6 +119,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 			// New stmt
 			cfg := newMockConfig(tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
+			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			stmt := newStmt(ms, cfg, "query")
 			// Exec
 			_, err := stmt.ExecContext(ctx, []driver.NamedValue{{Name: "test"}})
@@ -123,13 +135,12 @@ func TestOtStmt_ExecContext(t *testing.T) {
 			require.Equal(t, expectedSpanCount, len(spanList))
 
 			assertSpanList(t, spanList, spanAssertionParameter{
-				parentSpan: dummySpan,
-				error:      tc.error,
-				expectedAttributes: append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-					cfg.Attributes...),
-				expectedMethod:  MethodStmtExec,
-				allowRootOption: tc.allowRootOption,
-				noParentSpan:    tc.noParentSpan,
+				parentSpan:         dummySpan,
+				error:              tc.error,
+				expectedAttributes: append(cfg.Attributes, tc.attrs...),
+				expectedMethod:     MethodStmtExec,
+				allowRootOption:    tc.allowRootOption,
+				noParentSpan:       tc.noParentSpan,
 			})
 
 			assert.Equal(t, 1, ms.execCount)
@@ -139,27 +150,38 @@ func TestOtStmt_ExecContext(t *testing.T) {
 }
 
 func TestOtStmt_QueryContext(t *testing.T) {
+	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
 	testCases := []struct {
 		name            string
 		error           bool
 		allowRootOption bool
 		noParentSpan    bool
+		disableQuery    bool
+		attrs           []attribute.KeyValue
 	}{
 		{
-			name: "no error",
+			name:  "no error",
+			attrs: expectedAttrs,
+		},
+		{
+			name:         "no query db.statement",
+			disableQuery: true,
 		},
 		{
 			name:  "with error",
 			error: true,
+			attrs: expectedAttrs,
 		},
 		{
 			name:         "no parent span, disallow root span",
 			noParentSpan: true,
+			attrs:        expectedAttrs,
 		},
 		{
 			name:            "no parent span, allow root span",
 			noParentSpan:    true,
 			allowRootOption: true,
+			attrs:           expectedAttrs,
 		},
 	}
 
@@ -172,6 +194,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 			// New stmt
 			cfg := newMockConfig(tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
+			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			stmt := newStmt(ms, cfg, "query")
 			// Query
 			rows, err := stmt.QueryContext(ctx, []driver.NamedValue{{Name: "test"}})
@@ -187,13 +210,12 @@ func TestOtStmt_QueryContext(t *testing.T) {
 			require.Equal(t, expectedSpanCount, len(spanList))
 
 			assertSpanList(t, spanList, spanAssertionParameter{
-				parentSpan: dummySpan,
-				error:      tc.error,
-				expectedAttributes: append([]attribute.KeyValue{semconv.DBStatementKey.String("query")},
-					cfg.Attributes...),
-				expectedMethod:  MethodStmtQuery,
-				allowRootOption: tc.allowRootOption,
-				noParentSpan:    tc.noParentSpan,
+				parentSpan:         dummySpan,
+				error:              tc.error,
+				expectedAttributes: append(cfg.Attributes, tc.attrs...),
+				expectedMethod:     MethodStmtQuery,
+				allowRootOption:    tc.allowRootOption,
+				noParentSpan:       tc.noParentSpan,
 			})
 
 			assert.Equal(t, 1, ms.queryCount)
