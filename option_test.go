@@ -18,13 +18,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/oteltest"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 func TestOptions(t *testing.T) {
-	tracerProvider := oteltest.NewTracerProvider()
+	tracerProvider := sdktrace.NewTracerProvider()
 
 	testCases := []struct {
 		name           string

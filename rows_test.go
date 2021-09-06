@@ -21,8 +21,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	"go.opentelemetry.io/otel/codes"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 type mockRows struct {
@@ -88,20 +88,20 @@ func TestOtRows_Close(t *testing.T) {
 			// Close
 			err := rows.Close()
 
-			spanList := sr.Completed()
+			spanList := sr.Ended()
 			// A span created in newRows()
 			require.Equal(t, 2, len(spanList))
 			span := spanList[1]
-			assert.True(t, span.Ended())
+			assert.False(t, span.EndTime().IsZero())
 
 			assert.Equal(t, 1, mr.closeCount)
 			if tc.error {
 				require.Error(t, err)
-				assert.Equal(t, codes.Error, span.StatusCode())
+				assert.Equal(t, codes.Error, span.Status().Code)
 				assert.Len(t, span.Events(), 1)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, codes.Unset, span.StatusCode())
+				assert.Equal(t, codes.Unset, span.Status().Code)
 			}
 		})
 	}
@@ -144,18 +144,18 @@ func TestOtRows_Next(t *testing.T) {
 			// A span created in newRows()
 			require.Equal(t, 2, len(spanList))
 			span := spanList[1]
-			assert.False(t, span.Ended())
+			assert.True(t, span.EndTime().IsZero())
 
 			assert.Equal(t, 1, mr.nextCount)
 			assert.Equal(t, []driver.Value{"test"}, mr.nextDest)
 			var expectedEventCount int
 			if tc.error {
 				require.Error(t, err)
-				assert.Equal(t, codes.Error, span.StatusCode())
+				assert.Equal(t, codes.Error, span.Status().Code)
 				expectedEventCount++
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, codes.Unset, span.StatusCode())
+				assert.Equal(t, codes.Unset, span.Status().Code)
 			}
 
 			if tc.rowsNextOption {
@@ -203,7 +203,13 @@ func TestNewRows(t *testing.T) {
 			// One dummy span and one span created in newRows()
 			require.Equal(t, expectedSpanCount, len(spanList))
 
-			assertSpanList(t, spanList, spanAssertionParameter{
+			// Convert []sdktrace.ReadWriteSpan to []sdktrace.ReadOnlySpan explicitly due to the limitation of Go
+			var readOnlySpanList []sdktrace.ReadOnlySpan
+			for _, v := range spanList {
+				readOnlySpanList = append(readOnlySpanList, v)
+			}
+
+			assertSpanList(t, readOnlySpanList, spanAssertionParameter{
 				parentSpan:         dummySpan,
 				error:              false,
 				expectedAttributes: cfg.Attributes,

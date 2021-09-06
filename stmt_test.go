@@ -22,7 +22,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
@@ -129,7 +128,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			spanList := sr.Completed()
+			spanList := sr.Ended()
 			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 			// One dummy span and a span created in tx
 			require.Equal(t, expectedSpanCount, len(spanList))
@@ -204,7 +203,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			spanList := sr.Completed()
+			spanList := sr.Ended()
 			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 			// One dummy span and a span created in tx
 			require.Equal(t, expectedSpanCount, len(spanList))

@@ -21,10 +21,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/oteltest"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -86,13 +87,24 @@ func TestRecordSpanError(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if !tc.nilSpan {
-				var span oteltest.Span
-				recordSpanError(&span, tc.opts, tc.err)
+				// Create a span
+				sr, provider := newTracerProvider()
+				tracer := provider.Tracer("test")
+				tracer.Start(context.Background(), "test")
 
+				// Get the span
+				spanList := sr.Started()
+				require.Len(t, spanList, 1)
+				span := spanList[0]
+
+				// Update the span
+				recordSpanError(span, tc.opts, tc.err)
+
+				// Check result
 				if tc.expectedError {
-					assert.Equal(t, codes.Error, span.StatusCode())
+					assert.Equal(t, codes.Error, span.Status().Code)
 				} else {
-					assert.Equal(t, codes.Unset, span.StatusCode())
+					assert.Equal(t, codes.Unset, span.Status().Code)
 				}
 			} else {
 				recordSpanError(nil, tc.opts, tc.err)
@@ -101,10 +113,10 @@ func TestRecordSpanError(t *testing.T) {
 	}
 }
 
-func newTracerProvider() (*oteltest.SpanRecorder, *oteltest.TracerProvider) {
-	var sr oteltest.SpanRecorder
-	provider := oteltest.NewTracerProvider(
-		oteltest.WithSpanRecorder(&sr),
+func newTracerProvider() (*tracetest.SpanRecorder, trace.TracerProvider) {
+	var sr tracetest.SpanRecorder
+	provider := sdktrace.NewTracerProvider(
+		sdktrace.WithSpanProcessor(&sr),
 	)
 	return &sr, provider
 }
@@ -123,15 +135,6 @@ func newMockConfig(tracer trace.Tracer) config {
 	}
 }
 
-func attributesListToMap(attributes []attribute.KeyValue) map[attribute.Key]attribute.Value {
-	attributesMap := make(map[attribute.Key]attribute.Value)
-
-	for _, v := range attributes {
-		attributesMap[v.Key] = v.Value
-	}
-	return attributesMap
-}
-
 type spanAssertionParameter struct {
 	parentSpan         trace.Span
 	error              bool
@@ -143,8 +146,8 @@ type spanAssertionParameter struct {
 	spanNotEnded       bool
 }
 
-func assertSpanList(t *testing.T, spanList []*oteltest.Span, parameter spanAssertionParameter) {
-	var span *oteltest.Span
+func assertSpanList(t *testing.T, spanList []sdktrace.ReadOnlySpan, parameter spanAssertionParameter) {
+	var span sdktrace.ReadOnlySpan
 	if !parameter.noParentSpan {
 		span = spanList[1]
 	} else if parameter.allowRootOption {
@@ -153,22 +156,22 @@ func assertSpanList(t *testing.T, spanList []*oteltest.Span, parameter spanAsser
 
 	if span != nil {
 		if parameter.spanNotEnded {
-			assert.False(t, span.Ended())
+			assert.True(t, span.EndTime().IsZero())
 		} else {
-			assert.True(t, span.Ended())
+			assert.False(t, span.EndTime().IsZero())
 		}
 		assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-		assert.Equal(t, attributesListToMap(parameter.expectedAttributes), span.Attributes())
+		assert.Equal(t, parameter.expectedAttributes, span.Attributes())
 		assert.Equal(t, string(parameter.expectedMethod), span.Name())
 		if parameter.parentSpan != nil {
 			assert.Equal(t, parameter.parentSpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-			assert.Equal(t, parameter.parentSpan.SpanContext().SpanID(), span.ParentSpanID())
+			assert.Equal(t, parameter.parentSpan.SpanContext().SpanID(), span.Parent().SpanID())
 		}
 
 		if parameter.error {
-			assert.Equal(t, codes.Error, span.StatusCode())
+			assert.Equal(t, codes.Error, span.Status().Code)
 		} else {
-			assert.Equal(t, codes.Unset, span.StatusCode())
+			assert.Equal(t, codes.Unset, span.Status().Code)
 		}
 
 		if parameter.ctx != nil {
@@ -188,7 +191,7 @@ func getExpectedSpanCount(allowRootOption bool, noParentSpan bool) int {
 	return expectedSpanCount
 }
 
-func prepareTraces(noParentSpan bool) (context.Context, *oteltest.SpanRecorder, trace.Tracer, trace.Span) {
+func prepareTraces(noParentSpan bool) (context.Context, *tracetest.SpanRecorder, trace.Tracer, trace.Span) {
 	sr, provider := newTracerProvider()
 	tracer := provider.Tracer("test")
 

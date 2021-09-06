@@ -13,6 +13,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Added RecordError to SpanOption. (#23)
 - Added DisableQuery to SpanOption. (#26)
 
+### Changed
+
+- Upgrade OTel to v1.0.0-RC3. (#29)
+
 ## [0.5.0] - 2021-08-02
 
 ### Changed
