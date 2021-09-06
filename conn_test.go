@@ -22,9 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/oteltest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -190,7 +188,7 @@ func TestOtConn_Ping(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			spanList := sr.Completed()
+			spanList := sr.Ended()
 			if tc.pingOption {
 				expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 				// One dummy span and one span created in Ping
@@ -273,7 +271,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			spanList := sr.Completed()
+			spanList := sr.Ended()
 			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 			// One dummy span and one span created in ExecContext
 			require.Equal(t, expectedSpanCount, len(spanList))
@@ -349,7 +347,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			spanList := sr.Completed()
+			spanList := sr.Ended()
 			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 			// One dummy span and one span created in QueryContext
 			require.Equal(t, expectedSpanCount, len(spanList))
@@ -372,8 +370,16 @@ func TestOtConn_QueryContext(t *testing.T) {
 				require.True(t, ok)
 				if dummySpan != nil {
 					assert.Equal(t, dummySpan.SpanContext().TraceID(), otelRows.span.SpanContext().TraceID())
-					// Span that creates in newRows() is the child of the dummySpan
-					assert.Equal(t, dummySpan.SpanContext().SpanID(), otelRows.span.(*oteltest.Span).ParentSpanID())
+
+					// Get a span from started span list
+					startedSpanList := sr.Started()
+					require.Len(t, startedSpanList, expectedSpanCount+1)
+					span := startedSpanList[expectedSpanCount]
+					// Make sure this span is the same as the span from otelRows
+					require.Equal(t, otelRows.span.SpanContext().SpanID(), span.SpanContext().SpanID())
+
+					// The span that creates in newRows() is the child of the dummySpan
+					assert.Equal(t, dummySpan.SpanContext().SpanID(), span.Parent().SpanID())
 				}
 			}
 		})
@@ -435,7 +441,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			spanList := sr.Completed()
+			spanList := sr.Ended()
 			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 			// One dummy span and one span created in PrepareContext
 			require.Equal(t, expectedSpanCount, len(spanList))
@@ -505,7 +511,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			spanList := sr.Completed()
+			spanList := sr.Ended()
 			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 			// One dummy span and one span created in BeginTx
 			require.Equal(t, expectedSpanCount, len(spanList))
@@ -577,7 +583,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			spanList := sr.Completed()
+			spanList := sr.Ended()
 			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 			// One dummy span and one span created in ResetSession
 			require.Equal(t, expectedSpanCount, len(spanList))

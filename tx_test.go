@@ -21,7 +21,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -99,7 +98,7 @@ func TestOtTx_Commit(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			spanList := sr.Completed()
+			spanList := sr.Ended()
 			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 			// One dummy span and one span created in tx
 			require.Equal(t, expectedSpanCount, len(spanList))
@@ -162,7 +161,7 @@ func TestOtTx_Rollback(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			spanList := sr.Completed()
+			spanList := sr.Ended()
 			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
 			// One dummy span and a span created in tx
 			require.Equal(t, expectedSpanCount, len(spanList))
