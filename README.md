@@ -33,6 +33,28 @@ $ go get github.com/XSAM/otelsql
 
 See [example](./example/main.go)
 
+## Compatibility
+
+This project is tested on the following systems.
+
+| OS      | Go Version | Architecture |
+| ------- | ---------- | ------------ |
+| Ubuntu  | 1.17       | amd64        |
+| Ubuntu  | 1.16       | amd64        |
+| Ubuntu  | 1.17       | 386          |
+| Ubuntu  | 1.16       | 386          |
+| MacOS   | 1.17       | amd64        |
+| MacOS   | 1.16       | amd64        |
+| Windows | 1.17       | amd64        |
+| Windows | 1.16       | amd64        |
+| Windows | 1.17       | 386          |
+| Windows | 1.16       | 386          |
+
+While this project should work for other systems, no compatibility guarantees
+are made for those systems currently.
+
+The project follows the [Release Policy](https://golang.org/doc/devel/release#policy) to support major Go releases.
+
 ## Why port this?
 
 Based on [this comment](https://github.com/open-telemetry/opentelemetry-go-contrib/pull/505#issuecomment-800452510), OpenTelemetry SIG team like to see broader usage and community consensus on an approach before they commit to the level of support that would be required of a package in contrib. But it is painful for users without a stable version, and they have to use replacement in `go.mod` to use this instrumentation.
