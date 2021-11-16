@@ -21,6 +21,8 @@ updates:
     schedule:
       day: sunday
       interval: weekly
+    ignore:
+      - dependency-name: "go.opentelemetry.io/otel/*"
   -
     package-ecosystem: gomod
     directory: /example
@@ -29,3 +31,5 @@ updates:
     schedule:
       day: sunday
       interval: weekly
+    ignore:
+      - dependency-name: "go.opentelemetry.io/*"
