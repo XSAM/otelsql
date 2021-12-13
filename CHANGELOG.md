@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.10.0] - 2021-12-13
+
 ### Changed
 
 - Upgrade OTel to `v1.2.0`. (#50)
@@ -89,7 +91,8 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 - Example code for a basic usage.
 - Apache-2.0 license.
 
-[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/XSAM/otelsql/releases/tag/v0.10.0
 [0.9.0]: https://github.com/XSAM/otelsql/releases/tag/v0.9.0
 [0.8.0]: https://github.com/XSAM/otelsql/releases/tag/v0.8.0
 [0.7.0]: https://github.com/XSAM/otelsql/releases/tag/v0.7.0
