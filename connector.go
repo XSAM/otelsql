@@ -17,6 +17,8 @@ package otelsql
 import (
 	"context"
 	"database/sql/driver"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 var _ driver.Connector = (*otConnector)(nil)
@@ -34,8 +36,18 @@ func newConnector(connector driver.Connector, otDriver *otDriver) *otConnector {
 }
 
 func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err error) {
+	var span trace.Span
+	if c.otDriver.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
+		ctx, span = c.otDriver.cfg.Tracer.Start(ctx, c.otDriver.cfg.SpanNameFormatter.Format(ctx, MethodConnConnect, ""),
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(c.otDriver.cfg.Attributes...),
+		)
+		defer span.End()
+	}
+
 	connection, err = c.Connector.Connect(ctx)
 	if err != nil {
+		recordSpanError(span, c.otDriver.cfg.SpanOptions, err)
 		return nil, err
 	}
 	return newConn(connection, c.otDriver.cfg), nil
