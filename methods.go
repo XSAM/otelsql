@@ -21,7 +21,7 @@ type Method string
 type Event string
 
 const (
-	MethodConnConnect      Method = "sql.conn.connect"
+	MethodConnectorConnect Method = "sql.connector.connect"
 	MethodConnPing         Method = "sql.conn.ping"
 	MethodConnExec         Method = "sql.conn.exec"
 	MethodConnQuery        Method = "sql.conn.query"

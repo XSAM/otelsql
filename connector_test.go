@@ -114,7 +114,7 @@ func TestOtConnector_Connect(t *testing.T) {
 				parentSpan:         dummySpan,
 				error:              tc.error,
 				expectedAttributes: cfg.Attributes,
-				expectedMethod:     MethodConnConnect,
+				expectedMethod:     MethodConnectorConnect,
 				allowRootOption:    tc.allowRootOption,
 				noParentSpan:       tc.noParentSpan,
 				ctx:                mConnector.connectContext,
