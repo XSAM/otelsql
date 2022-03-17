@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- Covering connector's connect method with span. (#66)
+
 ## [0.11.0] - 2022-02-22
 
 ### Changed

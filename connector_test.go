@@ -64,8 +64,10 @@ func TestNewConnector(t *testing.T) {
 
 func TestOtConnector_Connect(t *testing.T) {
 	testCases := []struct {
-		name  string
-		error bool
+		name            string
+		error           bool
+		allowRootOption bool
+		noParentSpan    bool
 	}{
 		{
 			name: "no error",
@@ -74,14 +76,27 @@ func TestOtConnector_Connect(t *testing.T) {
 			name:  "with error",
 			error: true,
 		},
+		{
+			name:         "no parent span, disallow root span",
+			noParentSpan: true,
+		},
+		{
+			name:            "no parent span, allow root span",
+			noParentSpan:    true,
+			allowRootOption: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			mConnector := newMockConnector(nil, tc.error)
+			// Prepare traces
+			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-			connector := newConnector(mConnector, &otDriver{})
-			conn, err := connector.Connect(context.Background())
+			cfg := newMockConfig(tracer)
+			mConnector := newMockConnector(nil, tc.error)
+			cfg.SpanOptions.AllowRoot = tc.allowRootOption
+			connector := newConnector(mConnector, &otDriver{cfg: cfg})
+			conn, err := connector.Connect(ctx)
 			if tc.error {
 				assert.Error(t, err)
 			} else {
@@ -89,6 +104,23 @@ func TestOtConnector_Connect(t *testing.T) {
 				require.True(t, ok)
 				assert.IsType(t, &mockConn{}, otelConn.Conn)
 			}
+
+			spanList := sr.Ended()
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			// One dummy span and one span created in Connect
+			require.Equal(t, expectedSpanCount, len(spanList))
+
+			assertSpanList(t, spanList, spanAssertionParameter{
+				parentSpan:         dummySpan,
+				error:              tc.error,
+				expectedAttributes: cfg.Attributes,
+				expectedMethod:     MethodConnectorConnect,
+				allowRootOption:    tc.allowRootOption,
+				noParentSpan:       tc.noParentSpan,
+				ctx:                mConnector.connectContext,
+			})
+
+			assert.Equal(t, 1, mConnector.connectCount)
 		})
 	}
 }
