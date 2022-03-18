@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- Add Go 1.18 to supported versions. (#69)
+
 ## [0.12.0] - 2022-03-18
 
 ### Added
