@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 
 - Covering connector's connect method with span. (#66)
+- Add Go 1.18 to supported versions. (#69)
 
 ### Changed
 
