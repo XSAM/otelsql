@@ -12,6 +12,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Covering connector's connect method with span. (#66)
 
+### Changed
+
+- Upgrade OTel to `v1.5.0`. (#67)
+
 ## [0.11.0] - 2022-02-22
 
 ### Changed
