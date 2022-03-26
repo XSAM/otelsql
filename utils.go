@@ -15,8 +15,11 @@
 package otelsql
 
 import (
+	"context"
 	"database/sql/driver"
+	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -40,5 +43,28 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 	default:
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "")
+	}
+}
+
+func recordMetric(ctx context.Context, instruments *instruments, defaultAttributes []attribute.KeyValue, method Method) func(error) {
+	startTime := time.Now()
+
+	return func(err error) {
+		duration := float64(time.Since(startTime).Nanoseconds()) / 1e6
+
+		attributes := defaultAttributes
+		if err != nil {
+			attributes = append(attributes, queryStatusKey.String("error"))
+		} else {
+			attributes = append(attributes, queryStatusKey.String("ok"))
+		}
+
+		attributes = append(attributes, queryMethodKey.String(string(method)))
+
+		instruments.latency.Record(
+			ctx,
+			duration,
+			attributes...,
+		)
 	}
 }

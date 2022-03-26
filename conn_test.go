@@ -175,7 +175,7 @@ func TestOtConn_Ping(t *testing.T) {
 			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
-			cfg := newMockConfig(tracer)
+			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.Ping = tc.pingOption
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			mc := newMockConn(tc.error)
@@ -258,7 +258,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
-			cfg := newMockConfig(tracer)
+			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			mc := newMockConn(tc.error)
@@ -334,7 +334,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
-			cfg := newMockConfig(tracer)
+			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			mc := newMockConn(tc.error)
@@ -428,7 +428,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
-			cfg := newMockConfig(tracer)
+			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			mc := newMockConn(tc.error)
@@ -499,7 +499,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
-			cfg := newMockConfig(tracer)
+			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
@@ -571,7 +571,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 			// New conn
-			cfg := newMockConfig(tracer)
+			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)

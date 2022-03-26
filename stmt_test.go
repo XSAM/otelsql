@@ -116,7 +116,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 			ms := newMockStmt(tc.error)
 
 			// New stmt
-			cfg := newMockConfig(tracer)
+			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			stmt := newStmt(ms, cfg, "query")
@@ -191,7 +191,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 			ms := newMockStmt(tc.error)
 
 			// New stmt
-			cfg := newMockConfig(tracer)
+			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			stmt := newStmt(ms, cfg, "query")

@@ -92,7 +92,7 @@ func TestOtConnector_Connect(t *testing.T) {
 			// Prepare traces
 			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-			cfg := newMockConfig(tracer)
+			cfg := newMockConfig(t, tracer)
 			mConnector := newMockConnector(nil, tc.error)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			connector := newConnector(mConnector, &otDriver{cfg: cfg})

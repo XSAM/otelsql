@@ -34,23 +34,29 @@ var (
 type otRows struct {
 	driver.Rows
 
-	span trace.Span
-	cfg  config
+	span    trace.Span
+	cfg     config
+	onClose func(err error)
 }
 
 func newRows(ctx context.Context, rows driver.Rows, cfg config) *otRows {
 	var span trace.Span
+
+	method := MethodRows
+	onClose := recordMetric(ctx, cfg.Instruments, cfg.Attributes, method)
+
 	if cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
-		_, span = cfg.Tracer.Start(ctx, cfg.SpanNameFormatter.Format(ctx, MethodRows, ""),
+		_, span = cfg.Tracer.Start(ctx, cfg.SpanNameFormatter.Format(ctx, method, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(cfg.Attributes...),
 		)
 	}
 
 	return &otRows{
-		Rows: rows,
-		span: span,
-		cfg:  cfg,
+		Rows:    rows,
+		span:    span,
+		cfg:     cfg,
+		onClose: onClose,
 	}
 }
 
@@ -125,6 +131,7 @@ func (r otRows) Close() (err error) {
 		if r.span != nil {
 			r.span.End()
 		}
+		r.onClose(err)
 	}()
 
 	err = r.Rows.Close()

@@ -19,11 +19,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric/nonrecording"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 func TestOptions(t *testing.T) {
 	tracerProvider := sdktrace.NewTracerProvider()
+	meterProvider := nonrecording.NewNoopMeterProvider()
 
 	testCases := []struct {
 		name           string
@@ -55,6 +57,11 @@ func TestOptions(t *testing.T) {
 			name:           "WithSpanOptions",
 			option:         WithSpanOptions(SpanOptions{Ping: true}),
 			expectedConfig: config{SpanOptions: SpanOptions{Ping: true}},
+		},
+		{
+			name:           "WithMeterProvider",
+			option:         WithMeterProvider(meterProvider),
+			expectedConfig: config{MeterProvider: meterProvider},
 		},
 	}
 
