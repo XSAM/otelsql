@@ -105,51 +105,55 @@ func RegisterDBStatsMetrics(db *sql.DB, dbSystem string, opts ...Option) error {
 	}, func(ctx context.Context) {
 		dbStats := db.Stats()
 
-		instruments.connectionMaxOpen.Observe(
-			ctx,
-			int64(dbStats.MaxOpenConnections),
-			cfg.Attributes...,
-		)
-
-		instruments.connectionOpen.Observe(
-			ctx,
-			int64(dbStats.InUse),
-			append(cfg.Attributes, connectionStatusKey.String("inuse"))...,
-		)
-		instruments.connectionOpen.Observe(
-			ctx,
-			int64(dbStats.Idle),
-			append(cfg.Attributes, connectionStatusKey.String("idle"))...,
-		)
-
-		instruments.connectionWaitTotal.Observe(
-			ctx,
-			dbStats.WaitCount,
-			cfg.Attributes...,
-		)
-		instruments.connectionWaitDurationTotal.Observe(
-			ctx,
-			float64(dbStats.WaitDuration.Nanoseconds())/1e6,
-			cfg.Attributes...,
-		)
-		instruments.connectionClosedMaxIdleTotal.Observe(
-			ctx,
-			dbStats.MaxIdleClosed,
-			cfg.Attributes...,
-		)
-		instruments.connectionClosedMaxIdleTimeTotal.Observe(
-			ctx,
-			dbStats.MaxIdleTimeClosed,
-			cfg.Attributes...,
-		)
-		instruments.connectionClosedMaxLifetimeTotal.Observe(
-			ctx,
-			dbStats.MaxLifetimeClosed,
-			cfg.Attributes...,
-		)
+		recordDBStatsMetrics(ctx, dbStats, instruments, cfg)
 	})
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func recordDBStatsMetrics(ctx context.Context, dbStats sql.DBStats, instruments *dbStatsInstruments, cfg config) {
+	instruments.connectionMaxOpen.Observe(
+		ctx,
+		int64(dbStats.MaxOpenConnections),
+		cfg.Attributes...,
+	)
+
+	instruments.connectionOpen.Observe(
+		ctx,
+		int64(dbStats.InUse),
+		append(cfg.Attributes, connectionStatusKey.String("inuse"))...,
+	)
+	instruments.connectionOpen.Observe(
+		ctx,
+		int64(dbStats.Idle),
+		append(cfg.Attributes, connectionStatusKey.String("idle"))...,
+	)
+
+	instruments.connectionWaitTotal.Observe(
+		ctx,
+		dbStats.WaitCount,
+		cfg.Attributes...,
+	)
+	instruments.connectionWaitDurationTotal.Observe(
+		ctx,
+		float64(dbStats.WaitDuration.Nanoseconds())/1e6,
+		cfg.Attributes...,
+	)
+	instruments.connectionClosedMaxIdleTotal.Observe(
+		ctx,
+		dbStats.MaxIdleClosed,
+		cfg.Attributes...,
+	)
+	instruments.connectionClosedMaxIdleTimeTotal.Observe(
+		ctx,
+		dbStats.MaxIdleTimeClosed,
+		cfg.Attributes...,
+	)
+	instruments.connectionClosedMaxLifetimeTotal.Observe(
+		ctx,
+		dbStats.MaxLifetimeClosed,
+		cfg.Attributes...,
+	)
 }
