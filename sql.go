@@ -129,7 +129,7 @@ func RegisterDBStatsMetrics(db *sql.DB, dbSystem string, opts ...Option) error {
 		)
 		instruments.connectionWaitDurationTotal.Observe(
 			ctx,
-			dbStats.WaitDuration.Milliseconds(),
+			float64(dbStats.WaitDuration.Nanoseconds())/1e6,
 			cfg.Attributes...,
 		)
 		instruments.connectionClosedMaxIdleTotal.Observe(

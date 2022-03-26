@@ -20,6 +20,7 @@ import (
 
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/instrument"
+	"go.opentelemetry.io/otel/metric/instrument/asyncfloat64"
 	"go.opentelemetry.io/otel/metric/instrument/asyncint64"
 	"go.opentelemetry.io/otel/metric/instrument/syncfloat64"
 	"go.opentelemetry.io/otel/metric/unit"
@@ -33,7 +34,7 @@ type dbStatsInstruments struct {
 	connectionMaxOpen                asyncint64.Gauge
 	connectionOpen                   asyncint64.Gauge
 	connectionWaitTotal              asyncint64.Counter
-	connectionWaitDurationTotal      asyncint64.Counter
+	connectionWaitDurationTotal      asyncfloat64.Counter
 	connectionClosedMaxIdleTotal     asyncint64.Counter
 	connectionClosedMaxIdleTimeTotal asyncint64.Counter
 	connectionClosedMaxLifetimeTotal asyncint64.Counter
@@ -84,7 +85,7 @@ func newDBStatsInstruments(meter metric.Meter) (*dbStatsInstruments, error) {
 		return nil, fmt.Errorf("failed to create connectionWaitTotal instrument, %v", err)
 	}
 
-	if instruments.connectionWaitDurationTotal, err = meter.AsyncInt64().Counter(
+	if instruments.connectionWaitDurationTotal, err = meter.AsyncFloat64().Counter(
 		strings.Join([]string{namespace, subsystem, "wait_duration_total"}, "."),
 		instrument.WithDescription("The total time blocked waiting for a new connection"),
 		instrument.WithUnit(unit.Milliseconds),
