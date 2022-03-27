@@ -7,7 +7,7 @@
 
 It is an OpenTelemetry instrumentation for Golang `database/sql`, a port from https://github.com/open-telemetry/opentelemetry-go-contrib/pull/505.
 
-It can only instrument traces for the present.
+It instruments traces and metrics.
 
 ## Install
 
@@ -29,6 +29,20 @@ $ go get github.com/XSAM/otelsql
 | AllowRoot                  | If set to true, will allow otelsql to create root spans in absence of existing spans or even context.      | Implemented                           | It might helpful while debugging missing operations.                                                                                                                                                                         |
 | RowsAffected, LastInsertID | If set to true, will enable the creation of spans on RowsAffected/LastInsertId calls.                      | Dropped                               | Don't know its use cases. We might add this later based on the users' feedback.                                                                                                                                              |
 | QueryParams                | If set to true, will enable recording of parameters used with parametrized queries.                        | Dropped                               | It will cause high cardinality values and security problems.                                                                                                                                                                 |
+
+## Metric Instruments
+
+| Name                                         | Description                                                      | Units | Instrument Type      | Value Type | Attribute Key(s) | Attribute Values                    |
+| -------------------------------------------- | ---------------------------------------------------------------- | ----- | -------------------- | ---------- | ---------------- | ----------------------------------- |
+| db.sql.latency                               | The latency of calls in milliseconds                             | ms    | Histogram            | float64    | status           | ok, error                           |
+|                                              |                                                                  |       |                      |            | method           | method name, like `sql.conn.query` |
+| db.sql.connection.max_open                   | Maximum number of open connections to the database               |       | Asynchronous Gauge   | int64      |                  |                                     |
+| db.sql.connection.open                       | The number of established connections both in use and idle       |       | Asynchronous Gauge   | int64      | status           | idle, inuse                         |
+| db.sql.connection.wait_total                 | The total number of connections waited for                       |       | Asynchronous Counter | int64      |                  |                                     |
+| db.sql.connection.wait_duration_total        | The total time blocked waiting for a new connection              | ms    | Asynchronous Counter | float64    |                  |                                     |
+| db.sql.connection.closed_max_idle_total      | The total number of connections closed due to SetMaxIdleConns    |       | Asynchronous Counter | int64      |                  |                                     |
+| db.sql.connection.closed_max_idle_time_total | The total number of connections closed due to SetConnMaxIdleTime |       | Asynchronous Counter | int64      |                  |                                     |
+| db.sql.connection.closed_max_lifetime_total  | The total number of connections closed due to SetConnMaxLifetime |       | Asynchronous Counter | int64      |                  |                                     |
 
 ## Example
 

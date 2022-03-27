@@ -20,6 +20,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/global"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -32,6 +34,13 @@ func TestNewConfig(t *testing.T) {
 			instrumentationName,
 			trace.WithInstrumentationVersion(Version()),
 		),
+		MeterProvider: global.MeterProvider(),
+		Meter: global.MeterProvider().Meter(
+			instrumentationName,
+			metric.WithInstrumentationVersion(Version()),
+		),
+		// No need to check values of instruments in this part.
+		Instruments: cfg.Instruments,
 		SpanOptions: SpanOptions{Ping: true},
 		DBSystem:    "db",
 		Attributes: []attribute.KeyValue{
@@ -39,4 +48,5 @@ func TestNewConfig(t *testing.T) {
 		},
 		SpanNameFormatter: &defaultSpanNameFormatter{},
 	}, cfg)
+	assert.NotNil(t, cfg.Instruments)
 }

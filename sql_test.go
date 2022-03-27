@@ -15,27 +15,37 @@
 package otelsql
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric/nonrecording"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
+
+var driverName string
 
 func init() {
 	sql.Register("test-driver", newMockDriver(false))
 	maxDriverSlot = 1
+
+	var err error
+	driverName, err = Register("test-driver", "test-db",
+		WithAttributes(attribute.String("foo", "bar")),
+	)
+	if err != nil {
+		panic(err)
+	}
+	if driverName != "test-driver-otelsql-0" {
+		panic(fmt.Sprintf("expect driver name: test-driver-otelsql-0, got %s", driverName))
+	}
 }
 
 func TestRegister(t *testing.T) {
-	driverName, err := Register("test-driver", "test-db",
-		WithAttributes(attribute.String("foo", "bar")),
-	)
-	require.NoError(t, err)
-	assert.Equal(t, "test-driver-otelsql-0", driverName)
-
 	// Expected driver
 	db, err := sql.Open(driverName, "")
 	require.NoError(t, err)
@@ -65,4 +75,24 @@ func TestWrapDriver(t *testing.T) {
 		semconv.DBSystemKey.String("test-db"),
 		attribute.String("foo", "bar"),
 	}, otelDriver.cfg.Attributes)
+}
+
+func TestRegisterDBStatsMetrics(t *testing.T) {
+	db, err := sql.Open(driverName, "")
+	require.NoError(t, err)
+
+	err = RegisterDBStatsMetrics(db, "test-db")
+	assert.NoError(t, err)
+}
+
+func TestRecordDBStatsMetricsNoPanic(t *testing.T) {
+	db, err := sql.Open(driverName, "")
+	require.NoError(t, err)
+
+	instruments, err := newDBStatsInstruments(nonrecording.NewNoopMeterProvider().Meter("test"))
+	require.NoError(t, err)
+
+	cfg := newConfig("db")
+
+	recordDBStatsMetrics(context.Background(), db.Stats(), instruments, cfg)
 }

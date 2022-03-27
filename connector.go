@@ -36,9 +36,15 @@ func newConnector(connector driver.Connector, otDriver *otDriver) *otConnector {
 }
 
 func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err error) {
+	method := MethodConnectorConnect
+	onDefer := recordMetric(ctx, c.otDriver.cfg.Instruments, c.otDriver.cfg.Attributes, method)
+	defer func() {
+		onDefer(err)
+	}()
+
 	var span trace.Span
 	if c.otDriver.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
-		ctx, span = c.otDriver.cfg.Tracer.Start(ctx, c.otDriver.cfg.SpanNameFormatter.Format(ctx, MethodConnectorConnect, ""),
+		ctx, span = c.otDriver.cfg.Tracer.Start(ctx, c.otDriver.cfg.SpanNameFormatter.Format(ctx, method, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(c.otDriver.cfg.Attributes...),
 		)

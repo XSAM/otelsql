@@ -19,12 +19,20 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	metricglobal "go.opentelemetry.io/otel/metric/global"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
 const (
 	instrumentationName = "github.com/XSAM/otelsql"
+)
+
+var (
+	connectionStatusKey = attribute.Key("status")
+	queryStatusKey      = attribute.Key("status")
+	queryMethodKey      = attribute.Key("method")
 )
 
 // SpanNameFormatter is an interface that used to format span names.
@@ -35,6 +43,11 @@ type SpanNameFormatter interface {
 type config struct {
 	TracerProvider trace.TracerProvider
 	Tracer         trace.Tracer
+
+	MeterProvider metric.MeterProvider
+	Meter         metric.Meter
+
+	Instruments *instruments
 
 	SpanOptions SpanOptions
 
@@ -88,6 +101,7 @@ func (f *defaultSpanNameFormatter) Format(ctx context.Context, method Method, qu
 func newConfig(dbSystem string, options ...Option) config {
 	cfg := config{
 		TracerProvider:    otel.GetTracerProvider(),
+		MeterProvider:     metricglobal.MeterProvider(),
 		DBSystem:          dbSystem,
 		SpanNameFormatter: &defaultSpanNameFormatter{},
 	}
@@ -104,6 +118,15 @@ func newConfig(dbSystem string, options ...Option) config {
 		instrumentationName,
 		trace.WithInstrumentationVersion(Version()),
 	)
+	cfg.Meter = cfg.MeterProvider.Meter(
+		instrumentationName,
+		metric.WithInstrumentationVersion(Version()),
+	)
+
+	var err error
+	if cfg.Instruments, err = newInstruments(cfg.Meter); err != nil {
+		otel.Handle(err)
+	}
 
 	return cfg
 }

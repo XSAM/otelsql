@@ -52,9 +52,15 @@ func (c *otConn) Ping(ctx context.Context) (err error) {
 		return driver.ErrSkip
 	}
 
+	method := MethodConnPing
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	defer func() {
+		onDefer(err)
+	}()
+
 	if c.cfg.SpanOptions.Ping && (c.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid()) {
 		var span trace.Span
-		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnPing, ""),
+		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(c.cfg.Attributes...),
 		)
@@ -84,9 +90,15 @@ func (c *otConn) ExecContext(ctx context.Context, query string, args []driver.Na
 		return nil, driver.ErrSkip
 	}
 
+	method := MethodConnExec
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	defer func() {
+		onDefer(err)
+	}()
+
 	var span trace.Span
 	if c.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
-		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnExec, query),
+		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(withDBStatement(c.cfg, query)...),
 		)
@@ -115,10 +127,16 @@ func (c *otConn) QueryContext(ctx context.Context, query string, args []driver.N
 		return nil, driver.ErrSkip
 	}
 
+	method := MethodConnQuery
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	defer func() {
+		onDefer(err)
+	}()
+
 	var span trace.Span
 	queryCtx := ctx
 	if c.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
-		queryCtx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnQuery, query),
+		queryCtx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(withDBStatement(c.cfg, query)...),
 		)
@@ -139,9 +157,15 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 		return nil, driver.ErrSkip
 	}
 
+	method := MethodConnPrepare
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	defer func() {
+		onDefer(err)
+	}()
+
 	var span trace.Span
 	if c.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
-		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnPrepare, query),
+		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(withDBStatement(c.cfg, query)...),
 		)
@@ -162,10 +186,16 @@ func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.
 		return nil, driver.ErrSkip
 	}
 
+	method := MethodConnBeginTx
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	defer func() {
+		onDefer(err)
+	}()
+
 	var span trace.Span
 	beginTxCtx := ctx
 	if c.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
-		beginTxCtx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnBeginTx, ""),
+		beginTxCtx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(c.cfg.Attributes...),
 		)
@@ -186,9 +216,15 @@ func (c *otConn) ResetSession(ctx context.Context) (err error) {
 		return driver.ErrSkip
 	}
 
+	method := MethodConnResetSession
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	defer func() {
+		onDefer(err)
+	}()
+
 	var span trace.Span
 	if c.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
-		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, MethodConnResetSession, ""),
+		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(c.cfg.Attributes...),
 		)

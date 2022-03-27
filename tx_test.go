@@ -87,7 +87,7 @@ func TestOtTx_Commit(t *testing.T) {
 			mt := newMockTx(tc.error)
 
 			// New tx
-			cfg := newMockConfig(tracer)
+			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			tx := newTx(ctx, mt, cfg)
 			// Commit
@@ -149,7 +149,7 @@ func TestOtTx_Rollback(t *testing.T) {
 			mt := newMockTx(tc.error)
 
 			// New tx
-			cfg := newMockConfig(tracer)
+			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			tx := newTx(ctx, mt, cfg)
 

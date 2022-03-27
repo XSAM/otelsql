@@ -16,6 +16,7 @@ package otelsql
 
 import (
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -61,5 +62,13 @@ func WithSpanNameFormatter(spanNameFormatter SpanNameFormatter) Option {
 func WithSpanOptions(opts SpanOptions) Option {
 	return OptionFunc(func(cfg *config) {
 		cfg.SpanOptions = opts
+	})
+}
+
+// WithMeterProvider specifies a tracer provider to use for creating a tracer.
+// If none is specified, the global provider is used.
+func WithMeterProvider(provider metric.MeterProvider) Option {
+	return OptionFunc(func(cfg *config) {
+		cfg.MeterProvider = provider
 	})
 }

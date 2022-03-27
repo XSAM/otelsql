@@ -38,9 +38,15 @@ func newTx(ctx context.Context, tx driver.Tx, cfg config) *otTx {
 }
 
 func (t *otTx) Commit() (err error) {
+	method := MethodTxCommit
+	onDefer := recordMetric(t.ctx, t.cfg.Instruments, t.cfg.Attributes, method)
+	defer func() {
+		onDefer(err)
+	}()
+
 	var span trace.Span
 	if t.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(t.ctx).IsValid() {
-		_, span = t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, MethodTxCommit, ""),
+		_, span = t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, method, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(t.cfg.Attributes...),
 		)
@@ -56,9 +62,15 @@ func (t *otTx) Commit() (err error) {
 }
 
 func (t *otTx) Rollback() (err error) {
+	method := MethodTxRollback
+	onDefer := recordMetric(t.ctx, t.cfg.Instruments, t.cfg.Attributes, method)
+	defer func() {
+		onDefer(err)
+	}()
+
 	var span trace.Span
 	if t.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(t.ctx).IsValid() {
-		_, span = t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, MethodTxRollback, ""),
+		_, span = t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, method, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(t.cfg.Attributes...),
 		)
