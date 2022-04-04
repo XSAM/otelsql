@@ -31,6 +31,10 @@ type mockDriver struct {
 	openName                      string
 }
 
+func NewMockDriver() *mockDriver {
+	return newMockDriver(false)
+}
+
 func newMockDriver(shouldError bool) *mockDriver {
 	return &mockDriver{shouldError: shouldError}
 }
