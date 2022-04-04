@@ -26,39 +26,55 @@ var _ driver.Connector = (*otConnector)(nil)
 type otConnector struct {
 	driver.Connector
 	otDriver *otDriver
+	cfg      config
 }
 
 func newConnector(connector driver.Connector, otDriver *otDriver) *otConnector {
 	return &otConnector{
 		Connector: connector,
 		otDriver:  otDriver,
+		cfg:       otDriver.cfg,
 	}
 }
 
 func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err error) {
 	method := MethodConnectorConnect
-	onDefer := recordMetric(ctx, c.otDriver.cfg.Instruments, c.otDriver.cfg.Attributes, method)
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
 	defer func() {
 		onDefer(err)
 	}()
 
 	var span trace.Span
-	if c.otDriver.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
-		ctx, span = c.otDriver.cfg.Tracer.Start(ctx, c.otDriver.cfg.SpanNameFormatter.Format(ctx, method, ""),
+	if c.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
+		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
-			trace.WithAttributes(c.otDriver.cfg.Attributes...),
+			trace.WithAttributes(c.cfg.Attributes...),
 		)
 		defer span.End()
 	}
 
 	connection, err = c.Connector.Connect(ctx)
 	if err != nil {
-		recordSpanError(span, c.otDriver.cfg.SpanOptions, err)
+		recordSpanError(span, c.cfg.SpanOptions, err)
 		return nil, err
 	}
-	return newConn(connection, c.otDriver.cfg), nil
+	return newConn(connection, c.cfg), nil
 }
 
 func (c *otConnector) Driver() driver.Driver {
 	return c.otDriver
+}
+
+// dsnConnector is copied from sql.dsnConnector
+type dsnConnector struct {
+	dsn    string
+	driver driver.Driver
+}
+
+func (t dsnConnector) Connect(_ context.Context) (driver.Conn, error) {
+	return t.driver.Open(t.dsn)
+}
+
+func (t dsnConnector) Driver() driver.Driver {
+	return t.driver
 }
