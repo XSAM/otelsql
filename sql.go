@@ -127,7 +127,7 @@ func OpenDB(c driver.Connector, dbSystem string, options ...Option) *sql.DB {
 	return sql.OpenDB(connector)
 }
 
-// RegisterDBStatsMetrics register DBStats metrics with OTel instrumentation.
+// RegisterDBStatsMetrics register sql.DBStats metrics with OTel instrumentation.
 func RegisterDBStatsMetrics(db *sql.DB, dbSystem string, opts ...Option) error {
 	cfg := newConfig(dbSystem, opts...)
 	meter := cfg.Meter
