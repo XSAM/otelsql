@@ -16,6 +16,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - Upgrade OTel to `v1.6.0/v0.28.0`. (#74)
+- Upgrade OTel to `v1.6.1`. (#76)
 
 ## [0.12.0] - 2022-03-18
 
