@@ -38,7 +38,7 @@ if err != nil {
 
 See [godoc](https://pkg.go.dev/mod/github.com/XSAM/otelsql) and [a docker-compose example](./example/README.md) for details.
 
-## Traces Instruments
+## Trace Instruments
 
 It creates spans on corresponding [methods](https://pkg.go.dev/github.com/XSAM/otelsql#Method).
 
