@@ -36,7 +36,7 @@ if err != nil {
 }
 ```
 
-See [godoc](https://pkg.go.dev/mod/github.com/XSAM/otelsql) and [a docker-compose example](./example/main.go) for details.
+See [godoc](https://pkg.go.dev/mod/github.com/XSAM/otelsql) and [a docker-compose example](./example/README.md) for details.
 
 ## Features
 
