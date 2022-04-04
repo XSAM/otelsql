@@ -15,6 +15,29 @@ It instruments traces and metrics.
 $ go get github.com/XSAM/otelsql
 ```
 
+## Usage
+
+This project provides four different ways to instrument `database/sql`:
+
+`otelsql.Open`, `otelsql.OpenDB`, `otesql.Register` and `otelsql.WrapDriver`.
+
+And then use `otelsql.RegisterDBStatsMetrics` to instrument `sql.DBStats` with metrics.
+
+```go
+db, err := otelsql.Open("mysql", mysqlDSN, semconv.DBSystemMySQL.Value.AsString())
+if err != nil {
+	panic(err)
+}
+defer db.Close()
+
+err = otelsql.RegisterDBStatsMetrics(db, semconv.DBSystemMySQL.Value.AsString())
+if err != nil {
+	panic(err)
+}
+```
+
+See [godoc](https://pkg.go.dev/mod/github.com/XSAM/otelsql) and [a docker-compose example](./example/README.md) for details.
+
 ## Features
 
 | Feature                    | Description                                                                                                | Status                                | Reason                                                                                                                                                                                                                       |
@@ -32,21 +55,17 @@ $ go get github.com/XSAM/otelsql
 
 ## Metric Instruments
 
-| Name                                         | Description                                                      | Units | Instrument Type      | Value Type | Attribute Key(s) | Attribute Values                    |
-| -------------------------------------------- | ---------------------------------------------------------------- | ----- | -------------------- | ---------- | ---------------- | ----------------------------------- |
-| db.sql.latency                               | The latency of calls in milliseconds                             | ms    | Histogram            | float64    | status           | ok, error                           |
+| Name                                         | Description                                                      | Units | Instrument Type      | Value Type | Attribute Key(s) | Attribute Values                   |
+| -------------------------------------------- | ---------------------------------------------------------------- | ----- | -------------------- | ---------- | ---------------- | ---------------------------------- |
+| db.sql.latency                               | The latency of calls in milliseconds                             | ms    | Histogram            | float64    | status           | ok, error                          |
 |                                              |                                                                  |       |                      |            | method           | method name, like `sql.conn.query` |
-| db.sql.connection.max_open                   | Maximum number of open connections to the database               |       | Asynchronous Gauge   | int64      |                  |                                     |
-| db.sql.connection.open                       | The number of established connections both in use and idle       |       | Asynchronous Gauge   | int64      | status           | idle, inuse                         |
-| db.sql.connection.wait_total                 | The total number of connections waited for                       |       | Asynchronous Counter | int64      |                  |                                     |
-| db.sql.connection.wait_duration_total        | The total time blocked waiting for a new connection              | ms    | Asynchronous Counter | float64    |                  |                                     |
-| db.sql.connection.closed_max_idle_total      | The total number of connections closed due to SetMaxIdleConns    |       | Asynchronous Counter | int64      |                  |                                     |
-| db.sql.connection.closed_max_idle_time_total | The total number of connections closed due to SetConnMaxIdleTime |       | Asynchronous Counter | int64      |                  |                                     |
-| db.sql.connection.closed_max_lifetime_total  | The total number of connections closed due to SetConnMaxLifetime |       | Asynchronous Counter | int64      |                  |                                     |
-
-## Example
-
-See [example](./example/main.go)
+| db.sql.connection.max_open                   | Maximum number of open connections to the database               |       | Asynchronous Gauge   | int64      |                  |                                    |
+| db.sql.connection.open                       | The number of established connections both in use and idle       |       | Asynchronous Gauge   | int64      | status           | idle, inuse                        |
+| db.sql.connection.wait_total                 | The total number of connections waited for                       |       | Asynchronous Counter | int64      |                  |                                    |
+| db.sql.connection.wait_duration_total        | The total time blocked waiting for a new connection              | ms    | Asynchronous Counter | float64    |                  |                                    |
+| db.sql.connection.closed_max_idle_total      | The total number of connections closed due to SetMaxIdleConns    |       | Asynchronous Counter | int64      |                  |                                    |
+| db.sql.connection.closed_max_idle_time_total | The total number of connections closed due to SetConnMaxIdleTime |       | Asynchronous Counter | int64      |                  |                                    |
+| db.sql.connection.closed_max_lifetime_total  | The total number of connections closed due to SetConnMaxLifetime |       | Asynchronous Counter | int64      |                  |                                    |
 
 ## Compatibility
 

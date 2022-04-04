@@ -84,7 +84,50 @@ func WrapDriver(dri driver.Driver, dbSystem string, options ...Option) driver.Dr
 	return newDriver(dri, newConfig(dbSystem, options...))
 }
 
-// RegisterDBStatsMetrics register DBStats metrics with OTel instrumentation.
+// Open is a wrapper over sql.Open with OTel instrumentation.
+// Parameter dbSystem is an identifier for the database management system (DBMS)
+// product being used.
+//
+// For more information, see semantic conventions for database
+// https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/semantic_conventions/database.md
+func Open(driverName, dataSourceName string, dbSystem string, options ...Option) (*sql.DB, error) {
+	// Retrieve the driver implementation we need to wrap with instrumentation
+	db, err := sql.Open(driverName, "")
+	if err != nil {
+		return nil, err
+	}
+	d := db.Driver()
+	if err = db.Close(); err != nil {
+		return nil, err
+	}
+
+	otDriver := newOtDriver(d, newConfig(dbSystem, options...))
+
+	if _, ok := d.(driver.DriverContext); ok {
+		connector, err := otDriver.OpenConnector(dataSourceName)
+		if err != nil {
+			return nil, err
+		}
+		return sql.OpenDB(connector), nil
+	}
+
+	return sql.OpenDB(dsnConnector{dsn: dataSourceName, driver: otDriver}), nil
+}
+
+// OpenDB is a wrapper over sql.OpenDB with OTel instrumentation.
+// Parameter dbSystem is an identifier for the database management system (DBMS)
+// product being used.
+//
+// For more information, see semantic conventions for database
+// https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/semantic_conventions/database.md
+func OpenDB(c driver.Connector, dbSystem string, options ...Option) *sql.DB {
+	d := newOtDriver(c.Driver(), newConfig(dbSystem, options...))
+	connector := newConnector(c, d)
+
+	return sql.OpenDB(connector)
+}
+
+// RegisterDBStatsMetrics register sql.DBStats metrics with OTel instrumentation.
 func RegisterDBStatsMetrics(db *sql.DB, dbSystem string, opts ...Option) error {
 	cfg := newConfig(dbSystem, opts...)
 	meter := cfg.Meter

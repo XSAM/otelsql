@@ -30,10 +30,14 @@ type otDriver struct {
 
 func newDriver(dri driver.Driver, cfg config) driver.Driver {
 	if _, ok := dri.(driver.DriverContext); ok {
-		return &otDriver{driver: dri, cfg: cfg}
+		return newOtDriver(dri, cfg)
 	}
 	// Only implements driver.Driver
-	return struct{ driver.Driver }{&otDriver{driver: dri, cfg: cfg}}
+	return struct{ driver.Driver }{newOtDriver(dri, cfg)}
+}
+
+func newOtDriver(dri driver.Driver, cfg config) *otDriver {
+	return &otDriver{driver: dri, cfg: cfg}
 }
 
 func (d *otDriver) Open(name string) (driver.Conn, error) {

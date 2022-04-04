@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 
 - Metrics support. (#74)
+- Add `Open` and `OpenDB` methods to instrument `database/sql`. (#77)
 
 ### Changed
 

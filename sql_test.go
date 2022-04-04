@@ -17,6 +17,7 @@ package otelsql
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"testing"
 
@@ -29,12 +30,18 @@ import (
 
 var driverName string
 
+const (
+	testDriverName               = "test-driver"
+	testDriverWithoutContextName = "test-driver-without-context"
+)
+
 func init() {
-	sql.Register("test-driver", newMockDriver(false))
+	sql.Register(testDriverName, newMockDriver(false))
+	sql.Register(testDriverWithoutContextName, struct{ driver.Driver }{newMockDriver(false)})
 	maxDriverSlot = 1
 
 	var err error
-	driverName, err = Register("test-driver", "test-db",
+	driverName, err = Register(testDriverName, "test-db",
 		WithAttributes(attribute.String("foo", "bar")),
 	)
 	if err != nil {
@@ -58,7 +65,7 @@ func TestRegister(t *testing.T) {
 	}, otelDriver.cfg.Attributes)
 
 	// Exceed max slot count
-	_, err = Register("test-driver", "test-db")
+	_, err = Register(testDriverName, "test-db")
 	assert.Error(t, err)
 }
 
@@ -70,7 +77,67 @@ func TestWrapDriver(t *testing.T) {
 	// Expected driver
 	otelDriver, ok := driver.(*otDriver)
 	require.True(t, ok)
-	assert.Equal(t, &mockDriver{}, otelDriver.driver)
+	assert.IsType(t, &mockDriver{}, otelDriver.driver)
+	assert.ElementsMatch(t, []attribute.KeyValue{
+		semconv.DBSystemKey.String("test-db"),
+		attribute.String("foo", "bar"),
+	}, otelDriver.cfg.Attributes)
+}
+
+func TestOpen(t *testing.T) {
+	testCases := []struct {
+		driverName         string
+		expectedDriverType interface{}
+	}{
+		{
+			driverName:         testDriverName,
+			expectedDriverType: &mockDriver{},
+		},
+		{
+			driverName:         testDriverWithoutContextName,
+			expectedDriverType: struct{ driver.Driver }{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.driverName, func(t *testing.T) {
+			db, err := Open(tc.driverName, "", "test-db",
+				WithAttributes(attribute.String("foo", "bar")),
+			)
+			t.Cleanup(func() {
+				assert.NoError(t, db.Close())
+			})
+			require.NoError(t, err)
+			require.NotNil(t, db)
+
+			_, err = db.Conn(context.Background())
+			require.NoError(t, err)
+
+			// Expected driver
+			otelDriver, ok := db.Driver().(*otDriver)
+			require.True(t, ok)
+			assert.IsType(t, tc.expectedDriverType, otelDriver.driver)
+			assert.ElementsMatch(t, []attribute.KeyValue{
+				semconv.DBSystemKey.String("test-db"),
+				attribute.String("foo", "bar"),
+			}, otelDriver.cfg.Attributes)
+		})
+	}
+}
+
+func TestOpenDB(t *testing.T) {
+	connector, err := newMockDriver(false).OpenConnector("")
+	require.NoError(t, err)
+
+	db := OpenDB(connector, "test-db", WithAttributes(attribute.String("foo", "bar")))
+	require.NotNil(t, db)
+
+	_, err = db.Conn(context.Background())
+	require.NoError(t, err)
+
+	otelDriver, ok := db.Driver().(*otDriver)
+	require.True(t, ok)
+	assert.IsType(t, &mockDriver{}, otelDriver.driver)
 	assert.ElementsMatch(t, []attribute.KeyValue{
 		semconv.DBSystemKey.String("test-db"),
 		attribute.String("foo", "bar"),
