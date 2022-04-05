@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.14.0] - 2022-04-05
+
 ### ⚠️ Notice ⚠️
 
 This update is a breaking change of `Open`, `OpenDB`, `Register`, `WrapDriver` and `RegisterDBStatsMetrics` methods.
@@ -129,7 +131,8 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 - Example code for a basic usage.
 - Apache-2.0 license.
 
-[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/XSAM/otelsql/releases/tag/v0.14.0
 [0.13.0]: https://github.com/XSAM/otelsql/releases/tag/v0.13.0
 [0.12.0]: https://github.com/XSAM/otelsql/releases/tag/v0.12.0
 [0.11.0]: https://github.com/XSAM/otelsql/releases/tag/v0.11.0
