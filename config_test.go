@@ -22,12 +22,12 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
 func TestNewConfig(t *testing.T) {
-	cfg := newConfig("db", WithSpanOptions(SpanOptions{Ping: true}))
+	cfg := newConfig(WithSpanOptions(SpanOptions{Ping: true}), WithAttributes(semconv.DBSystemMySQL))
 	assert.Equal(t, config{
 		TracerProvider: otel.GetTracerProvider(),
 		Tracer: otel.GetTracerProvider().Tracer(
@@ -42,9 +42,8 @@ func TestNewConfig(t *testing.T) {
 		// No need to check values of instruments in this part.
 		Instruments: cfg.Instruments,
 		SpanOptions: SpanOptions{Ping: true},
-		DBSystem:    "db",
 		Attributes: []attribute.KeyValue{
-			semconv.DBSystemKey.String(cfg.DBSystem),
+			semconv.DBSystemMySQL,
 		},
 		SpanNameFormatter: &defaultSpanNameFormatter{},
 	}, cfg)

@@ -21,6 +21,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 )
 
 type mockDriver struct {
@@ -63,12 +65,12 @@ var (
 )
 
 func TestNewDriver(t *testing.T) {
-	d := newDriver(newMockDriver(false), config{DBSystem: "test"})
+	d := newDriver(newMockDriver(false), config{Attributes: []attribute.KeyValue{semconv.DBSystemMySQL}})
 
 	otelDriver, ok := d.(*otDriver)
 	require.True(t, ok)
 	assert.Equal(t, newMockDriver(false), otelDriver.driver)
-	assert.Equal(t, config{DBSystem: "test"}, otelDriver.cfg)
+	assert.Equal(t, config{Attributes: []attribute.KeyValue{semconv.DBSystemMySQL}}, otelDriver.cfg)
 }
 
 func TestOtDriver_Open(t *testing.T) {

@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/nonrecording"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
 var driverName string
@@ -41,7 +40,7 @@ func init() {
 	maxDriverSlot = 1
 
 	var err error
-	driverName, err = Register(testDriverName, "test-db",
+	driverName, err = Register(testDriverName,
 		WithAttributes(attribute.String("foo", "bar")),
 	)
 	if err != nil {
@@ -60,17 +59,16 @@ func TestRegister(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, &mockDriver{openConnectorCount: 2}, otelDriver.driver)
 	assert.ElementsMatch(t, []attribute.KeyValue{
-		semconv.DBSystemKey.String("test-db"),
 		attribute.String("foo", "bar"),
 	}, otelDriver.cfg.Attributes)
 
 	// Exceed max slot count
-	_, err = Register(testDriverName, "test-db")
+	_, err = Register(testDriverName)
 	assert.Error(t, err)
 }
 
 func TestWrapDriver(t *testing.T) {
-	driver := WrapDriver(newMockDriver(false), "test-db",
+	driver := WrapDriver(newMockDriver(false),
 		WithAttributes(attribute.String("foo", "bar")),
 	)
 
@@ -79,7 +77,6 @@ func TestWrapDriver(t *testing.T) {
 	require.True(t, ok)
 	assert.IsType(t, &mockDriver{}, otelDriver.driver)
 	assert.ElementsMatch(t, []attribute.KeyValue{
-		semconv.DBSystemKey.String("test-db"),
 		attribute.String("foo", "bar"),
 	}, otelDriver.cfg.Attributes)
 }
@@ -101,7 +98,7 @@ func TestOpen(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.driverName, func(t *testing.T) {
-			db, err := Open(tc.driverName, "", "test-db",
+			db, err := Open(tc.driverName, "",
 				WithAttributes(attribute.String("foo", "bar")),
 			)
 			t.Cleanup(func() {
@@ -118,7 +115,6 @@ func TestOpen(t *testing.T) {
 			require.True(t, ok)
 			assert.IsType(t, tc.expectedDriverType, otelDriver.driver)
 			assert.ElementsMatch(t, []attribute.KeyValue{
-				semconv.DBSystemKey.String("test-db"),
 				attribute.String("foo", "bar"),
 			}, otelDriver.cfg.Attributes)
 		})
@@ -129,7 +125,7 @@ func TestOpenDB(t *testing.T) {
 	connector, err := newMockDriver(false).OpenConnector("")
 	require.NoError(t, err)
 
-	db := OpenDB(connector, "test-db", WithAttributes(attribute.String("foo", "bar")))
+	db := OpenDB(connector, WithAttributes(attribute.String("foo", "bar")))
 	require.NotNil(t, db)
 
 	_, err = db.Conn(context.Background())
@@ -139,7 +135,6 @@ func TestOpenDB(t *testing.T) {
 	require.True(t, ok)
 	assert.IsType(t, &mockDriver{}, otelDriver.driver)
 	assert.ElementsMatch(t, []attribute.KeyValue{
-		semconv.DBSystemKey.String("test-db"),
 		attribute.String("foo", "bar"),
 	}, otelDriver.cfg.Attributes)
 }
@@ -148,7 +143,7 @@ func TestRegisterDBStatsMetrics(t *testing.T) {
 	db, err := sql.Open(driverName, "")
 	require.NoError(t, err)
 
-	err = RegisterDBStatsMetrics(db, "test-db")
+	err = RegisterDBStatsMetrics(db)
 	assert.NoError(t, err)
 }
 
@@ -159,7 +154,7 @@ func TestRecordDBStatsMetricsNoPanic(t *testing.T) {
 	instruments, err := newDBStatsInstruments(nonrecording.NewNoopMeterProvider().Meter("test"))
 	require.NoError(t, err)
 
-	cfg := newConfig("db")
+	cfg := newConfig()
 
 	recordDBStatsMetrics(context.Background(), db.Stats(), instruments, cfg)
 }

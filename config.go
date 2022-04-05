@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	metricglobal "go.opentelemetry.io/otel/metric/global"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -50,8 +50,6 @@ type config struct {
 	Instruments *instruments
 
 	SpanOptions SpanOptions
-
-	DBSystem string
 
 	// Attributes will be set to each span.
 	Attributes []attribute.KeyValue
@@ -98,22 +96,16 @@ func (f *defaultSpanNameFormatter) Format(ctx context.Context, method Method, qu
 }
 
 // newConfig returns a config with all Options set.
-func newConfig(dbSystem string, options ...Option) config {
+func newConfig(options ...Option) config {
 	cfg := config{
 		TracerProvider:    otel.GetTracerProvider(),
 		MeterProvider:     metricglobal.MeterProvider(),
-		DBSystem:          dbSystem,
 		SpanNameFormatter: &defaultSpanNameFormatter{},
 	}
 	for _, opt := range options {
 		opt.Apply(&cfg)
 	}
 
-	if cfg.DBSystem != "" {
-		cfg.Attributes = append(cfg.Attributes,
-			semconv.DBSystemKey.String(cfg.DBSystem),
-		)
-	}
 	cfg.Tracer = cfg.TracerProvider.Tracer(
 		instrumentationName,
 		trace.WithInstrumentationVersion(Version()),
