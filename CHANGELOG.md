@@ -8,6 +8,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### ⚠️ Notice ⚠️
+
+This update is a breaking change of `Open`, `OpenDB`, `Register`, `WrapDriver` and `RegisterDBStatsMetrics` methods.
+Code instrumented with these methods will need to be modified.
+
+### Removed
+
+- Remove `dbSystem` parameter from all exported functions. (#80)
+
 ## [0.13.0] - 2022-04-04
 
 ### Added
