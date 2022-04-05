@@ -91,13 +91,17 @@ func main() {
 	initMeter()
 
 	// Connect to database
-	db, err := otelsql.Open("mysql", mysqlDSN, semconv.DBSystemMySQL.Value.AsString())
+	db, err := otelsql.Open("mysql", mysqlDSN, otelsql.WithAttributes(
+		semconv.DBSystemMySQL,
+	))
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
 
-	err = otelsql.RegisterDBStatsMetrics(db, semconv.DBSystemMySQL.Value.AsString())
+	err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
+		semconv.DBSystemMySQL,
+	))
 	if err != nil {
 		panic(err)
 	}

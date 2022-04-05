@@ -18,8 +18,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
-
 	"github.com/XSAM/otelsql"
 )
 
@@ -35,7 +33,7 @@ var (
 
 func ExampleOpen() {
 	// Connect to database
-	db, err := otelsql.Open("mysql", mysqlDSN, semconv.DBSystemMySQL.Value.AsString())
+	db, err := otelsql.Open("mysql", mysqlDSN)
 	if err != nil {
 		panic(err)
 	}
@@ -45,12 +43,12 @@ func ExampleOpen() {
 
 func ExampleOpenDB() {
 	// Connect to database
-	db := otelsql.OpenDB(connector, semconv.DBSystemMySQL.Value.AsString())
+	db := otelsql.OpenDB(connector)
 	defer db.Close()
 }
 
 func ExampleWrapDriver() {
-	otDriver := otelsql.WrapDriver(dri, semconv.DBSystemMySQL.Value.AsString())
+	otDriver := otelsql.WrapDriver(dri)
 
 	connector, err := otDriver.(driver.DriverContext).OpenConnector(mysqlDSN)
 	if err != nil {
@@ -65,13 +63,13 @@ func ExampleWrapDriver() {
 
 func ExampleRegister() {
 	// Register an OTel driver
-	driverName, err := otelsql.Register("mysql", semconv.DBSystemMySQL.Value.AsString())
+	driverName, err := otelsql.Register("mysql")
 	if err != nil {
 		panic(err)
 	}
 
 	// Connect to database
-	db, err := otelsql.Open(driverName, mysqlDSN, semconv.DBSystemMySQL.Value.AsString())
+	db, err := otelsql.Open(driverName, mysqlDSN)
 	if err != nil {
 		panic(err)
 	}

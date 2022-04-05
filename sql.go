@@ -29,16 +29,11 @@ var registerLock sync.Mutex
 
 var maxDriverSlot = 1000
 
-// Register initializes and registers our OTel wrapped database driver
+// Register initializes and registers OTel wrapped database driver
 // identified by its driverName, using provided Option.
 // It is possible to register multiple wrappers for the same database driver if
 // needing different Option for different connections.
-// Parameter dbSystem is an identifier for the database management system (DBMS)
-// product being used.
-//
-// For more information, see semantic conventions for database
-// https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/semantic_conventions/database.md
-func Register(driverName string, dbSystem string, options ...Option) (string, error) {
+func Register(driverName string, options ...Option) (string, error) {
 	// Retrieve the driver implementation we need to wrap with instrumentation
 	db, err := sql.Open(driverName, "")
 	if err != nil {
@@ -67,7 +62,7 @@ func Register(driverName string, dbSystem string, options ...Option) (string, er
 			}
 		}
 		if !found {
-			sql.Register(regName, newDriver(dri, newConfig(dbSystem, options...)))
+			sql.Register(regName, newDriver(dri, newConfig(options...)))
 			return regName, nil
 		}
 	}
@@ -75,22 +70,12 @@ func Register(driverName string, dbSystem string, options ...Option) (string, er
 }
 
 // WrapDriver takes a SQL driver and wraps it with OTel instrumentation.
-// Parameter dbSystem is an identifier for the database management system (DBMS)
-// product being used.
-//
-// For more information, see semantic conventions for database
-// https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/semantic_conventions/database.md
-func WrapDriver(dri driver.Driver, dbSystem string, options ...Option) driver.Driver {
-	return newDriver(dri, newConfig(dbSystem, options...))
+func WrapDriver(dri driver.Driver, options ...Option) driver.Driver {
+	return newDriver(dri, newConfig(options...))
 }
 
 // Open is a wrapper over sql.Open with OTel instrumentation.
-// Parameter dbSystem is an identifier for the database management system (DBMS)
-// product being used.
-//
-// For more information, see semantic conventions for database
-// https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/semantic_conventions/database.md
-func Open(driverName, dataSourceName string, dbSystem string, options ...Option) (*sql.DB, error) {
+func Open(driverName, dataSourceName string, options ...Option) (*sql.DB, error) {
 	// Retrieve the driver implementation we need to wrap with instrumentation
 	db, err := sql.Open(driverName, "")
 	if err != nil {
@@ -101,7 +86,7 @@ func Open(driverName, dataSourceName string, dbSystem string, options ...Option)
 		return nil, err
 	}
 
-	otDriver := newOtDriver(d, newConfig(dbSystem, options...))
+	otDriver := newOtDriver(d, newConfig(options...))
 
 	if _, ok := d.(driver.DriverContext); ok {
 		connector, err := otDriver.OpenConnector(dataSourceName)
@@ -115,21 +100,16 @@ func Open(driverName, dataSourceName string, dbSystem string, options ...Option)
 }
 
 // OpenDB is a wrapper over sql.OpenDB with OTel instrumentation.
-// Parameter dbSystem is an identifier for the database management system (DBMS)
-// product being used.
-//
-// For more information, see semantic conventions for database
-// https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/semantic_conventions/database.md
-func OpenDB(c driver.Connector, dbSystem string, options ...Option) *sql.DB {
-	d := newOtDriver(c.Driver(), newConfig(dbSystem, options...))
+func OpenDB(c driver.Connector, options ...Option) *sql.DB {
+	d := newOtDriver(c.Driver(), newConfig(options...))
 	connector := newConnector(c, d)
 
 	return sql.OpenDB(connector)
 }
 
 // RegisterDBStatsMetrics register sql.DBStats metrics with OTel instrumentation.
-func RegisterDBStatsMetrics(db *sql.DB, dbSystem string, opts ...Option) error {
-	cfg := newConfig(dbSystem, opts...)
+func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) error {
+	cfg := newConfig(opts...)
 	meter := cfg.Meter
 
 	instruments, err := newDBStatsInstruments(meter)
