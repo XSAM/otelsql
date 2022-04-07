@@ -93,3 +93,7 @@ The project follows the [Release Policy](https://golang.org/doc/devel/release#po
 Based on [this comment](https://github.com/open-telemetry/opentelemetry-go-contrib/pull/505#issuecomment-800452510), OpenTelemetry SIG team like to see broader usage and community consensus on an approach before they commit to the level of support that would be required of a package in contrib. But it is painful for users without a stable version, and they have to use replacement in `go.mod` to use this instrumentation.
 
 Therefore, I host this module independently for convenience and make improvements based on users' feedback.
+
+## Communication
+
+I use GitHub discussions/issues for most communications. Feel free to contact me on CNCF slack.
