@@ -75,6 +75,9 @@ type SpanOptions struct {
 	// DisableErrSkip, if set to true, will suppress driver.ErrSkip errors in spans.
 	DisableErrSkip bool
 
+	// OmitResetSession if set to true will suppress sql.conn.reset_session spans
+	OmitResetSession bool
+
 	// DisableQuery if set to true, will suppress db.statement in spans.
 	DisableQuery bool
 

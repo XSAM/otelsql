@@ -223,7 +223,8 @@ func (c *otConn) ResetSession(ctx context.Context) (err error) {
 	}()
 
 	var span trace.Span
-	if c.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
+	if !c.cfg.SpanOptions.OmitResetSession &&
+		(c.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid()) {
 		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(c.cfg.Attributes...),
