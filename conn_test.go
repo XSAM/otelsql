@@ -190,7 +190,7 @@ func TestOtConn_Ping(t *testing.T) {
 
 			spanList := sr.Ended()
 			if tc.pingOption {
-				expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+				expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
 				// One dummy span and one span created in Ping
 				require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -272,7 +272,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
 			// One dummy span and one span created in ExecContext
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -348,7 +348,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
 			// One dummy span and one span created in QueryContext
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -442,7 +442,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
 			// One dummy span and one span created in PrepareContext
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -512,7 +512,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
 			// One dummy span and one span created in BeginTx
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -542,10 +542,11 @@ func TestOtConn_BeginTx(t *testing.T) {
 
 func TestOtConn_ResetSession(t *testing.T) {
 	testCases := []struct {
-		name            string
-		error           bool
-		allowRootOption bool
-		noParentSpan    bool
+		name             string
+		error            bool
+		allowRootOption  bool
+		noParentSpan     bool
+		omitResetSession bool
 	}{
 		{
 			name: "no error",
@@ -563,6 +564,10 @@ func TestOtConn_ResetSession(t *testing.T) {
 			noParentSpan:    true,
 			allowRootOption: true,
 		},
+		{
+			name:             "omit reset session",
+			omitResetSession: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -573,6 +578,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 			// New conn
 			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.AllowRoot = tc.allowRootOption
+			cfg.SpanOptions.OmitResetSession = tc.omitResetSession
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -584,7 +590,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, tc.omitResetSession)
 			// One dummy span and one span created in ResetSession
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -596,6 +602,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 				allowRootOption:    tc.allowRootOption,
 				noParentSpan:       tc.noParentSpan,
 				ctx:                mc.resetSessionCtx,
+				omitSpan:           tc.omitResetSession,
 			})
 
 			assert.Equal(t, 1, mc.resetSessionCount)

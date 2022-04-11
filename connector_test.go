@@ -59,7 +59,6 @@ func TestNewConnector(t *testing.T) {
 
 	assert.Equal(t, mConnector, connector.Connector)
 	assert.Equal(t, otelDriver, connector.otDriver)
-
 }
 
 func TestOtConnector_Connect(t *testing.T) {
@@ -106,7 +105,7 @@ func TestOtConnector_Connect(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
 			// One dummy span and one span created in Connect
 			require.Equal(t, expectedSpanCount, len(spanList))
 

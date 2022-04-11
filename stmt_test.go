@@ -129,7 +129,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
 			// One dummy span and a span created in tx
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -204,7 +204,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
 			// One dummy span and a span created in tx
 			require.Equal(t, expectedSpanCount, len(spanList))
 

@@ -57,9 +57,7 @@ func newMockRows(shouldError bool) *mockRows {
 	return &mockRows{shouldError: shouldError}
 }
 
-var (
-	_ driver.Rows = (*mockRows)(nil)
-)
+var _ driver.Rows = (*mockRows)(nil)
 
 func TestOtRows_Close(t *testing.T) {
 	testCases := []struct {
@@ -199,7 +197,7 @@ func TestNewRows(t *testing.T) {
 			rows := newRows(ctx, mr, cfg)
 
 			spanList := sr.Started()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan)
+			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
 			// One dummy span and one span created in newRows()
 			require.Equal(t, expectedSpanCount, len(spanList))
 

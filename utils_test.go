@@ -153,14 +153,17 @@ type spanAssertionParameter struct {
 	noParentSpan       bool
 	ctx                context.Context
 	spanNotEnded       bool
+	omitSpan           bool
 }
 
 func assertSpanList(t *testing.T, spanList []sdktrace.ReadOnlySpan, parameter spanAssertionParameter) {
 	var span sdktrace.ReadOnlySpan
-	if !parameter.noParentSpan {
-		span = spanList[1]
-	} else if parameter.allowRootOption {
-		span = spanList[0]
+	if !parameter.omitSpan {
+		if !parameter.noParentSpan {
+			span = spanList[1]
+		} else if parameter.allowRootOption {
+			span = spanList[0]
+		}
 	}
 
 	if span != nil {
@@ -189,15 +192,17 @@ func assertSpanList(t *testing.T, spanList []sdktrace.ReadOnlySpan, parameter sp
 	}
 }
 
-func getExpectedSpanCount(allowRootOption bool, noParentSpan bool) int {
-	var expectedSpanCount int
-	if allowRootOption {
-		expectedSpanCount++
-	}
+func getExpectedSpanCount(allowRootOption bool, noParentSpan bool, omitSpan bool) int {
 	if !noParentSpan {
-		expectedSpanCount = 2
+		if !omitSpan {
+			return 2
+		}
+		return 1
 	}
-	return expectedSpanCount
+	if allowRootOption {
+		return 1
+	}
+	return 0
 }
 
 func prepareTraces(noParentSpan bool) (context.Context, *tracetest.SpanRecorder, trace.Tracer, trace.Span) {
