@@ -199,7 +199,7 @@ func getExpectedSpanCount(allowRootOption bool, noParentSpan bool, omitSpan bool
 		}
 		return 1
 	}
-	if allowRootOption {
+	if allowRootOption && !omitSpan {
 		return 1
 	}
 	return 0

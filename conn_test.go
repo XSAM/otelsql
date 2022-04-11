@@ -541,71 +541,74 @@ func TestOtConn_BeginTx(t *testing.T) {
 }
 
 func TestOtConn_ResetSession(t *testing.T) {
-	testCases := []struct {
-		name             string
-		error            bool
-		allowRootOption  bool
-		noParentSpan     bool
-		omitResetSession bool
-	}{
-		{
-			name: "no error",
-		},
-		{
-			name:  "with error",
-			error: true,
-		},
-		{
-			name:         "no parent span, disallow root span",
-			noParentSpan: true,
-		},
-		{
-			name:            "no parent span, allow root span",
-			noParentSpan:    true,
-			allowRootOption: true,
-		},
-		{
-			name:             "omit reset session",
-			omitResetSession: true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
-
-			// New conn
-			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.AllowRoot = tc.allowRootOption
-			cfg.SpanOptions.OmitResetSession = tc.omitResetSession
-			mc := newMockConn(tc.error)
-			otelConn := newConn(mc, cfg)
-
-			err := otelConn.ResetSession(ctx)
-			if tc.error {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
+	for _, omitResetSession := range []bool{false, true} {
+		var testname string
+		if omitResetSession {
+			testname = "OmitResetSession"
+		}
+		t.Run(testname, func(t *testing.T) {
+			testCases := []struct {
+				name            string
+				error           bool
+				allowRootOption bool
+				noParentSpan    bool
+			}{
+				{
+					name: "no error",
+				},
+				{
+					name:  "with error",
+					error: true,
+				},
+				{
+					name:         "no parent span, disallow root span",
+					noParentSpan: true,
+				},
+				{
+					name:            "no parent span, allow root span",
+					noParentSpan:    true,
+					allowRootOption: true,
+				},
 			}
 
-			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, tc.omitResetSession)
-			// One dummy span and one span created in ResetSession
-			require.Equal(t, expectedSpanCount, len(spanList))
+			for _, tc := range testCases {
+				t.Run(tc.name, func(t *testing.T) {
+					// Prepare traces
+					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-			assertSpanList(t, spanList, spanAssertionParameter{
-				parentSpan:         dummySpan,
-				error:              tc.error,
-				expectedAttributes: cfg.Attributes,
-				expectedMethod:     MethodConnResetSession,
-				allowRootOption:    tc.allowRootOption,
-				noParentSpan:       tc.noParentSpan,
-				ctx:                mc.resetSessionCtx,
-				omitSpan:           tc.omitResetSession,
-			})
+					// New conn
+					cfg := newMockConfig(t, tracer)
+					cfg.SpanOptions.AllowRoot = tc.allowRootOption
+					cfg.SpanOptions.OmitResetSession = omitResetSession
+					mc := newMockConn(tc.error)
+					otelConn := newConn(mc, cfg)
 
-			assert.Equal(t, 1, mc.resetSessionCount)
+					err := otelConn.ResetSession(ctx)
+					if tc.error {
+						require.Error(t, err)
+					} else {
+						require.NoError(t, err)
+					}
+
+					spanList := sr.Ended()
+					expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, omitResetSession)
+					// One dummy span and one span created in ResetSession
+					require.Equal(t, expectedSpanCount, len(spanList))
+
+					assertSpanList(t, spanList, spanAssertionParameter{
+						parentSpan:         dummySpan,
+						error:              tc.error,
+						expectedAttributes: cfg.Attributes,
+						expectedMethod:     MethodConnResetSession,
+						allowRootOption:    tc.allowRootOption,
+						noParentSpan:       tc.noParentSpan,
+						ctx:                mc.resetSessionCtx,
+						omitSpan:           omitResetSession,
+					})
+
+					assert.Equal(t, 1, mc.resetSessionCount)
+				})
+			}
 		})
 	}
 }
