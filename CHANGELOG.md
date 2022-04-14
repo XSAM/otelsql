@@ -9,7 +9,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Added
-- Option `OmitResetSession` that if set to true will suppress `sql.conn.reset_session` spans
+
+- Option `OmitResetSession` that if set to true will suppress `sql.conn.reset_session` spans. (#87)
 
 ## [0.14.1] - 2022-04-07
 
