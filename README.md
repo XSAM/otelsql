@@ -24,13 +24,17 @@ This project provides four different ways to instrument `database/sql`:
 And then use `otelsql.RegisterDBStatsMetrics` to instrument `sql.DBStats` with metrics.
 
 ```go
-db, err := otelsql.Open("mysql", mysqlDSN, semconv.DBSystemMySQL.Value.AsString())
+db, err := otelsql.Open("mysql", mysqlDSN, otelsql.WithAttributes(
+	semconv.DBSystemMySQL,
+))
 if err != nil {
 	panic(err)
 }
 defer db.Close()
 
-err = otelsql.RegisterDBStatsMetrics(db, semconv.DBSystemMySQL.Value.AsString())
+err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
+	semconv.DBSystemMySQL,
+))
 if err != nil {
 	panic(err)
 }
