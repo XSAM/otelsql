@@ -12,6 +12,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Option `OmitResetSession` that if set to true will suppress `sql.conn.reset_session` spans. (#87)
 
+### Changed
+
+- Upgrade OTel to `v1.7.0`. (#91)
+
 ## [0.14.1] - 2022-04-07
 
 ### Changed
