@@ -76,12 +76,11 @@ var (
 func TestOtStmt_ExecContext(t *testing.T) {
 	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
 	testCases := []struct {
-		name            string
-		error           bool
-		allowRootOption bool
-		noParentSpan    bool
-		disableQuery    bool
-		attrs           []attribute.KeyValue
+		name         string
+		error        bool
+		noParentSpan bool
+		disableQuery bool
+		attrs        []attribute.KeyValue
 	}{
 		{
 			name:  "no error",
@@ -97,15 +96,9 @@ func TestOtStmt_ExecContext(t *testing.T) {
 			attrs: expectedAttrs,
 		},
 		{
-			name:         "no parent span, disallow root span",
+			name:         "no parent span",
 			noParentSpan: true,
 			attrs:        expectedAttrs,
-		},
-		{
-			name:            "no parent span, allow root span",
-			noParentSpan:    true,
-			allowRootOption: true,
-			attrs:           expectedAttrs,
 		},
 	}
 
@@ -117,7 +110,6 @@ func TestOtStmt_ExecContext(t *testing.T) {
 
 			// New stmt
 			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			stmt := newStmt(ms, cfg, "query")
 			// Exec
@@ -129,7 +121,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
+			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
 			// One dummy span and a span created in tx
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -138,7 +130,6 @@ func TestOtStmt_ExecContext(t *testing.T) {
 				error:              tc.error,
 				expectedAttributes: append(cfg.Attributes, tc.attrs...),
 				expectedMethod:     MethodStmtExec,
-				allowRootOption:    tc.allowRootOption,
 				noParentSpan:       tc.noParentSpan,
 			})
 
@@ -151,12 +142,11 @@ func TestOtStmt_ExecContext(t *testing.T) {
 func TestOtStmt_QueryContext(t *testing.T) {
 	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
 	testCases := []struct {
-		name            string
-		error           bool
-		allowRootOption bool
-		noParentSpan    bool
-		disableQuery    bool
-		attrs           []attribute.KeyValue
+		name         string
+		error        bool
+		noParentSpan bool
+		disableQuery bool
+		attrs        []attribute.KeyValue
 	}{
 		{
 			name:  "no error",
@@ -172,15 +162,9 @@ func TestOtStmt_QueryContext(t *testing.T) {
 			attrs: expectedAttrs,
 		},
 		{
-			name:         "no parent span, disallow root span",
+			name:         "no parent span",
 			noParentSpan: true,
 			attrs:        expectedAttrs,
-		},
-		{
-			name:            "no parent span, allow root span",
-			noParentSpan:    true,
-			allowRootOption: true,
-			attrs:           expectedAttrs,
 		},
 	}
 
@@ -192,7 +176,6 @@ func TestOtStmt_QueryContext(t *testing.T) {
 
 			// New stmt
 			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			stmt := newStmt(ms, cfg, "query")
 			// Query
@@ -204,7 +187,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
+			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
 			// One dummy span and a span created in tx
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -213,7 +196,6 @@ func TestOtStmt_QueryContext(t *testing.T) {
 				error:              tc.error,
 				expectedAttributes: append(cfg.Attributes, tc.attrs...),
 				expectedMethod:     MethodStmtQuery,
-				allowRootOption:    tc.allowRootOption,
 				noParentSpan:       tc.noParentSpan,
 			})
 

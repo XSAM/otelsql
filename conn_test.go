@@ -137,27 +137,19 @@ var (
 
 func TestOtConn_Ping(t *testing.T) {
 	testCases := []struct {
-		name            string
-		error           bool
-		pingOption      bool
-		allowRootOption bool
-		noParentSpan    bool
+		name         string
+		error        bool
+		pingOption   bool
+		noParentSpan bool
 	}{
 		{
 			name:       "ping enabled",
 			pingOption: true,
 		},
 		{
-			name:            "ping enabled with no parent span, allow root span",
-			pingOption:      true,
-			allowRootOption: true,
-			noParentSpan:    true,
-		},
-		{
-			name:            "ping enabled with no parent span, disallow root span",
-			pingOption:      true,
-			allowRootOption: false,
-			noParentSpan:    true,
+			name:         "ping enabled with no parent span",
+			pingOption:   true,
+			noParentSpan: true,
 		},
 		{
 			name:       "ping enabled with error",
@@ -177,7 +169,6 @@ func TestOtConn_Ping(t *testing.T) {
 			// New conn
 			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.Ping = tc.pingOption
-			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -190,7 +181,7 @@ func TestOtConn_Ping(t *testing.T) {
 
 			spanList := sr.Ended()
 			if tc.pingOption {
-				expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
+				expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
 				// One dummy span and one span created in Ping
 				require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -200,7 +191,6 @@ func TestOtConn_Ping(t *testing.T) {
 						error:              tc.error,
 						expectedAttributes: cfg.Attributes,
 						expectedMethod:     MethodConnPing,
-						allowRootOption:    tc.allowRootOption,
 						noParentSpan:       tc.noParentSpan,
 						ctx:                mc.pingCtx,
 					})
@@ -219,12 +209,11 @@ func TestOtConn_Ping(t *testing.T) {
 func TestOtConn_ExecContext(t *testing.T) {
 	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
 	testCases := []struct {
-		name            string
-		error           bool
-		allowRootOption bool
-		noParentSpan    bool
-		disableQuery    bool
-		attrs           []attribute.KeyValue
+		name         string
+		error        bool
+		noParentSpan bool
+		disableQuery bool
+		attrs        []attribute.KeyValue
 	}{
 		{
 			name:  "no error",
@@ -240,15 +229,9 @@ func TestOtConn_ExecContext(t *testing.T) {
 			attrs: expectedAttrs,
 		},
 		{
-			name:         "no parent span, disallow root span",
+			name:         "no parent span",
 			noParentSpan: true,
 			attrs:        expectedAttrs,
-		},
-		{
-			name:            "no parent span, allow root span",
-			noParentSpan:    true,
-			allowRootOption: true,
-			attrs:           expectedAttrs,
 		},
 	}
 
@@ -259,7 +242,6 @@ func TestOtConn_ExecContext(t *testing.T) {
 
 			// New conn
 			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
@@ -272,7 +254,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
+			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
 			// One dummy span and one span created in ExecContext
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -281,7 +263,6 @@ func TestOtConn_ExecContext(t *testing.T) {
 				error:              tc.error,
 				expectedAttributes: append(cfg.Attributes, tc.attrs...),
 				expectedMethod:     MethodConnExec,
-				allowRootOption:    tc.allowRootOption,
 				noParentSpan:       tc.noParentSpan,
 				ctx:                mc.execContextCtx,
 			})
@@ -295,12 +276,11 @@ func TestOtConn_ExecContext(t *testing.T) {
 func TestOtConn_QueryContext(t *testing.T) {
 	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
 	testCases := []struct {
-		name            string
-		error           bool
-		allowRootOption bool
-		noParentSpan    bool
-		disableQuery    bool
-		attrs           []attribute.KeyValue
+		name         string
+		error        bool
+		noParentSpan bool
+		disableQuery bool
+		attrs        []attribute.KeyValue
 	}{
 		{
 			name:  "no error",
@@ -316,15 +296,9 @@ func TestOtConn_QueryContext(t *testing.T) {
 			attrs: expectedAttrs,
 		},
 		{
-			name:         "no parent span, disallow root span",
+			name:         "no parent span",
 			noParentSpan: true,
 			attrs:        expectedAttrs,
-		},
-		{
-			name:            "no parent span, allow root span",
-			noParentSpan:    true,
-			allowRootOption: true,
-			attrs:           expectedAttrs,
 		},
 	}
 
@@ -335,7 +309,6 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 			// New conn
 			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
@@ -348,7 +321,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
+			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
 			// One dummy span and one span created in QueryContext
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -357,7 +330,6 @@ func TestOtConn_QueryContext(t *testing.T) {
 				error:              tc.error,
 				expectedAttributes: append(cfg.Attributes, tc.attrs...),
 				expectedMethod:     MethodConnQuery,
-				allowRootOption:    tc.allowRootOption,
 				noParentSpan:       tc.noParentSpan,
 				ctx:                mc.queryContextCtx,
 			})
@@ -389,12 +361,11 @@ func TestOtConn_QueryContext(t *testing.T) {
 func TestOtConn_PrepareContext(t *testing.T) {
 	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
 	testCases := []struct {
-		name            string
-		error           bool
-		allowRootOption bool
-		noParentSpan    bool
-		disableQuery    bool
-		attrs           []attribute.KeyValue
+		name         string
+		error        bool
+		noParentSpan bool
+		disableQuery bool
+		attrs        []attribute.KeyValue
 	}{
 		{
 			name:  "no error",
@@ -410,15 +381,9 @@ func TestOtConn_PrepareContext(t *testing.T) {
 			attrs: expectedAttrs,
 		},
 		{
-			name:         "no parent span, disallow root span",
+			name:         "no parent span",
 			noParentSpan: true,
 			attrs:        expectedAttrs,
-		},
-		{
-			name:            "no parent span, allow root span",
-			noParentSpan:    true,
-			allowRootOption: true,
-			attrs:           expectedAttrs,
 		},
 	}
 
@@ -429,7 +394,6 @@ func TestOtConn_PrepareContext(t *testing.T) {
 
 			// New conn
 			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
@@ -442,7 +406,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
+			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
 			// One dummy span and one span created in PrepareContext
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -451,7 +415,6 @@ func TestOtConn_PrepareContext(t *testing.T) {
 				error:              tc.error,
 				expectedAttributes: append(cfg.Attributes, tc.attrs...),
 				expectedMethod:     MethodConnPrepare,
-				allowRootOption:    tc.allowRootOption,
 				noParentSpan:       tc.noParentSpan,
 				ctx:                mc.prepareContextCtx,
 			})
@@ -470,10 +433,9 @@ func TestOtConn_PrepareContext(t *testing.T) {
 
 func TestOtConn_BeginTx(t *testing.T) {
 	testCases := []struct {
-		name            string
-		error           bool
-		allowRootOption bool
-		noParentSpan    bool
+		name         string
+		error        bool
+		noParentSpan bool
 	}{
 		{
 			name: "no error",
@@ -483,13 +445,8 @@ func TestOtConn_BeginTx(t *testing.T) {
 			error: true,
 		},
 		{
-			name:         "no parent span, disallow root span",
+			name:         "no parent span",
 			noParentSpan: true,
-		},
-		{
-			name:            "no parent span, allow root span",
-			noParentSpan:    true,
-			allowRootOption: true,
 		},
 	}
 
@@ -500,7 +457,6 @@ func TestOtConn_BeginTx(t *testing.T) {
 
 			// New conn
 			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -512,7 +468,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
+			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
 			// One dummy span and one span created in BeginTx
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -521,7 +477,6 @@ func TestOtConn_BeginTx(t *testing.T) {
 				error:              tc.error,
 				expectedAttributes: cfg.Attributes,
 				expectedMethod:     MethodConnBeginTx,
-				allowRootOption:    tc.allowRootOption,
 				noParentSpan:       tc.noParentSpan,
 				ctx:                mc.beginTxCtx,
 			})
@@ -548,10 +503,9 @@ func TestOtConn_ResetSession(t *testing.T) {
 		}
 		t.Run(testname, func(t *testing.T) {
 			testCases := []struct {
-				name            string
-				error           bool
-				allowRootOption bool
-				noParentSpan    bool
+				name         string
+				error        bool
+				noParentSpan bool
 			}{
 				{
 					name: "no error",
@@ -561,13 +515,8 @@ func TestOtConn_ResetSession(t *testing.T) {
 					error: true,
 				},
 				{
-					name:         "no parent span, disallow root span",
+					name:         "no parent span",
 					noParentSpan: true,
-				},
-				{
-					name:            "no parent span, allow root span",
-					noParentSpan:    true,
-					allowRootOption: true,
 				},
 			}
 
@@ -578,7 +527,6 @@ func TestOtConn_ResetSession(t *testing.T) {
 
 					// New conn
 					cfg := newMockConfig(t, tracer)
-					cfg.SpanOptions.AllowRoot = tc.allowRootOption
 					cfg.SpanOptions.OmitResetSession = omitResetSession
 					mc := newMockConn(tc.error)
 					otelConn := newConn(mc, cfg)
@@ -591,7 +539,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 					}
 
 					spanList := sr.Ended()
-					expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, omitResetSession)
+					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omitResetSession)
 					// One dummy span and one span created in ResetSession
 					require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -600,7 +548,6 @@ func TestOtConn_ResetSession(t *testing.T) {
 						error:              tc.error,
 						expectedAttributes: cfg.Attributes,
 						expectedMethod:     MethodConnResetSession,
-						allowRootOption:    tc.allowRootOption,
 						noParentSpan:       tc.noParentSpan,
 						ctx:                mc.resetSessionCtx,
 						omitSpan:           omitResetSession,

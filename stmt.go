@@ -56,13 +56,11 @@ func (s *otStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (res
 	}()
 
 	var span trace.Span
-	if s.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
-		ctx, span = s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, method, s.query),
-			trace.WithSpanKind(trace.SpanKindClient),
-			trace.WithAttributes(withDBStatement(s.cfg, s.query)...),
-		)
-		defer span.End()
-	}
+	ctx, span = s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, method, s.query),
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(withDBStatement(s.cfg, s.query)...),
+	)
+	defer span.End()
 
 	result, err = execer.ExecContext(ctx, args)
 	if err != nil {
@@ -86,13 +84,11 @@ func (s *otStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (ro
 
 	var span trace.Span
 	queryCtx := ctx
-	if s.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(ctx).IsValid() {
-		queryCtx, span = s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, method, s.query),
-			trace.WithSpanKind(trace.SpanKindClient),
-			trace.WithAttributes(withDBStatement(s.cfg, s.query)...),
-		)
-		defer span.End()
-	}
+	queryCtx, span = s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, method, s.query),
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(withDBStatement(s.cfg, s.query)...),
+	)
+	defer span.End()
 
 	rows, err = query.QueryContext(queryCtx, args)
 	if err != nil {

@@ -57,10 +57,9 @@ var defaultattribute = attribute.Key("test").String("foo")
 
 func TestOtTx_Commit(t *testing.T) {
 	testCases := []struct {
-		name            string
-		error           bool
-		allowRootOption bool
-		noParentSpan    bool
+		name         string
+		error        bool
+		noParentSpan bool
 	}{
 		{
 			name: "no error",
@@ -70,13 +69,8 @@ func TestOtTx_Commit(t *testing.T) {
 			error: true,
 		},
 		{
-			name:         "no parent span, disallow root span",
+			name:         "no parent span",
 			noParentSpan: true,
-		},
-		{
-			name:            "no parent span, allow root span",
-			noParentSpan:    true,
-			allowRootOption: true,
 		},
 	}
 
@@ -88,7 +82,6 @@ func TestOtTx_Commit(t *testing.T) {
 
 			// New tx
 			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			tx := newTx(ctx, mt, cfg)
 			// Commit
 			err := tx.Commit()
@@ -99,7 +92,7 @@ func TestOtTx_Commit(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
+			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
 			// One dummy span and one span created in tx
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -108,7 +101,6 @@ func TestOtTx_Commit(t *testing.T) {
 				error:              tc.error,
 				expectedAttributes: cfg.Attributes,
 				expectedMethod:     MethodTxCommit,
-				allowRootOption:    tc.allowRootOption,
 				noParentSpan:       tc.noParentSpan,
 			})
 
@@ -119,10 +111,9 @@ func TestOtTx_Commit(t *testing.T) {
 
 func TestOtTx_Rollback(t *testing.T) {
 	testCases := []struct {
-		name            string
-		error           bool
-		allowRootOption bool
-		noParentSpan    bool
+		name         string
+		error        bool
+		noParentSpan bool
 	}{
 		{
 			name: "no error",
@@ -132,13 +123,8 @@ func TestOtTx_Rollback(t *testing.T) {
 			error: true,
 		},
 		{
-			name:         "no parent span, disallow root span",
+			name:         "no parent span",
 			noParentSpan: true,
-		},
-		{
-			name:            "no parent span, allow root span",
-			noParentSpan:    true,
-			allowRootOption: true,
 		},
 	}
 
@@ -150,7 +136,6 @@ func TestOtTx_Rollback(t *testing.T) {
 
 			// New tx
 			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 			tx := newTx(ctx, mt, cfg)
 
 			// Rollback
@@ -162,7 +147,7 @@ func TestOtTx_Rollback(t *testing.T) {
 			}
 
 			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
+			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
 			// One dummy span and a span created in tx
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -171,7 +156,6 @@ func TestOtTx_Rollback(t *testing.T) {
 				error:              tc.error,
 				expectedAttributes: cfg.Attributes,
 				expectedMethod:     MethodTxRollback,
-				allowRootOption:    tc.allowRootOption,
 				noParentSpan:       tc.noParentSpan,
 			})
 

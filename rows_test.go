@@ -166,21 +166,15 @@ func TestOtRows_Next(t *testing.T) {
 
 func TestNewRows(t *testing.T) {
 	testCases := []struct {
-		name            string
-		allowRootOption bool
-		noParentSpan    bool
+		name         string
+		noParentSpan bool
 	}{
 		{
 			name: "default config",
 		},
 		{
-			name:         "no parent span, disallow root span",
+			name:         "no parent span",
 			noParentSpan: true,
-		},
-		{
-			name:            "no parent span, allow root span",
-			noParentSpan:    true,
-			allowRootOption: true,
 		},
 	}
 
@@ -191,13 +185,12 @@ func TestNewRows(t *testing.T) {
 
 			mr := newMockRows(false)
 			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.AllowRoot = tc.allowRootOption
 
 			// New rows
 			rows := newRows(ctx, mr, cfg)
 
 			spanList := sr.Started()
-			expectedSpanCount := getExpectedSpanCount(tc.allowRootOption, tc.noParentSpan, false)
+			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
 			// One dummy span and one span created in newRows()
 			require.Equal(t, expectedSpanCount, len(spanList))
 
@@ -212,7 +205,6 @@ func TestNewRows(t *testing.T) {
 				error:              false,
 				expectedAttributes: cfg.Attributes,
 				expectedMethod:     MethodRows,
-				allowRootOption:    tc.allowRootOption,
 				noParentSpan:       tc.noParentSpan,
 				spanNotEnded:       true,
 			})
