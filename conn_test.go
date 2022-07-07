@@ -612,3 +612,10 @@ func TestOtConn_ResetSession(t *testing.T) {
 		})
 	}
 }
+
+func TestOtConn_Raw(t *testing.T) {
+	raw := newMockConn(false)
+	conn := newConn(raw, config{})
+
+	assert.Equal(t, raw, conn.Raw())
+}
