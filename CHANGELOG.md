@@ -15,6 +15,7 @@ The minimum supported Go version is `1.17`.
 ### Added
 
 - Option `OmitResetSession` that if set to true will suppress `sql.conn.reset_session` spans. (#87)
+- Function `Raw` to `otConn` to return the underlying driver connection. (#100)
 
 ### Changed
 

@@ -248,3 +248,9 @@ func (c *otConn) CheckNamedValue(namedValue *driver.NamedValue) error {
 
 	return namedValueChecker.CheckNamedValue(namedValue)
 }
+
+// Raw returns the underlying driver connection
+// Issue: https://github.com/XSAM/otelsql/issues/98
+func (c *otConn) Raw() driver.Conn {
+	return c.Conn
+}
