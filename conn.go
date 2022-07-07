@@ -131,9 +131,7 @@ func (c *otConn) QueryContext(ctx context.Context, query string, args []driver.N
 		onDefer(err)
 	}()
 
-	var span trace.Span
-	queryCtx := ctx
-	queryCtx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
+	queryCtx, span := c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithAttributes(withDBStatement(c.cfg, query)...),
 	)
@@ -186,9 +184,7 @@ func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.
 		onDefer(err)
 	}()
 
-	var span trace.Span
-	beginTxCtx := ctx
-	beginTxCtx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, ""),
+	beginTxCtx, span := c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, ""),
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithAttributes(c.cfg.Attributes...),
 	)

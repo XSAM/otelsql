@@ -82,9 +82,7 @@ func (s *otStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (ro
 		onDefer(err)
 	}()
 
-	var span trace.Span
-	queryCtx := ctx
-	queryCtx, span = s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, method, s.query),
+	queryCtx, span := s.cfg.Tracer.Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, method, s.query),
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithAttributes(withDBStatement(s.cfg, s.query)...),
 	)
