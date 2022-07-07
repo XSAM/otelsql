@@ -12,7 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The minimum supported Go version is `1.17`.
 
-This update contains a breaking change of the removal of `SpanOptions.AllowRoot`
+This update contains a breaking change of the removal of `SpanOptions.AllowRoot`.
 
 ### Added
 
