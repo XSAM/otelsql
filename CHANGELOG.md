@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### ⚠️ Notice ⚠️
+
+The minimum supported Go version is `1.17`.
+
 ### Added
 
 - Option `OmitResetSession` that if set to true will suppress `sql.conn.reset_session` spans. (#87)
@@ -15,6 +19,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - Upgrade OTel to `v1.7.0`. (#91)
+
+### Removed
+
+- Support for Go `1.16`. Support is now only for Go `1.17` and Go `1.18`. (#99)
 
 ## [0.14.1] - 2022-04-07
 
