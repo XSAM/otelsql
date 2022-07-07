@@ -106,7 +106,7 @@ func main() {
 		panic(err)
 	}
 
-	err = query(db)
+	err = run(db)
 	if err != nil {
 		panic(err)
 	}
@@ -116,12 +116,21 @@ func main() {
 	select {}
 }
 
-func query(db *sql.DB) error {
-	// Create a span
+func run(db *sql.DB) error {
+	// Create a parent span (Optional)
 	tracer := otel.GetTracerProvider()
 	ctx, span := tracer.Tracer(instrumentationName).Start(context.Background(), "example")
 	defer span.End()
 
+	err := query(ctx, db)
+	if err != nil {
+		span.RecordError(err)
+		return err
+	}
+	return nil
+}
+
+func query(ctx context.Context, db *sql.DB) error {
 	// Make a query
 	rows, err := db.QueryContext(ctx, `SELECT CURRENT_TIMESTAMP`)
 	if err != nil {
