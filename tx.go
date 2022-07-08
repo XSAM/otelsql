@@ -45,13 +45,11 @@ func (t *otTx) Commit() (err error) {
 	}()
 
 	var span trace.Span
-	if t.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(t.ctx).IsValid() {
-		_, span = t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, method, ""),
-			trace.WithSpanKind(trace.SpanKindClient),
-			trace.WithAttributes(t.cfg.Attributes...),
-		)
-		defer span.End()
-	}
+	_, span = t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, method, ""),
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(t.cfg.Attributes...),
+	)
+	defer span.End()
 
 	err = t.tx.Commit()
 	if err != nil {
@@ -69,13 +67,11 @@ func (t *otTx) Rollback() (err error) {
 	}()
 
 	var span trace.Span
-	if t.cfg.SpanOptions.AllowRoot || trace.SpanContextFromContext(t.ctx).IsValid() {
-		_, span = t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, method, ""),
-			trace.WithSpanKind(trace.SpanKindClient),
-			trace.WithAttributes(t.cfg.Attributes...),
-		)
-		defer span.End()
-	}
+	_, span = t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, method, ""),
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(t.cfg.Attributes...),
+	)
+	defer span.End()
 
 	err = t.tx.Rollback()
 	if err != nil {

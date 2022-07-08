@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The minimum supported Go version is `1.17`.
 
+This update contains a breaking change of the removal of `SpanOptions.AllowRoot`.
+
 ### Added
 
 - Option `OmitResetSession` that if set to true will suppress `sql.conn.reset_session` spans. (#87)
@@ -24,6 +26,7 @@ The minimum supported Go version is `1.17`.
 ### Removed
 
 - Support for Go `1.16`. Support is now only for Go `1.17` and Go `1.18`. (#99)
+- `SpanOptions.AllowRoot`. (#101)
 
 ## [0.14.1] - 2022-04-07
 

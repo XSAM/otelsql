@@ -87,9 +87,6 @@ type SpanOptions struct {
 	// If this is not set it will default to record all errors (possible not ErrSkip, see option
 	// DisableErrSkip).
 	RecordError func(err error) bool
-
-	// AllowRoot, if set to true, will create root spans in absence of existing spans or even context.
-	AllowRoot bool
 }
 
 type defaultSpanNameFormatter struct{}

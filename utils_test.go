@@ -149,7 +149,6 @@ type spanAssertionParameter struct {
 	error              bool
 	expectedAttributes []attribute.KeyValue
 	expectedMethod     Method
-	allowRootOption    bool
 	noParentSpan       bool
 	ctx                context.Context
 	spanNotEnded       bool
@@ -161,7 +160,7 @@ func assertSpanList(t *testing.T, spanList []sdktrace.ReadOnlySpan, parameter sp
 	if !parameter.omitSpan {
 		if !parameter.noParentSpan {
 			span = spanList[1]
-		} else if parameter.allowRootOption {
+		} else {
 			span = spanList[0]
 		}
 	}
@@ -192,14 +191,14 @@ func assertSpanList(t *testing.T, spanList []sdktrace.ReadOnlySpan, parameter sp
 	}
 }
 
-func getExpectedSpanCount(allowRootOption bool, noParentSpan bool, omitSpan bool) int {
+func getExpectedSpanCount(noParentSpan bool, omitSpan bool) int {
 	if !noParentSpan {
 		if !omitSpan {
 			return 2
 		}
 		return 1
 	}
-	if allowRootOption && !omitSpan {
+	if !omitSpan {
 		return 1
 	}
 	return 0
