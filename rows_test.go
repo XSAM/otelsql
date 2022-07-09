@@ -165,51 +165,62 @@ func TestOtRows_Next(t *testing.T) {
 }
 
 func TestNewRows(t *testing.T) {
-	testCases := []struct {
-		name         string
-		noParentSpan bool
-	}{
-		{
-			name: "default config",
-		},
-		{
-			name:         "no parent span",
-			noParentSpan: true,
-		},
-	}
+	for _, omitRows := range []bool{true, false} {
+		var testname string
+		if omitRows {
+			testname = "OmitRows"
+		}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
-
-			mr := newMockRows(false)
-			cfg := newMockConfig(t, tracer)
-
-			// New rows
-			rows := newRows(ctx, mr, cfg)
-
-			spanList := sr.Started()
-			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
-			// One dummy span and one span created in newRows()
-			require.Equal(t, expectedSpanCount, len(spanList))
-
-			// Convert []sdktrace.ReadWriteSpan to []sdktrace.ReadOnlySpan explicitly due to the limitation of Go
-			var readOnlySpanList []sdktrace.ReadOnlySpan
-			for _, v := range spanList {
-				readOnlySpanList = append(readOnlySpanList, v)
+		t.Run(testname, func(t *testing.T) {
+			testCases := []struct {
+				name         string
+				noParentSpan bool
+			}{
+				{
+					name: "default config",
+				},
+				{
+					name:         "no parent span",
+					noParentSpan: true,
+				},
 			}
 
-			assertSpanList(t, readOnlySpanList, spanAssertionParameter{
-				parentSpan:         dummySpan,
-				error:              false,
-				expectedAttributes: cfg.Attributes,
-				expectedMethod:     MethodRows,
-				noParentSpan:       tc.noParentSpan,
-				spanNotEnded:       true,
-			})
+			for _, tc := range testCases {
+				t.Run(tc.name, func(t *testing.T) {
+					// Prepare traces
+					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-			assert.Equal(t, mr, rows.Rows)
+					mr := newMockRows(false)
+					cfg := newMockConfig(t, tracer)
+					cfg.SpanOptions.OmitRows = omitRows
+
+					// New rows
+					rows := newRows(ctx, mr, cfg)
+
+					spanList := sr.Started()
+					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omitRows)
+					// One dummy span and one span created in newRows()
+					require.Equal(t, expectedSpanCount, len(spanList))
+
+					// Convert []sdktrace.ReadWriteSpan to []sdktrace.ReadOnlySpan explicitly due to the limitation of Go
+					var readOnlySpanList []sdktrace.ReadOnlySpan
+					for _, v := range spanList {
+						readOnlySpanList = append(readOnlySpanList, v)
+					}
+
+					assertSpanList(t, readOnlySpanList, spanAssertionParameter{
+						parentSpan:         dummySpan,
+						error:              false,
+						expectedAttributes: cfg.Attributes,
+						expectedMethod:     MethodRows,
+						noParentSpan:       tc.noParentSpan,
+						spanNotEnded:       true,
+						omitSpan:           omitRows,
+					})
+
+					assert.Equal(t, mr, rows.Rows)
+				})
+			}
 		})
 	}
 }

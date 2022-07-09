@@ -62,56 +62,67 @@ func TestNewConnector(t *testing.T) {
 }
 
 func TestOtConnector_Connect(t *testing.T) {
-	testCases := []struct {
-		name         string
-		error        bool
-		noParentSpan bool
-	}{
-		{
-			name: "no error",
-		},
-		{
-			name:  "with error",
-			error: true,
-		},
-		{
-			name:         "no parent span",
-			noParentSpan: true,
-		},
-	}
+	for _, omitConnectorConnect := range []bool{true, false} {
+		var testname string
+		if omitConnectorConnect {
+			testname = "OmitConnectorConnect"
+		}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
-
-			cfg := newMockConfig(t, tracer)
-			mConnector := newMockConnector(nil, tc.error)
-			connector := newConnector(mConnector, &otDriver{cfg: cfg})
-			conn, err := connector.Connect(ctx)
-			if tc.error {
-				assert.Error(t, err)
-			} else {
-				otelConn, ok := conn.(*otConn)
-				require.True(t, ok)
-				assert.IsType(t, &mockConn{}, otelConn.Conn)
+		t.Run(testname, func(t *testing.T) {
+			testCases := []struct {
+				name         string
+				error        bool
+				noParentSpan bool
+			}{
+				{
+					name: "no error",
+				},
+				{
+					name:  "with error",
+					error: true,
+				},
+				{
+					name:         "no parent span",
+					noParentSpan: true,
+				},
 			}
 
-			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
-			// One dummy span and one span created in Connect
-			require.Equal(t, expectedSpanCount, len(spanList))
+			for _, tc := range testCases {
+				t.Run(tc.name, func(t *testing.T) {
+					// Prepare traces
+					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-			assertSpanList(t, spanList, spanAssertionParameter{
-				parentSpan:         dummySpan,
-				error:              tc.error,
-				expectedAttributes: cfg.Attributes,
-				expectedMethod:     MethodConnectorConnect,
-				noParentSpan:       tc.noParentSpan,
-				ctx:                mConnector.connectContext,
-			})
+					cfg := newMockConfig(t, tracer)
+					cfg.SpanOptions.OmitConnectorConnect = omitConnectorConnect
+					mConnector := newMockConnector(nil, tc.error)
+					connector := newConnector(mConnector, &otDriver{cfg: cfg})
+					conn, err := connector.Connect(ctx)
+					if tc.error {
+						assert.Error(t, err)
+					} else {
+						otelConn, ok := conn.(*otConn)
+						require.True(t, ok)
+						assert.IsType(t, &mockConn{}, otelConn.Conn)
+					}
 
-			assert.Equal(t, 1, mConnector.connectCount)
+					spanList := sr.Ended()
+					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omitConnectorConnect)
+					// One dummy span and one span created in Connect
+					require.Equal(t, expectedSpanCount, len(spanList))
+
+					assertSpanList(t, spanList, spanAssertionParameter{
+						parentSpan:         dummySpan,
+						error:              tc.error,
+						expectedAttributes: cfg.Attributes,
+						expectedMethod:     MethodConnectorConnect,
+						noParentSpan:       tc.noParentSpan,
+						ctx:                mConnector.connectContext,
+						omitSpan:           omitConnectorConnect,
+					})
+
+					assert.Equal(t, 1, mConnector.connectCount)
+				})
+			}
 		})
 	}
 }

@@ -45,10 +45,12 @@ func newRows(ctx context.Context, rows driver.Rows, cfg config) *otRows {
 	method := MethodRows
 	onClose := recordMetric(ctx, cfg.Instruments, cfg.Attributes, method)
 
-	_, span = cfg.Tracer.Start(ctx, cfg.SpanNameFormatter.Format(ctx, method, ""),
-		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(cfg.Attributes...),
-	)
+	if !cfg.SpanOptions.OmitRows {
+		_, span = cfg.Tracer.Start(ctx, cfg.SpanNameFormatter.Format(ctx, method, ""),
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(cfg.Attributes...),
+		)
+	}
 
 	return &otRows{
 		Rows:    rows,
