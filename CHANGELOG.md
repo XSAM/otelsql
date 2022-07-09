@@ -16,7 +16,13 @@ This update contains a breaking change of the removal of `SpanOptions.AllowRoot`
 
 ### Added
 
-- Option `OmitResetSession` that if set to true will suppress `sql.conn.reset_session` spans. (#87)
+- SpanOptions to suppress creation of spans. (#87, #102)
+  - `OmitConnResetSession`
+  - `OmitConnPrepare`
+  - `OmitConnQuery`
+  - `OmitRows`
+  - `OmitConnectorConnect`
+
 - Function `Raw` to `otConn` to return the underlying driver connection. (#100)
 
 ### Changed
