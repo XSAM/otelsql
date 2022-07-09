@@ -33,7 +33,7 @@ type mockDriver struct {
 	openName                      string
 }
 
-func NewMockDriver() *mockDriver {
+func NewMockDriver() driver.Driver {
 	return newMockDriver(false)
 }
 

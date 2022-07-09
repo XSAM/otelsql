@@ -3,7 +3,7 @@ linters:
   enable:
     - misspell
     - goimports
-    - golint
+    - revive
     - gofmt
 
 issues:
