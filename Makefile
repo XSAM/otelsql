@@ -41,13 +41,8 @@ $(TOOLS)/%: | $(TOOLS)
 GOLANGCI_LINT = $(TOOLS)/golangci-lint
 $(TOOLS)/golangci-lint: PACKAGE=github.com/golangci/golangci-lint/cmd/golangci-lint
 
-STRINGER = $(TOOLS)/stringer
-$(TOOLS)/stringer: PACKAGE=golang.org/x/tools/cmd/stringer
-
-$(TOOLS)/gojq: PACKAGE=github.com/itchyny/gojq/cmd/gojq
-
 .PHONY: tools
-tools: $(GOLANGCI_LINT) $(STRINGER) $(TOOLS)/gojq
+tools: $(GOLANGCI_LINT)
 
 
 # Build
