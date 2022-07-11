@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric/nonrecording"
+	"go.opentelemetry.io/otel/metric"
 )
 
 var driverName string
@@ -151,7 +151,7 @@ func TestRecordDBStatsMetricsNoPanic(t *testing.T) {
 	db, err := sql.Open(driverName, "")
 	require.NoError(t, err)
 
-	instruments, err := newDBStatsInstruments(nonrecording.NewNoopMeterProvider().Meter("test"))
+	instruments, err := newDBStatsInstruments(metric.NewNoopMeterProvider().Meter("test"))
 	require.NoError(t, err)
 
 	cfg := newConfig()

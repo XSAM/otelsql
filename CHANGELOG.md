@@ -28,6 +28,7 @@ This update contains a breaking change of the removal of `SpanOptions.AllowRoot`
 ### Changed
 
 - Upgrade OTel to `v1.7.0`. (#91)
+- Upgrade OTel to version `1.8.0/0.31.0`. (#105)
 
 ### Removed
 
