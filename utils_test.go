@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/metric/nonrecording"
+	"go.opentelemetry.io/otel/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
@@ -130,7 +130,7 @@ func createDummySpan(ctx context.Context, tracer trace.Tracer) (context.Context,
 
 func newMockConfig(t *testing.T, tracer trace.Tracer) config {
 	// TODO: use mock meter instead of noop meter
-	meter := nonrecording.NewNoopMeterProvider().Meter("test")
+	meter := metric.NewNoopMeterProvider().Meter("test")
 
 	instruments, err := newInstruments(meter)
 	require.NoError(t, err)

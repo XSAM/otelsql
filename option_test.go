@@ -19,13 +19,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric/nonrecording"
+	"go.opentelemetry.io/otel/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 func TestOptions(t *testing.T) {
 	tracerProvider := sdktrace.NewTracerProvider()
-	meterProvider := nonrecording.NewNoopMeterProvider()
+	meterProvider := metric.NewNoopMeterProvider()
 
 	testCases := []struct {
 		name           string
