@@ -45,11 +45,13 @@ func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err 
 	}()
 
 	var span trace.Span
-	ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, ""),
-		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(c.cfg.Attributes...),
-	)
-	defer span.End()
+	if !c.cfg.SpanOptions.OmitConnectorConnect {
+		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, ""),
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(c.cfg.Attributes...),
+		)
+		defer span.End()
+	}
 
 	connection, err = c.Connector.Connect(ctx)
 	if err != nil {

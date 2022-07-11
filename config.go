@@ -75,9 +75,6 @@ type SpanOptions struct {
 	// DisableErrSkip, if set to true, will suppress driver.ErrSkip errors in spans.
 	DisableErrSkip bool
 
-	// OmitResetSession if set to true will suppress sql.conn.reset_session spans
-	OmitResetSession bool
-
 	// DisableQuery if set to true, will suppress db.statement in spans.
 	DisableQuery bool
 
@@ -87,6 +84,21 @@ type SpanOptions struct {
 	// If this is not set it will default to record all errors (possible not ErrSkip, see option
 	// DisableErrSkip).
 	RecordError func(err error) bool
+
+	// OmitConnResetSession if set to true will suppress sql.conn.reset_session spans
+	OmitConnResetSession bool
+
+	// OmitConnPrepare if set to true will suppress sql.conn.prepare spans
+	OmitConnPrepare bool
+
+	// OmitConnQuery if set to true will suppress sql.conn.query spans
+	OmitConnQuery bool
+
+	// OmitRows if set to true will suppress sql.rows spans
+	OmitRows bool
+
+	// OmitConnectorConnect if set to true will suppress sql.connector.connect spans
+	OmitConnectorConnect bool
 }
 
 type defaultSpanNameFormatter struct{}

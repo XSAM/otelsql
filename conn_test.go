@@ -275,84 +275,96 @@ func TestOtConn_ExecContext(t *testing.T) {
 
 func TestOtConn_QueryContext(t *testing.T) {
 	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
-	testCases := []struct {
-		name         string
-		error        bool
-		noParentSpan bool
-		disableQuery bool
-		attrs        []attribute.KeyValue
-	}{
-		{
-			name:  "no error",
-			attrs: expectedAttrs,
-		},
-		{
-			name:         "no query db.statement",
-			disableQuery: true,
-		},
-		{
-			name:  "with error",
-			error: true,
-			attrs: expectedAttrs,
-		},
-		{
-			name:         "no parent span",
-			noParentSpan: true,
-			attrs:        expectedAttrs,
-		},
-	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+	for _, omitConnQuery := range []bool{true, false} {
+		var testname string
+		if omitConnQuery {
+			testname = "OmitConnQuery"
+		}
 
-			// New conn
-			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.DisableQuery = tc.disableQuery
-			mc := newMockConn(tc.error)
-			otelConn := newConn(mc, cfg)
-
-			rows, err := otelConn.QueryContext(ctx, "query", nil)
-			if tc.error {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
+		t.Run(testname, func(t *testing.T) {
+			testCases := []struct {
+				name         string
+				error        bool
+				noParentSpan bool
+				disableQuery bool
+				attrs        []attribute.KeyValue
+			}{
+				{
+					name:  "no error",
+					attrs: expectedAttrs,
+				},
+				{
+					name:         "no query db.statement",
+					disableQuery: true,
+				},
+				{
+					name:  "with error",
+					error: true,
+					attrs: expectedAttrs,
+				},
+				{
+					name:         "no parent span",
+					noParentSpan: true,
+					attrs:        expectedAttrs,
+				},
 			}
 
-			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
-			// One dummy span and one span created in QueryContext
-			require.Equal(t, expectedSpanCount, len(spanList))
+			for _, tc := range testCases {
+				t.Run(tc.name, func(t *testing.T) {
+					// Prepare traces
+					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-			assertSpanList(t, spanList, spanAssertionParameter{
-				parentSpan:         dummySpan,
-				error:              tc.error,
-				expectedAttributes: append(cfg.Attributes, tc.attrs...),
-				expectedMethod:     MethodConnQuery,
-				noParentSpan:       tc.noParentSpan,
-				ctx:                mc.queryContextCtx,
-			})
+					// New conn
+					cfg := newMockConfig(t, tracer)
+					cfg.SpanOptions.DisableQuery = tc.disableQuery
+					cfg.SpanOptions.OmitConnQuery = omitConnQuery
+					mc := newMockConn(tc.error)
+					otelConn := newConn(mc, cfg)
 
-			assert.Equal(t, 1, mc.queryContextCount)
-			assert.Equal(t, "query", mc.queryContextQuery)
+					rows, err := otelConn.QueryContext(ctx, "query", nil)
+					if tc.error {
+						require.Error(t, err)
+					} else {
+						require.NoError(t, err)
+					}
 
-			if !tc.error {
-				otelRows, ok := rows.(*otRows)
-				require.True(t, ok)
-				if dummySpan != nil {
-					assert.Equal(t, dummySpan.SpanContext().TraceID(), otelRows.span.SpanContext().TraceID())
+					spanList := sr.Ended()
+					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omitConnQuery)
+					// One dummy span and one span created in QueryContext
+					require.Equal(t, expectedSpanCount, len(spanList))
 
-					// Get a span from started span list
-					startedSpanList := sr.Started()
-					require.Len(t, startedSpanList, expectedSpanCount+1)
-					span := startedSpanList[expectedSpanCount]
-					// Make sure this span is the same as the span from otelRows
-					require.Equal(t, otelRows.span.SpanContext().SpanID(), span.SpanContext().SpanID())
+					assertSpanList(t, spanList, spanAssertionParameter{
+						parentSpan:         dummySpan,
+						error:              tc.error,
+						expectedAttributes: append(cfg.Attributes, tc.attrs...),
+						expectedMethod:     MethodConnQuery,
+						noParentSpan:       tc.noParentSpan,
+						ctx:                mc.queryContextCtx,
+						omitSpan:           omitConnQuery,
+					})
 
-					// The span that creates in newRows() is the child of the dummySpan
-					assert.Equal(t, dummySpan.SpanContext().SpanID(), span.Parent().SpanID())
-				}
+					assert.Equal(t, 1, mc.queryContextCount)
+					assert.Equal(t, "query", mc.queryContextQuery)
+
+					if !tc.error {
+						otelRows, ok := rows.(*otRows)
+						require.True(t, ok)
+						if dummySpan != nil {
+							assert.Equal(t, dummySpan.SpanContext().TraceID(), otelRows.span.SpanContext().TraceID())
+
+							// Get a span from started span list
+							startedSpanList := sr.Started()
+							require.Len(t, startedSpanList, expectedSpanCount+1)
+							span := startedSpanList[expectedSpanCount]
+							// Make sure this span is the same as the span from otelRows
+							require.Equal(t, otelRows.span.SpanContext().SpanID(), span.SpanContext().SpanID())
+
+							// The span that creates in newRows() is the child of the dummySpan
+							assert.Equal(t, dummySpan.SpanContext().SpanID(), span.Parent().SpanID())
+						}
+					}
+				})
 			}
 		})
 	}
@@ -360,72 +372,84 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 func TestOtConn_PrepareContext(t *testing.T) {
 	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
-	testCases := []struct {
-		name         string
-		error        bool
-		noParentSpan bool
-		disableQuery bool
-		attrs        []attribute.KeyValue
-	}{
-		{
-			name:  "no error",
-			attrs: expectedAttrs,
-		},
-		{
-			name:         "no query db.statement",
-			disableQuery: true,
-		},
-		{
-			name:  "with error",
-			error: true,
-			attrs: expectedAttrs,
-		},
-		{
-			name:         "no parent span",
-			noParentSpan: true,
-			attrs:        expectedAttrs,
-		},
-	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+	for _, omitConnPrepare := range []bool{true, false} {
+		var testname string
+		if omitConnPrepare {
+			testname = "OmitConnPrepare"
+		}
 
-			// New conn
-			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.DisableQuery = tc.disableQuery
-			mc := newMockConn(tc.error)
-			otelConn := newConn(mc, cfg)
-
-			stmt, err := otelConn.PrepareContext(ctx, "query")
-			if tc.error {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
+		t.Run(testname, func(t *testing.T) {
+			testCases := []struct {
+				name         string
+				error        bool
+				noParentSpan bool
+				disableQuery bool
+				attrs        []attribute.KeyValue
+			}{
+				{
+					name:  "no error",
+					attrs: expectedAttrs,
+				},
+				{
+					name:         "no query db.statement",
+					disableQuery: true,
+				},
+				{
+					name:  "with error",
+					error: true,
+					attrs: expectedAttrs,
+				},
+				{
+					name:         "no parent span",
+					noParentSpan: true,
+					attrs:        expectedAttrs,
+				},
 			}
 
-			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
-			// One dummy span and one span created in PrepareContext
-			require.Equal(t, expectedSpanCount, len(spanList))
+			for _, tc := range testCases {
+				t.Run(tc.name, func(t *testing.T) {
+					// Prepare traces
+					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-			assertSpanList(t, spanList, spanAssertionParameter{
-				parentSpan:         dummySpan,
-				error:              tc.error,
-				expectedAttributes: append(cfg.Attributes, tc.attrs...),
-				expectedMethod:     MethodConnPrepare,
-				noParentSpan:       tc.noParentSpan,
-				ctx:                mc.prepareContextCtx,
-			})
+					// New conn
+					cfg := newMockConfig(t, tracer)
+					cfg.SpanOptions.DisableQuery = tc.disableQuery
+					cfg.SpanOptions.OmitConnPrepare = omitConnPrepare
+					mc := newMockConn(tc.error)
+					otelConn := newConn(mc, cfg)
 
-			assert.Equal(t, 1, mc.prepareContextCount)
-			assert.Equal(t, "query", mc.prepareContextQuery)
+					stmt, err := otelConn.PrepareContext(ctx, "query")
+					if tc.error {
+						require.Error(t, err)
+					} else {
+						require.NoError(t, err)
+					}
 
-			if !tc.error {
-				otelStmt, ok := stmt.(*otStmt)
-				require.True(t, ok)
-				assert.Equal(t, "query", otelStmt.query)
+					spanList := sr.Ended()
+					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omitConnPrepare)
+					// One dummy span and one span created in PrepareContext
+					require.Equal(t, expectedSpanCount, len(spanList))
+
+					assertSpanList(t, spanList, spanAssertionParameter{
+						parentSpan:         dummySpan,
+						error:              tc.error,
+						expectedAttributes: append(cfg.Attributes, tc.attrs...),
+						expectedMethod:     MethodConnPrepare,
+						noParentSpan:       tc.noParentSpan,
+						ctx:                mc.prepareContextCtx,
+						omitSpan:           omitConnPrepare,
+					})
+
+					assert.Equal(t, 1, mc.prepareContextCount)
+					assert.Equal(t, "query", mc.prepareContextQuery)
+
+					if !tc.error {
+						otelStmt, ok := stmt.(*otStmt)
+						require.True(t, ok)
+						assert.Equal(t, "query", otelStmt.query)
+					}
+				})
 			}
 		})
 	}
@@ -499,8 +523,9 @@ func TestOtConn_ResetSession(t *testing.T) {
 	for _, omitResetSession := range []bool{false, true} {
 		var testname string
 		if omitResetSession {
-			testname = "OmitResetSession"
+			testname = "OmitConnResetSession"
 		}
+
 		t.Run(testname, func(t *testing.T) {
 			testCases := []struct {
 				name         string
@@ -527,7 +552,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 
 					// New conn
 					cfg := newMockConfig(t, tracer)
-					cfg.SpanOptions.OmitResetSession = omitResetSession
+					cfg.SpanOptions.OmitConnResetSession = omitResetSession
 					mc := newMockConn(tc.error)
 					otelConn := newConn(mc, cfg)
 

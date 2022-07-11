@@ -131,11 +131,15 @@ func (c *otConn) QueryContext(ctx context.Context, query string, args []driver.N
 		onDefer(err)
 	}()
 
-	queryCtx, span := c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
-		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(withDBStatement(c.cfg, query)...),
-	)
-	defer span.End()
+	var span trace.Span
+	queryCtx := ctx
+	if !c.cfg.SpanOptions.OmitConnQuery {
+		queryCtx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(withDBStatement(c.cfg, query)...),
+		)
+		defer span.End()
+	}
 
 	rows, err = queryer.QueryContext(queryCtx, query, args)
 	if err != nil {
@@ -158,11 +162,13 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 	}()
 
 	var span trace.Span
-	ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
-		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(withDBStatement(c.cfg, query)...),
-	)
-	defer span.End()
+	if !c.cfg.SpanOptions.OmitConnPrepare {
+		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(withDBStatement(c.cfg, query)...),
+		)
+		defer span.End()
+	}
 
 	stmt, err = preparer.PrepareContext(ctx, query)
 	if err != nil {
@@ -211,7 +217,7 @@ func (c *otConn) ResetSession(ctx context.Context) (err error) {
 	}()
 
 	var span trace.Span
-	if !c.cfg.SpanOptions.OmitResetSession {
+	if !c.cfg.SpanOptions.OmitConnResetSession {
 		ctx, span = c.cfg.Tracer.Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, ""),
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(c.cfg.Attributes...),
