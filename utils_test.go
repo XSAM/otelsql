@@ -136,7 +136,7 @@ func newMockConfig(t *testing.T, tracer trace.Tracer) config {
 	require.NoError(t, err)
 
 	return config{
-		Tracer:            tracer,
+		Tracer:            func() trace.Tracer { return tracer },
 		Meter:             meter,
 		Instruments:       instruments,
 		Attributes:        []attribute.KeyValue{defaultattribute},
