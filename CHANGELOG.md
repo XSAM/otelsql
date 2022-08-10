@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- `WithSQLCommenter` option to enable context propagation for database by injecting a comment into SQL statements. (#112)
+
 ## [0.15.0] - 2022-07-11
 
 ### ⚠️ Notice ⚠️
