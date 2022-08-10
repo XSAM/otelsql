@@ -72,3 +72,20 @@ func WithMeterProvider(provider metric.MeterProvider) Option {
 		cfg.MeterProvider = provider
 	})
 }
+
+// WithSQLCommenter will enable and disable context propagation for SQL statements
+// by injecting a comment into the SQL statement.
+// e.g., a SQL query `SELECT * from FOO` will become
+// `SELECT * from FOO /*traceparent='00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',tracestate='congo%3Dt61rcWkgMzE%2Crojo%3D00f067aa0ba902b7'*/`
+//
+// This option defaults to disable.
+//
+// Experimental
+//
+// Notice: This option is EXPERIMENTAL and may be changed or removed in a
+// later release.
+func WithSQLCommenter(enabled bool) Option {
+	return OptionFunc(func(cfg *config) {
+		cfg.SQLCommenterEnabled = enabled
+	})
+}

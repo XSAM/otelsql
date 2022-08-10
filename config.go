@@ -57,6 +57,16 @@ type config struct {
 	// SpanNameFormatter will be called to produce span's name.
 	// Default use method as span name
 	SpanNameFormatter SpanNameFormatter
+
+	// SQLCommenterEnabled enables context propagation for SQL statements
+	// by injecting a comment into the SQL statement.
+	//
+	// Experimental
+	//
+	// Notice: This config is EXPERIMENTAL and may be changed or removed in a
+	// later release.
+	SQLCommenterEnabled bool
+	SQLCommenter        *commenter
 }
 
 // SpanOptions holds configuration of tracing span to decide
@@ -126,6 +136,8 @@ func newConfig(options ...Option) config {
 		instrumentationName,
 		metric.WithInstrumentationVersion(Version()),
 	)
+
+	cfg.SQLCommenter = newCommenter(cfg.SQLCommenterEnabled)
 
 	var err error
 	if cfg.Instruments, err = newInstruments(cfg.Meter); err != nil {
