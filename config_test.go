@@ -46,6 +46,7 @@ func TestNewConfig(t *testing.T) {
 			semconv.DBSystemMySQL,
 		},
 		SpanNameFormatter: &defaultSpanNameFormatter{},
+		SQLCommenter:      newCommenter(false),
 	}, cfg)
 	assert.NotNil(t, cfg.Instruments)
 }
