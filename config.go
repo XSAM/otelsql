@@ -58,8 +58,8 @@ type config struct {
 	// Default use method as span name
 	SpanNameFormatter SpanNameFormatter
 
-	// SQLCommenterEnabled enables context propagation for SQL statements
-	// by injecting a comment into the SQL statement.
+	// SQLCommenterEnabled enables context propagation for database
+	// by injecting a comment into SQL statements.
 	//
 	// Experimental
 	//

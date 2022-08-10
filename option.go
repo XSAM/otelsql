@@ -73,8 +73,8 @@ func WithMeterProvider(provider metric.MeterProvider) Option {
 	})
 }
 
-// WithSQLCommenter will enable or disable context propagation for SQL statements
-// by injecting a comment into the SQL statement.
+// WithSQLCommenter will enable or disable context propagation for database
+// by injecting a comment into SQL statements.
 //
 // e.g., a SQL query
 //  SELECT * from FOO
