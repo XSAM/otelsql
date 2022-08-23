@@ -164,7 +164,6 @@ func withDBStatement(cfg config, query string, args []driver.NamedValue) []attri
 	attrs := append(cfg.Attributes, semconv.DBStatementKey.String(query))
 	if cfg.ArgumentsOptions.EnableAttributes {
 		for i, arg := range namedToInterface(args) {
-			println(i, arg)
 			attrs = append(attrs, attribute.String(
 				fmt.Sprintf("db.args.%d", i+1),
 				fmt.Sprintf("%v", arg)))
