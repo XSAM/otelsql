@@ -71,6 +71,8 @@ type config struct {
 	SQLCommenter        *commenter
 }
 
+// ArgumentsOptions holds configuration of arguments to decide whether to enable
+// adding query arguments as attributes onto the associated span.
 type ArgumentsOptions struct {
 	// EnableAttributes, if set to true will add query arguments as attributes on the relevant span.
 	EnableAttributes bool
