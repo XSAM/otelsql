@@ -58,7 +58,7 @@ func (s *otStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (res
 	var span trace.Span
 	ctx, span = s.cfg.Tracer().Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, method, s.query),
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(withDBStatement(s.cfg, s.query, args)...),
+		trace.WithAttributes(withDBStatement(ctx, s.cfg, s.query, args)...),
 	)
 	defer span.End()
 
@@ -84,7 +84,7 @@ func (s *otStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (ro
 
 	queryCtx, span := s.cfg.Tracer().Start(ctx, s.cfg.SpanNameFormatter.Format(ctx, method, s.query),
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(withDBStatement(s.cfg, s.query, args)...),
+		trace.WithAttributes(withDBStatement(ctx, s.cfg, s.query, args)...),
 	)
 	defer span.End()
 

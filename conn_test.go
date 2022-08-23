@@ -213,6 +213,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 		noParentSpan bool
 		disableQuery bool
 		enableArgs   bool
+		skip         func(context.Context, string, []interface{}) bool
 		attrs        []attribute.KeyValue
 	}{
 		{
@@ -238,7 +239,18 @@ func TestOtConn_ExecContext(t *testing.T) {
 			enableArgs: true,
 			attrs: []attribute.KeyValue{
 				expectedAttrs[0],
-				attribute.String("db.args.1", "foo"),
+				attribute.String("db.args.$1", "foo"),
+			},
+		},
+		{
+			name:       "enable args as attributes, with skip function",
+			enableArgs: true,
+			skip: func(ctx context.Context, q string, args []interface{}) bool {
+				return len(args) > 0
+			},
+			attrs: []attribute.KeyValue{
+				expectedAttrs[0],
+				attribute.Bool("db.args.skipped", true),
 			},
 		},
 	}
@@ -251,6 +263,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 			// New conn
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			cfg.ArgumentsOptions.EnableAttributes = tc.enableArgs
+			cfg.ArgumentsOptions.Skip = tc.skip
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -322,7 +335,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 					enableArgs: true,
 					attrs: []attribute.KeyValue{
 						expectedAttrs[0],
-						attribute.String("db.args.1", "foo"),
+						attribute.String("db.args.$1", "foo"),
 					},
 				},
 			}

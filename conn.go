@@ -99,7 +99,7 @@ func (c *otConn) ExecContext(ctx context.Context, query string, args []driver.Na
 	var span trace.Span
 	ctx, span = c.cfg.Tracer().Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(withDBStatement(c.cfg, query, args)...),
+		trace.WithAttributes(withDBStatement(ctx, c.cfg, query, args)...),
 	)
 	defer span.End()
 
@@ -119,15 +119,6 @@ func (c *otConn) Query(query string, args []driver.Value) (driver.Rows, error) {
 	return queryer.Query(query, args)
 }
 
-// TODO move
-func namedToInterface(args []driver.NamedValue) []interface{} {
-	list := make([]interface{}, len(args))
-	for i, a := range args {
-		list[i] = a.Value
-	}
-	return list
-}
-
 func (c *otConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (rows driver.Rows, err error) {
 	queryer, ok := c.Conn.(driver.QueryerContext)
 	if !ok {
@@ -145,7 +136,7 @@ func (c *otConn) QueryContext(ctx context.Context, query string, args []driver.N
 	if !c.cfg.SpanOptions.OmitConnQuery {
 		queryCtx, span = c.cfg.Tracer().Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
 			trace.WithSpanKind(trace.SpanKindClient),
-			trace.WithAttributes(withDBStatement(c.cfg, query, args)...),
+			trace.WithAttributes(withDBStatement(ctx, c.cfg, query, args)...),
 		)
 		defer span.End()
 	}
@@ -174,7 +165,7 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 	if !c.cfg.SpanOptions.OmitConnPrepare {
 		ctx, span = c.cfg.Tracer().Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, query),
 			trace.WithSpanKind(trace.SpanKindClient),
-			trace.WithAttributes(withDBStatement(c.cfg, query, nil)...),
+			trace.WithAttributes(withDBStatement(ctx, c.cfg, query, nil)...),
 		)
 		defer span.End()
 	}
@@ -255,4 +246,12 @@ func (c *otConn) CheckNamedValue(namedValue *driver.NamedValue) error {
 // Issue: https://github.com/XSAM/otelsql/issues/98
 func (c *otConn) Raw() driver.Conn {
 	return c.Conn
+}
+
+func namedToInterface(args []driver.NamedValue) []interface{} {
+	list := make([]interface{}, len(args))
+	for i, a := range args {
+		list[i] = a.Value
+	}
+	return list
 }

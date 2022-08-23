@@ -72,8 +72,11 @@ type config struct {
 }
 
 type ArgumentsOptions struct {
-	EnableAttributes    bool
-	AttributeNamePrefix string
+	// EnableAttributes, if set to true will add query arguments as attributes on the relevant span.
+	EnableAttributes bool
+	// Skip, if set, will be invoked with the current context, query and arguments, and if the func
+	// returns true the arguments will not be added as attributes on the span.
+	Skip func(context context.Context, query string, args []interface{}) bool
 }
 
 // SpanOptions holds configuration of tracing span to decide
@@ -150,23 +153,21 @@ func newConfig(options ...Option) config {
 	return cfg
 }
 
-func (c *config) Tracer() trace.Tracer {
-	return c.TracerProvider.Tracer(
-		instrumentationName,
-		trace.WithInstrumentationVersion(Version()),
-	)
-}
-
-func withDBStatement(cfg config, query string, args []driver.NamedValue) []attribute.KeyValue {
+func withDBStatement(ctx context.Context, cfg config, query string, args []driver.NamedValue) []attribute.KeyValue {
 	if cfg.SpanOptions.DisableQuery {
 		return cfg.Attributes
 	}
 	attrs := append(cfg.Attributes, semconv.DBStatementKey.String(query))
 	if cfg.ArgumentsOptions.EnableAttributes {
-		for i, arg := range namedToInterface(args) {
-			attrs = append(attrs, attribute.String(
-				fmt.Sprintf("db.args.%d", i+1),
-				fmt.Sprintf("%v", arg)))
+		list := namedToInterface(args)
+		if cfg.ArgumentsOptions.Skip == nil || (cfg.ArgumentsOptions.Skip != nil && !cfg.ArgumentsOptions.Skip(ctx, query, list)) {
+			for i, arg := range namedToInterface(args) {
+				attrs = append(attrs, attribute.String(
+					fmt.Sprintf("db.args.$%d", i+1),
+					fmt.Sprintf("%v", arg)))
+			}
+		} else {
+			attrs = append(attrs, attribute.Bool("db.args.skipped", true))
 		}
 	}
 	return attrs
