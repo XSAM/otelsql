@@ -16,6 +16,8 @@ package otelsql
 
 import (
 	"context"
+	"database/sql/driver"
+	"fmt"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -48,7 +50,8 @@ type config struct {
 
 	Instruments *instruments
 
-	SpanOptions SpanOptions
+	SpanOptions      SpanOptions
+	ArgumentsOptions ArgumentsOptions
 
 	// Attributes will be set to each span.
 	Attributes []attribute.KeyValue
@@ -66,6 +69,11 @@ type config struct {
 	// later release.
 	SQLCommenterEnabled bool
 	SQLCommenter        *commenter
+}
+
+type ArgumentsOptions struct {
+	EnableAttributes    bool
+	AttributeNamePrefix string
 }
 
 // SpanOptions holds configuration of tracing span to decide
@@ -149,9 +157,18 @@ func (c *config) Tracer() trace.Tracer {
 	)
 }
 
-func withDBStatement(cfg config, query string) []attribute.KeyValue {
+func withDBStatement(cfg config, query string, args []driver.NamedValue) []attribute.KeyValue {
 	if cfg.SpanOptions.DisableQuery {
 		return cfg.Attributes
 	}
-	return append(cfg.Attributes, semconv.DBStatementKey.String(query))
+	attrs := append(cfg.Attributes, semconv.DBStatementKey.String(query))
+	if cfg.ArgumentsOptions.EnableAttributes {
+		for i, arg := range namedToInterface(args) {
+			println(i, arg)
+			attrs = append(attrs, attribute.String(
+				fmt.Sprintf("db.args.%d", i+1),
+				fmt.Sprintf("%v", arg)))
+		}
+	}
+	return attrs
 }

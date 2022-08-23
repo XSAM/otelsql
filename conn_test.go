@@ -212,6 +212,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 		error        bool
 		noParentSpan bool
 		disableQuery bool
+		enableArgs   bool
 		attrs        []attribute.KeyValue
 	}{
 		{
@@ -232,6 +233,14 @@ func TestOtConn_ExecContext(t *testing.T) {
 			noParentSpan: true,
 			attrs:        expectedAttrs,
 		},
+		{
+			name:       "enable args as attributes",
+			enableArgs: true,
+			attrs: []attribute.KeyValue{
+				expectedAttrs[0],
+				attribute.String("db.args.1", "foo"),
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -241,10 +250,11 @@ func TestOtConn_ExecContext(t *testing.T) {
 
 			// New conn
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
+			cfg.ArgumentsOptions.EnableAttributes = tc.enableArgs
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
-			_, err := otelConn.ExecContext(ctx, "query", nil)
+			_, err := otelConn.ExecContext(ctx, "query", []driver.NamedValue{{Name: "name", Ordinal: 0, Value: "foo"}})
 			if tc.error {
 				require.Error(t, err)
 			} else {
@@ -286,6 +296,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 				error        bool
 				noParentSpan bool
 				disableQuery bool
+				enableArgs   bool
 				attrs        []attribute.KeyValue
 			}{
 				{
@@ -306,6 +317,14 @@ func TestOtConn_QueryContext(t *testing.T) {
 					noParentSpan: true,
 					attrs:        expectedAttrs,
 				},
+				{
+					name:       "enable args as attributes",
+					enableArgs: true,
+					attrs: []attribute.KeyValue{
+						expectedAttrs[0],
+						attribute.String("db.args.1", "foo"),
+					},
+				},
 			}
 
 			for _, tc := range testCases {
@@ -316,10 +335,11 @@ func TestOtConn_QueryContext(t *testing.T) {
 					// New conn
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
 					cfg.SpanOptions.OmitConnQuery = omitConnQuery
+					cfg.ArgumentsOptions.EnableAttributes = tc.enableArgs
 					mc := newMockConn(tc.error)
 					otelConn := newConn(mc, cfg)
 
-					rows, err := otelConn.QueryContext(ctx, "query", nil)
+					rows, err := otelConn.QueryContext(ctx, "query", []driver.NamedValue{{Name: "name", Ordinal: 0, Value: "foo"}})
 					if tc.error {
 						require.Error(t, err)
 					} else {
@@ -382,6 +402,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 				error        bool
 				noParentSpan bool
 				disableQuery bool
+				enableArgs   bool
 				attrs        []attribute.KeyValue
 			}{
 				{

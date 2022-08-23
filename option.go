@@ -50,6 +50,14 @@ func WithAttributes(attributes ...attribute.KeyValue) Option {
 	})
 }
 
+// WithArgumentsAttributes specifies configurations for span to decide whether to enable
+// some features.
+func WithArgumentsAttributes(opts ArgumentsOptions) Option {
+	return OptionFunc(func(cfg *config) {
+		cfg.ArgumentsOptions = opts
+	})
+}
+
 // WithSpanNameFormatter takes an interface that will be called on every
 // operation and the returned string will become the span name.
 func WithSpanNameFormatter(spanNameFormatter SpanNameFormatter) Option {

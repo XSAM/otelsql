@@ -27,7 +27,14 @@ import (
 )
 
 func TestNewConfig(t *testing.T) {
-	cfg := newConfig(WithSpanOptions(SpanOptions{Ping: true}), WithAttributes(semconv.DBSystemMySQL))
+	cfg := newConfig(
+		WithSpanOptions(SpanOptions{Ping: true}),
+		WithAttributes(semconv.DBSystemMySQL),
+		WithArgumentsAttributes(ArgumentsOptions{EnableAttributes: true, AttributeNamePrefix: "foo"}))
+	assert.Equal(t, cfg.Tracer(), otel.GetTracerProvider().Tracer(
+		instrumentationName,
+		trace.WithInstrumentationVersion(Version()),
+	))
 	assert.Equal(t, config{
 		TracerProvider: otel.GetTracerProvider(),
 		MeterProvider:  global.MeterProvider(),
@@ -36,8 +43,9 @@ func TestNewConfig(t *testing.T) {
 			metric.WithInstrumentationVersion(Version()),
 		),
 		// No need to check values of instruments in this part.
-		Instruments: cfg.Instruments,
-		SpanOptions: SpanOptions{Ping: true},
+		Instruments:      cfg.Instruments,
+		SpanOptions:      SpanOptions{Ping: true},
+		ArgumentsOptions: ArgumentsOptions{EnableAttributes: true, AttributeNamePrefix: "foo"},
 		Attributes: []attribute.KeyValue{
 			semconv.DBSystemMySQL,
 		},
