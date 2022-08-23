@@ -28,9 +28,8 @@ import (
 
 func TestNewConfig(t *testing.T) {
 	cfg := newConfig(
-		WithSpanOptions(SpanOptions{Ping: true}),
-		WithAttributes(semconv.DBSystemMySQL),
-		WithArgumentsAttributes(ArgumentOptions{EnableAttributes: true}))
+		WithSpanOptions(SpanOptions{Ping: true, ArgumentOptions: ArgumentOptions{EnableAttributes: true}}),
+		WithAttributes(semconv.DBSystemMySQL))
 	assert.Equal(t, cfg.Tracer(), otel.GetTracerProvider().Tracer(
 		instrumentationName,
 		trace.WithInstrumentationVersion(Version()),
@@ -43,9 +42,8 @@ func TestNewConfig(t *testing.T) {
 			metric.WithInstrumentationVersion(Version()),
 		),
 		// No need to check values of instruments in this part.
-		Instruments:      cfg.Instruments,
-		SpanOptions:      SpanOptions{Ping: true},
-		ArgumentsOptions: ArgumentOptions{EnableAttributes: true},
+		Instruments: cfg.Instruments,
+		SpanOptions: SpanOptions{Ping: true, ArgumentOptions: ArgumentOptions{EnableAttributes: true}},
 		Attributes: []attribute.KeyValue{
 			semconv.DBSystemMySQL,
 		},

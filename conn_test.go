@@ -262,8 +262,8 @@ func TestOtConn_ExecContext(t *testing.T) {
 
 			// New conn
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
-			cfg.ArgumentsOptions.EnableAttributes = tc.enableArgs
-			cfg.ArgumentsOptions.Skip = tc.skip
+			cfg.SpanOptions.ArgumentOptions.EnableAttributes = tc.enableArgs
+			cfg.SpanOptions.ArgumentOptions.Skip = tc.skip
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -348,7 +348,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 					// New conn
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
 					cfg.SpanOptions.OmitConnQuery = omitConnQuery
-					cfg.ArgumentsOptions.EnableAttributes = tc.enableArgs
+					cfg.SpanOptions.ArgumentOptions.EnableAttributes = tc.enableArgs
 					mc := newMockConn(tc.error)
 					otelConn := newConn(mc, cfg)
 

@@ -50,8 +50,7 @@ type config struct {
 
 	Instruments *instruments
 
-	SpanOptions      SpanOptions
-	ArgumentsOptions ArgumentOptions
+	SpanOptions SpanOptions
 
 	// Attributes will be set to each span.
 	Attributes []attribute.KeyValue
@@ -69,16 +68,6 @@ type config struct {
 	// later release.
 	SQLCommenterEnabled bool
 	SQLCommenter        *commenter
-}
-
-// ArgumentOptions holds configuration of arguments to decide whether to enable
-// adding query arguments as attributes onto the associated span.
-type ArgumentOptions struct {
-	// EnableAttributes, if set to true will add query arguments as attributes on the relevant span.
-	EnableAttributes bool
-	// Skip, if set, will be invoked with the current context, query and arguments, and if the func
-	// returns true the arguments will not be added as attributes on the span.
-	Skip func(context context.Context, query string, args []interface{}) bool
 }
 
 // SpanOptions holds configuration of tracing span to decide
@@ -121,6 +110,19 @@ type SpanOptions struct {
 
 	// OmitConnectorConnect if set to true will suppress sql.connector.connect spans
 	OmitConnectorConnect bool
+
+	// ArgumentOptions holds configuration for query arguments.
+	ArgumentOptions ArgumentOptions
+}
+
+// ArgumentOptions holds configuration of arguments to decide whether to enable
+// adding query arguments as attributes onto the associated span.
+type ArgumentOptions struct {
+	// EnableAttributes, if set to true will add query arguments as attributes on the relevant span.
+	EnableAttributes bool
+	// Skip, if set, will be invoked with the current context, query and arguments, and if the func
+	// returns true the arguments will not be added as attributes on the span.
+	Skip func(context context.Context, query string, args []interface{}) bool
 }
 
 type defaultSpanNameFormatter struct{}
@@ -160,9 +162,10 @@ func withDBStatement(ctx context.Context, cfg config, query string, args []drive
 		return cfg.Attributes
 	}
 	attrs := append(cfg.Attributes, semconv.DBStatementKey.String(query))
-	if cfg.ArgumentsOptions.EnableAttributes {
+	if cfg.SpanOptions.ArgumentOptions.EnableAttributes {
+		opts := cfg.SpanOptions.ArgumentOptions
 		list := namedToInterface(args)
-		if cfg.ArgumentsOptions.Skip == nil || (cfg.ArgumentsOptions.Skip != nil && !cfg.ArgumentsOptions.Skip(ctx, query, list)) {
+		if opts.Skip == nil || (opts.Skip != nil && !opts.Skip(ctx, query, list)) {
 			for i, arg := range namedToInterface(args) {
 				attrs = append(attrs, attribute.String(
 					fmt.Sprintf("db.args.$%d", i+1),
