@@ -51,7 +51,7 @@ type config struct {
 	Instruments *instruments
 
 	SpanOptions      SpanOptions
-	ArgumentsOptions ArgumentsOptions
+	ArgumentsOptions ArgumentOptions
 
 	// Attributes will be set to each span.
 	Attributes []attribute.KeyValue
@@ -71,9 +71,9 @@ type config struct {
 	SQLCommenter        *commenter
 }
 
-// ArgumentsOptions holds configuration of arguments to decide whether to enable
+// ArgumentOptions holds configuration of arguments to decide whether to enable
 // adding query arguments as attributes onto the associated span.
-type ArgumentsOptions struct {
+type ArgumentOptions struct {
 	// EnableAttributes, if set to true will add query arguments as attributes on the relevant span.
 	EnableAttributes bool
 	// Skip, if set, will be invoked with the current context, query and arguments, and if the func

@@ -52,7 +52,7 @@ func WithAttributes(attributes ...attribute.KeyValue) Option {
 
 // WithArgumentsAttributes specifies configurations for span to decide whether to enable
 // some features.
-func WithArgumentsAttributes(opts ArgumentsOptions) Option {
+func WithArgumentsAttributes(opts ArgumentOptions) Option {
 	return OptionFunc(func(cfg *config) {
 		cfg.ArgumentsOptions = opts
 	})
