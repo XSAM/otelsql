@@ -164,10 +164,9 @@ func TestOtConn_Ping(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+			ctx, cfg, sr, dummySpan := prepareTraces(t, tc.noParentSpan)
 
 			// New conn
-			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.Ping = tc.pingOption
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
@@ -238,10 +237,9 @@ func TestOtConn_ExecContext(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+			ctx, cfg, sr, dummySpan := prepareTraces(t, tc.noParentSpan)
 
 			// New conn
-			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
@@ -313,10 +311,9 @@ func TestOtConn_QueryContext(t *testing.T) {
 			for _, tc := range testCases {
 				t.Run(tc.name, func(t *testing.T) {
 					// Prepare traces
-					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+					ctx, cfg, sr, dummySpan := prepareTraces(t, tc.noParentSpan)
 
 					// New conn
-					cfg := newMockConfig(t, tracer)
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
 					cfg.SpanOptions.OmitConnQuery = omitConnQuery
 					mc := newMockConn(tc.error)
@@ -410,10 +407,9 @@ func TestOtConn_PrepareContext(t *testing.T) {
 			for _, tc := range testCases {
 				t.Run(tc.name, func(t *testing.T) {
 					// Prepare traces
-					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+					ctx, cfg, sr, dummySpan := prepareTraces(t, tc.noParentSpan)
 
 					// New conn
-					cfg := newMockConfig(t, tracer)
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
 					cfg.SpanOptions.OmitConnPrepare = omitConnPrepare
 					mc := newMockConn(tc.error)
@@ -477,10 +473,9 @@ func TestOtConn_BeginTx(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+			ctx, cfg, sr, dummySpan := prepareTraces(t, tc.noParentSpan)
 
 			// New conn
-			cfg := newMockConfig(t, tracer)
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -548,10 +543,9 @@ func TestOtConn_ResetSession(t *testing.T) {
 			for _, tc := range testCases {
 				t.Run(tc.name, func(t *testing.T) {
 					// Prepare traces
-					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+					ctx, cfg, sr, dummySpan := prepareTraces(t, tc.noParentSpan)
 
 					// New conn
-					cfg := newMockConfig(t, tracer)
 					cfg.SpanOptions.OmitConnResetSession = omitResetSession
 					mc := newMockConn(tc.error)
 					otelConn := newConn(mc, cfg)

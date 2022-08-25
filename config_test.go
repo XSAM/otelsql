@@ -28,15 +28,8 @@ import (
 
 func TestNewConfig(t *testing.T) {
 	cfg := newConfig(WithSpanOptions(SpanOptions{Ping: true}), WithAttributes(semconv.DBSystemMySQL))
-	assert.Equal(t, cfg.Tracer(), otel.GetTracerProvider().Tracer(
-		instrumentationName,
-		trace.WithInstrumentationVersion(Version()),
-	))
-	// Avoid breaking the assertion below because we're comparing funcs.
-	cfg.Tracer = nil
 	assert.Equal(t, config{
 		TracerProvider: otel.GetTracerProvider(),
-		Tracer:         nil, // Asserted by the assertion above.
 		MeterProvider:  global.MeterProvider(),
 		Meter: global.MeterProvider().Meter(
 			instrumentationName,
@@ -51,5 +44,10 @@ func TestNewConfig(t *testing.T) {
 		SpanNameFormatter: &defaultSpanNameFormatter{},
 		SQLCommenter:      newCommenter(false),
 	}, cfg)
+
+	assert.Equal(t, cfg.Tracer(), otel.GetTracerProvider().Tracer(
+		instrumentationName,
+		trace.WithInstrumentationVersion(Version()),
+	))
 	assert.NotNil(t, cfg.Instruments)
 }

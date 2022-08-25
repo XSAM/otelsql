@@ -105,11 +105,10 @@ func TestOtStmt_ExecContext(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+			ctx, cfg, sr, dummySpan := prepareTraces(t, tc.noParentSpan)
 			ms := newMockStmt(tc.error)
 
 			// New stmt
-			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			stmt := newStmt(ms, cfg, "query")
 			// Exec
@@ -171,11 +170,10 @@ func TestOtStmt_QueryContext(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+			ctx, cfg, sr, dummySpan := prepareTraces(t, tc.noParentSpan)
 			ms := newMockStmt(tc.error)
 
 			// New stmt
-			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
 			stmt := newStmt(ms, cfg, "query")
 			// Query

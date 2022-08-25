@@ -76,10 +76,9 @@ func TestOtRows_Close(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			ctx, sr, tracer, _ := prepareTraces(false)
+			ctx, cfg, sr, _ := prepareTraces(t, false)
 
 			mr := newMockRows(tc.error)
-			cfg := newMockConfig(t, tracer)
 
 			// New rows
 			rows := newRows(ctx, mr, cfg)
@@ -127,10 +126,9 @@ func TestOtRows_Next(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Prepare traces
-			ctx, sr, tracer, _ := prepareTraces(false)
+			ctx, cfg, sr, _ := prepareTraces(t, false)
 
 			mr := newMockRows(tc.error)
-			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.RowsNext = tc.rowsNextOption
 
 			// New rows
@@ -188,10 +186,9 @@ func TestNewRows(t *testing.T) {
 			for _, tc := range testCases {
 				t.Run(tc.name, func(t *testing.T) {
 					// Prepare traces
-					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+					ctx, cfg, sr, dummySpan := prepareTraces(t, tc.noParentSpan)
 
 					mr := newMockRows(false)
-					cfg := newMockConfig(t, tracer)
 					cfg.SpanOptions.OmitRows = omitRows
 
 					// New rows

@@ -42,7 +42,6 @@ type SpanNameFormatter interface {
 
 type config struct {
 	TracerProvider trace.TracerProvider
-	Tracer         func() trace.Tracer
 
 	MeterProvider metric.MeterProvider
 	Meter         metric.Meter
@@ -128,12 +127,6 @@ func newConfig(options ...Option) config {
 		opt.Apply(&cfg)
 	}
 
-	cfg.Tracer = func() trace.Tracer {
-		return cfg.TracerProvider.Tracer(
-			instrumentationName,
-			trace.WithInstrumentationVersion(Version()),
-		)
-	}
 	cfg.Meter = cfg.MeterProvider.Meter(
 		instrumentationName,
 		metric.WithInstrumentationVersion(Version()),
@@ -147,6 +140,13 @@ func newConfig(options ...Option) config {
 	}
 
 	return cfg
+}
+
+func (c *config) Tracer() trace.Tracer {
+	return c.TracerProvider.Tracer(
+		instrumentationName,
+		trace.WithInstrumentationVersion(Version()),
+	)
 }
 
 func withDBStatement(cfg config, query string) []attribute.KeyValue {
