@@ -111,7 +111,7 @@ type SpanOptions struct {
 	// OmitConnectorConnect if set to true will suppress sql.connector.connect spans
 	OmitConnectorConnect bool
 
-	// ArgumentOptions holds configuration for query arguments.
+	// ArgumentOptions holds configuration for including query arguments in spans.
 	ArgumentOptions ArgumentOptions
 }
 
@@ -165,14 +165,14 @@ func withDBStatement(ctx context.Context, cfg config, query string, args []drive
 	if cfg.SpanOptions.ArgumentOptions.EnableAttributes {
 		opts := cfg.SpanOptions.ArgumentOptions
 		list := namedToInterface(args)
-		if opts.Skip == nil || (opts.Skip != nil && !opts.Skip(ctx, query, list)) {
+		if opts.Skip != nil && opts.Skip(ctx, query, list) {
+			attrs = append(attrs, attribute.Bool("db.args.skipped", true))
+		} else {
 			for i, arg := range namedToInterface(args) {
 				attrs = append(attrs, attribute.String(
 					fmt.Sprintf("db.args.$%d", i+1),
 					fmt.Sprintf("%v", arg)))
 			}
-		} else {
-			attrs = append(attrs, attribute.Bool("db.args.skipped", true))
 		}
 	}
 	return attrs
