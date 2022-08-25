@@ -157,6 +157,13 @@ func newConfig(options ...Option) config {
 	return cfg
 }
 
+func (c *config) Tracer() trace.Tracer {
+	return c.TracerProvider.Tracer(
+		instrumentationName,
+		trace.WithInstrumentationVersion(Version()),
+	)
+}
+
 func withDBStatement(ctx context.Context, cfg config, query string, args []driver.NamedValue) []attribute.KeyValue {
 	if cfg.SpanOptions.DisableQuery {
 		return cfg.Attributes
