@@ -14,6 +14,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
   This is an experimental feature and may be changed or removed in a later release.
 
+### Changed
+
+- Upgrade OTel to version `1.9.0`. (#113)
+
 ## [0.15.0] - 2022-07-11
 
 ### ⚠️ Notice ⚠️
