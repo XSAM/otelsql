@@ -63,6 +63,11 @@ func TestOptions(t *testing.T) {
 			option:         WithMeterProvider(meterProvider),
 			expectedConfig: config{MeterProvider: meterProvider},
 		},
+		{
+			name:           "WithSQLCommenter",
+			option:         WithSQLCommenter(true),
+			expectedConfig: config{SQLCommenterEnabled: true},
+		},
 	}
 
 	for _, tc := range testCases {
