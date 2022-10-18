@@ -40,6 +40,8 @@ if err != nil {
 }
 ```
 
+Check [Option](https://pkg.go.dev/github.com/XSAM/otelsql#Option) for more features like adding context propagation to SQL queries when enabling [`WithSQLCommenter`](https://pkg.go.dev/github.com/XSAM/otelsql#WithSQLCommenter).
+
 See [godoc](https://pkg.go.dev/mod/github.com/XSAM/otelsql) and [a docker-compose example](./example/README.md) for details.
 
 ## Trace Instruments
