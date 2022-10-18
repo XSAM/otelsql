@@ -19,6 +19,7 @@ The minimum supported Go version is `1.18`.
 ### Changed
 
 - Upgrade OTel to version `1.10.0`. (#119)
+- Upgrade OTel to version `1.11.0/0.32.3`. (#122)
 
 ### Removed
 

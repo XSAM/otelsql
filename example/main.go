@@ -23,14 +23,13 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/prometheus"
+	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/metric/global"
-	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
-	"go.opentelemetry.io/otel/sdk/metric/export/aggregation"
-	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
-	selector "go.opentelemetry.io/otel/sdk/metric/selector/simple"
+	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
@@ -62,24 +61,23 @@ func initTracer() {
 }
 
 func initMeter() {
-	c := controller.New(
-		processor.NewFactory(
-			selector.NewWithHistogramDistribution(),
-			aggregation.CumulativeTemporalitySelector(),
-			processor.WithMemory(true),
-		),
-		controller.WithResource(resource.NewWithAttributes(
+	metricExporter := otelprom.New()
+	meterProvider := metric.NewMeterProvider(
+		metric.WithReader(metricExporter),
+		metric.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
 			serviceName,
 		)),
 	)
-	metricExporter, err := prometheus.New(prometheus.Config{}, c)
-	if err != nil {
-		log.Fatalf("failed to install metric exporter, %v", err)
-	}
-	global.SetMeterProvider(metricExporter.MeterProvider())
+	global.SetMeterProvider(meterProvider)
 
-	http.HandleFunc("/", metricExporter.ServeHTTP)
+	registry := prometheus.NewRegistry()
+	err := registry.Register(metricExporter.Collector)
+	if err != nil {
+		fmt.Printf("error registering collector: %v", err)
+		return
+	}
+	http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 	go func() {
 		_ = http.ListenAndServe(":2222", nil)
 	}()
