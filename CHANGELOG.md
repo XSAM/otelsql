@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### ⚠️ Notice ⚠️
+
+The minimum supported Go version is `1.18`.
+
 ### Added
 
 - Go 1.19 to supported versions. (#118)
@@ -15,6 +19,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - Upgrade OTel to version `1.10.0`. (#119)
+
+### Removed
+
+- Support for Go `1.17`. Support is now only for Go `1.18` and Go `1.19`. (#123)
 
 ## [0.16.0] - 2022-08-25
 
