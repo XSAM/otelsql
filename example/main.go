@@ -41,7 +41,7 @@ const instrumentationName = "github.com/XSAM/otelsql/example"
 
 var serviceName = semconv.ServiceNameKey.String("otesql-example")
 
-var mysqlDSN = "root:otel_password@tcp(localhost)/db?parseTime=true"
+var mysqlDSN = "root:otel_password@tcp(mysql)/db?parseTime=true"
 
 func initTracer() {
 	exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
