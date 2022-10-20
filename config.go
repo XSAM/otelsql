@@ -41,7 +41,7 @@ type SpanNameFormatter interface {
 	Format(ctx context.Context, method Method, query string) string
 }
 
-// AttributesGetter provides additional attributes from span creation
+// AttributesGetter provides additional attributes on spans creation
 type AttributesGetter func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue
 
 type config struct {
