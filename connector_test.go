@@ -70,9 +70,10 @@ func TestOtConnector_Connect(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			testCases := []struct {
-				name         string
-				error        bool
-				noParentSpan bool
+				name             string
+				error            bool
+				noParentSpan     bool
+				attributesGetter AttributesGetter
 			}{
 				{
 					name: "no error",
@@ -85,6 +86,10 @@ func TestOtConnector_Connect(t *testing.T) {
 					name:         "no parent span",
 					noParentSpan: true,
 				},
+				{
+					name:             "with attribute getter",
+					attributesGetter: getDummyAttributesGetter(),
+				},
 			}
 
 			for _, tc := range testCases {
@@ -94,6 +99,7 @@ func TestOtConnector_Connect(t *testing.T) {
 
 					cfg := newMockConfig(t, tracer)
 					cfg.SpanOptions.OmitConnectorConnect = omitConnectorConnect
+					cfg.AttributesGetter = tc.attributesGetter
 					mConnector := newMockConnector(nil, tc.error)
 					connector := newConnector(mConnector, &otDriver{cfg: cfg})
 					conn, err := connector.Connect(ctx)
@@ -114,10 +120,11 @@ func TestOtConnector_Connect(t *testing.T) {
 						parentSpan:         dummySpan,
 						error:              tc.error,
 						expectedAttributes: cfg.Attributes,
-						expectedMethod:     MethodConnectorConnect,
+						method:             MethodConnectorConnect,
 						noParentSpan:       tc.noParentSpan,
 						ctx:                mConnector.connectContext,
 						omitSpan:           omitConnectorConnect,
+						attributesGetter:   tc.attributesGetter,
 					})
 
 					assert.Equal(t, 1, mConnector.connectCount)

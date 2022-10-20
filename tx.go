@@ -45,10 +45,7 @@ func (t *otTx) Commit() (err error) {
 	}()
 
 	var span trace.Span
-	_, span = t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, method, ""),
-		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(t.cfg.Attributes...),
-	)
+	_, span = createSpan(t.ctx, t.cfg, method, false, "", nil)
 	defer span.End()
 
 	err = t.tx.Commit()
@@ -67,10 +64,7 @@ func (t *otTx) Rollback() (err error) {
 	}()
 
 	var span trace.Span
-	_, span = t.cfg.Tracer.Start(t.ctx, t.cfg.SpanNameFormatter.Format(t.ctx, method, ""),
-		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(t.cfg.Attributes...),
-	)
+	_, span = createSpan(t.ctx, t.cfg, method, false, "", nil)
 	defer span.End()
 
 	err = t.tx.Rollback()

@@ -173,8 +173,9 @@ func TestNewRows(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			testCases := []struct {
-				name         string
-				noParentSpan bool
+				name             string
+				noParentSpan     bool
+				attributesGetter AttributesGetter
 			}{
 				{
 					name: "default config",
@@ -182,6 +183,10 @@ func TestNewRows(t *testing.T) {
 				{
 					name:         "no parent span",
 					noParentSpan: true,
+				},
+				{
+					name:             "with attribute getter",
+					attributesGetter: getDummyAttributesGetter(),
 				},
 			}
 
@@ -193,6 +198,7 @@ func TestNewRows(t *testing.T) {
 					mr := newMockRows(false)
 					cfg := newMockConfig(t, tracer)
 					cfg.SpanOptions.OmitRows = omitRows
+					cfg.AttributesGetter = tc.attributesGetter
 
 					// New rows
 					rows := newRows(ctx, mr, cfg)
@@ -212,10 +218,11 @@ func TestNewRows(t *testing.T) {
 						parentSpan:         dummySpan,
 						error:              false,
 						expectedAttributes: cfg.Attributes,
-						expectedMethod:     MethodRows,
+						method:             MethodRows,
 						noParentSpan:       tc.noParentSpan,
 						spanNotEnded:       true,
 						omitSpan:           omitRows,
+						attributesGetter:   tc.attributesGetter,
 					})
 
 					assert.Equal(t, mr, rows.Rows)

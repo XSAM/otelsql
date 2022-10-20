@@ -15,6 +15,7 @@ The minimum supported Go version is `1.18`.
 ### Added
 
 - Go 1.19 to supported versions. (#118)
+- `WithAttributesGetter` option provides additional attributes on spans creation. (#125)
 
 ### Changed
 
