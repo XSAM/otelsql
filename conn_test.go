@@ -137,10 +137,11 @@ var (
 
 func TestOtConn_Ping(t *testing.T) {
 	testCases := []struct {
-		name         string
-		error        bool
-		pingOption   bool
-		noParentSpan bool
+		name             string
+		error            bool
+		pingOption       bool
+		noParentSpan     bool
+		attributesGetter AttributesGetter
 	}{
 		{
 			name:       "ping enabled",
@@ -159,6 +160,10 @@ func TestOtConn_Ping(t *testing.T) {
 		{
 			name: "ping disabled",
 		},
+		{
+			name:             "with attribute getter",
+			attributesGetter: getDummyAttributesGetter(),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -169,6 +174,7 @@ func TestOtConn_Ping(t *testing.T) {
 			// New conn
 			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.Ping = tc.pingOption
+			cfg.AttributesGetter = tc.attributesGetter
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -190,9 +196,10 @@ func TestOtConn_Ping(t *testing.T) {
 						parentSpan:         dummySpan,
 						error:              tc.error,
 						expectedAttributes: cfg.Attributes,
-						expectedMethod:     MethodConnPing,
+						method:             MethodConnPing,
 						noParentSpan:       tc.noParentSpan,
 						ctx:                mc.pingCtx,
+						attributesGetter:   tc.attributesGetter,
 					})
 
 					assert.Equal(t, 1, mc.pingCount)
@@ -207,13 +214,17 @@ func TestOtConn_Ping(t *testing.T) {
 }
 
 func TestOtConn_ExecContext(t *testing.T) {
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
+	query := "query"
+	args := []driver.NamedValue{{Value: "foo"}}
+	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
+
 	testCases := []struct {
-		name         string
-		error        bool
-		noParentSpan bool
-		disableQuery bool
-		attrs        []attribute.KeyValue
+		name             string
+		error            bool
+		noParentSpan     bool
+		disableQuery     bool
+		attrs            []attribute.KeyValue
+		attributesGetter AttributesGetter
 	}{
 		{
 			name:  "no error",
@@ -233,6 +244,11 @@ func TestOtConn_ExecContext(t *testing.T) {
 			noParentSpan: true,
 			attrs:        expectedAttrs,
 		},
+		{
+			name:             "with attribute getter",
+			attributesGetter: getDummyAttributesGetter(),
+			attrs:            expectedAttrs,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -243,10 +259,11 @@ func TestOtConn_ExecContext(t *testing.T) {
 			// New conn
 			cfg := newMockConfig(t, tracer)
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
+			cfg.AttributesGetter = tc.attributesGetter
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
-			_, err := otelConn.ExecContext(ctx, "query", nil)
+			_, err := otelConn.ExecContext(ctx, query, args)
 			if tc.error {
 				require.Error(t, err)
 			} else {
@@ -262,9 +279,12 @@ func TestOtConn_ExecContext(t *testing.T) {
 				parentSpan:         dummySpan,
 				error:              tc.error,
 				expectedAttributes: append(cfg.Attributes, tc.attrs...),
-				expectedMethod:     MethodConnExec,
+				method:             MethodConnExec,
 				noParentSpan:       tc.noParentSpan,
 				ctx:                mc.execContextCtx,
+				attributesGetter:   tc.attributesGetter,
+				query:              query,
+				args:               args,
 			})
 
 			assert.Equal(t, 1, mc.execContextCount)
@@ -274,7 +294,9 @@ func TestOtConn_ExecContext(t *testing.T) {
 }
 
 func TestOtConn_QueryContext(t *testing.T) {
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
+	query := "query"
+	args := []driver.NamedValue{{Value: "foo"}}
+	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
 
 	for _, omitConnQuery := range []bool{true, false} {
 		var testname string
@@ -284,11 +306,12 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			testCases := []struct {
-				name         string
-				error        bool
-				noParentSpan bool
-				disableQuery bool
-				attrs        []attribute.KeyValue
+				name             string
+				error            bool
+				noParentSpan     bool
+				disableQuery     bool
+				attrs            []attribute.KeyValue
+				attributesGetter AttributesGetter
 			}{
 				{
 					name:  "no error",
@@ -308,6 +331,11 @@ func TestOtConn_QueryContext(t *testing.T) {
 					noParentSpan: true,
 					attrs:        expectedAttrs,
 				},
+				{
+					name:             "with attribute getter",
+					attributesGetter: getDummyAttributesGetter(),
+					attrs:            expectedAttrs,
+				},
 			}
 
 			for _, tc := range testCases {
@@ -319,10 +347,11 @@ func TestOtConn_QueryContext(t *testing.T) {
 					cfg := newMockConfig(t, tracer)
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
 					cfg.SpanOptions.OmitConnQuery = omitConnQuery
+					cfg.AttributesGetter = tc.attributesGetter
 					mc := newMockConn(tc.error)
 					otelConn := newConn(mc, cfg)
 
-					rows, err := otelConn.QueryContext(ctx, "query", nil)
+					rows, err := otelConn.QueryContext(ctx, query, args)
 					if tc.error {
 						require.Error(t, err)
 					} else {
@@ -338,10 +367,13 @@ func TestOtConn_QueryContext(t *testing.T) {
 						parentSpan:         dummySpan,
 						error:              tc.error,
 						expectedAttributes: append(cfg.Attributes, tc.attrs...),
-						expectedMethod:     MethodConnQuery,
+						method:             MethodConnQuery,
 						noParentSpan:       tc.noParentSpan,
 						ctx:                mc.queryContextCtx,
 						omitSpan:           omitConnQuery,
+						attributesGetter:   tc.attributesGetter,
+						query:              query,
+						args:               args,
 					})
 
 					assert.Equal(t, 1, mc.queryContextCount)
@@ -371,7 +403,8 @@ func TestOtConn_QueryContext(t *testing.T) {
 }
 
 func TestOtConn_PrepareContext(t *testing.T) {
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
+	query := "query"
+	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
 
 	for _, omitConnPrepare := range []bool{true, false} {
 		var testname string
@@ -381,11 +414,12 @@ func TestOtConn_PrepareContext(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			testCases := []struct {
-				name         string
-				error        bool
-				noParentSpan bool
-				disableQuery bool
-				attrs        []attribute.KeyValue
+				name             string
+				error            bool
+				noParentSpan     bool
+				disableQuery     bool
+				attrs            []attribute.KeyValue
+				attributesGetter AttributesGetter
 			}{
 				{
 					name:  "no error",
@@ -405,6 +439,11 @@ func TestOtConn_PrepareContext(t *testing.T) {
 					noParentSpan: true,
 					attrs:        expectedAttrs,
 				},
+				{
+					name:             "with attribute getter",
+					attributesGetter: getDummyAttributesGetter(),
+					attrs:            expectedAttrs,
+				},
 			}
 
 			for _, tc := range testCases {
@@ -416,10 +455,11 @@ func TestOtConn_PrepareContext(t *testing.T) {
 					cfg := newMockConfig(t, tracer)
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
 					cfg.SpanOptions.OmitConnPrepare = omitConnPrepare
+					cfg.AttributesGetter = tc.attributesGetter
 					mc := newMockConn(tc.error)
 					otelConn := newConn(mc, cfg)
 
-					stmt, err := otelConn.PrepareContext(ctx, "query")
+					stmt, err := otelConn.PrepareContext(ctx, query)
 					if tc.error {
 						require.Error(t, err)
 					} else {
@@ -435,10 +475,12 @@ func TestOtConn_PrepareContext(t *testing.T) {
 						parentSpan:         dummySpan,
 						error:              tc.error,
 						expectedAttributes: append(cfg.Attributes, tc.attrs...),
-						expectedMethod:     MethodConnPrepare,
+						method:             MethodConnPrepare,
 						noParentSpan:       tc.noParentSpan,
 						ctx:                mc.prepareContextCtx,
 						omitSpan:           omitConnPrepare,
+						attributesGetter:   tc.attributesGetter,
+						query:              query,
 					})
 
 					assert.Equal(t, 1, mc.prepareContextCount)
@@ -457,9 +499,10 @@ func TestOtConn_PrepareContext(t *testing.T) {
 
 func TestOtConn_BeginTx(t *testing.T) {
 	testCases := []struct {
-		name         string
-		error        bool
-		noParentSpan bool
+		name             string
+		error            bool
+		noParentSpan     bool
+		attributesGetter AttributesGetter
 	}{
 		{
 			name: "no error",
@@ -472,6 +515,10 @@ func TestOtConn_BeginTx(t *testing.T) {
 			name:         "no parent span",
 			noParentSpan: true,
 		},
+		{
+			name:             "with attribute getter",
+			attributesGetter: getDummyAttributesGetter(),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -481,6 +528,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 
 			// New conn
 			cfg := newMockConfig(t, tracer)
+			cfg.AttributesGetter = tc.attributesGetter
 			mc := newMockConn(tc.error)
 			otelConn := newConn(mc, cfg)
 
@@ -500,9 +548,10 @@ func TestOtConn_BeginTx(t *testing.T) {
 				parentSpan:         dummySpan,
 				error:              tc.error,
 				expectedAttributes: cfg.Attributes,
-				expectedMethod:     MethodConnBeginTx,
+				method:             MethodConnBeginTx,
 				noParentSpan:       tc.noParentSpan,
 				ctx:                mc.beginTxCtx,
+				attributesGetter:   tc.attributesGetter,
 			})
 
 			assert.Equal(t, 1, mc.beginTxCount)
@@ -528,9 +577,10 @@ func TestOtConn_ResetSession(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			testCases := []struct {
-				name         string
-				error        bool
-				noParentSpan bool
+				name             string
+				error            bool
+				noParentSpan     bool
+				attributesGetter AttributesGetter
 			}{
 				{
 					name: "no error",
@@ -543,6 +593,10 @@ func TestOtConn_ResetSession(t *testing.T) {
 					name:         "no parent span",
 					noParentSpan: true,
 				},
+				{
+					name:             "with attribute getter",
+					attributesGetter: getDummyAttributesGetter(),
+				},
 			}
 
 			for _, tc := range testCases {
@@ -553,6 +607,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 					// New conn
 					cfg := newMockConfig(t, tracer)
 					cfg.SpanOptions.OmitConnResetSession = omitResetSession
+					cfg.AttributesGetter = tc.attributesGetter
 					mc := newMockConn(tc.error)
 					otelConn := newConn(mc, cfg)
 
@@ -572,10 +627,11 @@ func TestOtConn_ResetSession(t *testing.T) {
 						parentSpan:         dummySpan,
 						error:              tc.error,
 						expectedAttributes: cfg.Attributes,
-						expectedMethod:     MethodConnResetSession,
+						method:             MethodConnResetSession,
 						noParentSpan:       tc.noParentSpan,
 						ctx:                mc.resetSessionCtx,
 						omitSpan:           omitResetSession,
+						attributesGetter:   tc.attributesGetter,
 					})
 
 					assert.Equal(t, 1, mc.resetSessionCount)

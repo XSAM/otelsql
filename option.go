@@ -92,3 +92,11 @@ func WithSQLCommenter(enabled bool) Option {
 		cfg.SQLCommenterEnabled = enabled
 	})
 }
+
+// WithAttributesGetter takes AttributesGetter that will be called on every
+// span creations.
+func WithAttributesGetter(attributesGetter AttributesGetter) Option {
+	return OptionFunc(func(cfg *config) {
+		cfg.AttributesGetter = attributesGetter
+	})
+}

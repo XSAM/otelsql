@@ -21,6 +21,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -67,4 +68,19 @@ func recordMetric(ctx context.Context, instruments *instruments, defaultAttribut
 			attributes...,
 		)
 	}
+}
+
+func createSpan(ctx context.Context, cfg config, method Method, enableDBStatement bool, query string, args []driver.NamedValue) (context.Context, trace.Span) {
+	attrs := cfg.Attributes
+	if enableDBStatement && !cfg.SpanOptions.DisableQuery {
+		attrs = append(attrs, semconv.DBStatementKey.String(query))
+	}
+	if cfg.AttributesGetter != nil {
+		attrs = append(attrs, cfg.AttributesGetter(ctx, method, query, args)...)
+	}
+
+	return cfg.Tracer.Start(ctx, cfg.SpanNameFormatter.Format(ctx, method, query),
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(attrs...),
+	)
 }

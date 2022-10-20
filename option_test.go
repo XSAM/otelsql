@@ -15,6 +15,8 @@
 package otelsql
 
 import (
+	"context"
+	"database/sql/driver"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,6 +28,10 @@ import (
 func TestOptions(t *testing.T) {
 	tracerProvider := sdktrace.NewTracerProvider()
 	meterProvider := metric.NewNoopMeterProvider()
+
+	dummyAttributesGetter := func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+		return []attribute.KeyValue{attribute.String("foo", "bar")}
+	}
 
 	testCases := []struct {
 		name           string
@@ -68,6 +74,11 @@ func TestOptions(t *testing.T) {
 			option:         WithSQLCommenter(true),
 			expectedConfig: config{SQLCommenterEnabled: true},
 		},
+		{
+			name:           "WithAttributesGetter",
+			option:         WithAttributesGetter(dummyAttributesGetter),
+			expectedConfig: config{AttributesGetter: dummyAttributesGetter},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -76,7 +87,11 @@ func TestOptions(t *testing.T) {
 
 			tc.option.Apply(&cfg)
 
-			assert.Equal(t, tc.expectedConfig, cfg)
+			if tc.expectedConfig.AttributesGetter != nil {
+				assert.Equal(t, tc.expectedConfig.AttributesGetter(context.Background(), "", "", nil), cfg.AttributesGetter(context.Background(), "", "", nil))
+			} else {
+				assert.Equal(t, tc.expectedConfig, cfg)
+			}
 		})
 	}
 }

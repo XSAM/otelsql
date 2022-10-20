@@ -16,12 +16,12 @@ package otelsql
 
 import (
 	"context"
+	"database/sql/driver"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	metricglobal "go.opentelemetry.io/otel/metric/global"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -36,9 +36,13 @@ var (
 )
 
 // SpanNameFormatter is an interface that used to format span names.
+// TODO(Sam): change this to function instead of interface
 type SpanNameFormatter interface {
 	Format(ctx context.Context, method Method, query string) string
 }
+
+// AttributesGetter provides additional attributes from span creation
+type AttributesGetter func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue
 
 type config struct {
 	TracerProvider trace.TracerProvider
@@ -67,6 +71,10 @@ type config struct {
 	// later release.
 	SQLCommenterEnabled bool
 	SQLCommenter        *commenter
+
+	// AttributesGetter will be called to produce additional attributes while creating spans.
+	// Default returns nil
+	AttributesGetter AttributesGetter
 }
 
 // SpanOptions holds configuration of tracing span to decide
@@ -145,11 +153,4 @@ func newConfig(options ...Option) config {
 	}
 
 	return cfg
-}
-
-func withDBStatement(cfg config, query string) []attribute.KeyValue {
-	if cfg.SpanOptions.DisableQuery {
-		return cfg.Attributes
-	}
-	return append(cfg.Attributes, semconv.DBStatementKey.String(query))
 }

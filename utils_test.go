@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -149,11 +150,14 @@ type spanAssertionParameter struct {
 	parentSpan         trace.Span
 	error              bool
 	expectedAttributes []attribute.KeyValue
-	expectedMethod     Method
+	method             Method
 	noParentSpan       bool
 	ctx                context.Context
 	spanNotEnded       bool
 	omitSpan           bool
+	attributesGetter   AttributesGetter
+	query              string
+	args               []driver.NamedValue
 }
 
 func assertSpanList(t *testing.T, spanList []sdktrace.ReadOnlySpan, parameter spanAssertionParameter) {
@@ -173,8 +177,14 @@ func assertSpanList(t *testing.T, spanList []sdktrace.ReadOnlySpan, parameter sp
 			assert.False(t, span.EndTime().IsZero())
 		}
 		assert.Equal(t, trace.SpanKindClient, span.SpanKind())
-		assert.Equal(t, parameter.expectedAttributes, span.Attributes())
-		assert.Equal(t, string(parameter.expectedMethod), span.Name())
+
+		expectedAttributes := parameter.expectedAttributes
+		if parameter.attributesGetter != nil {
+			expectedAttributes = append(expectedAttributes, parameter.attributesGetter(context.Background(), parameter.method, parameter.query, parameter.args)...)
+		}
+
+		assert.Equal(t, expectedAttributes, span.Attributes())
+		assert.Equal(t, string(parameter.method), span.Name())
 		if parameter.parentSpan != nil {
 			assert.Equal(t, parameter.parentSpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 			assert.Equal(t, parameter.parentSpan.SpanContext().SpanID(), span.Parent().SpanID())
@@ -215,4 +225,21 @@ func prepareTraces(noParentSpan bool) (context.Context, *tracetest.SpanRecorder,
 		ctx, dummySpan = createDummySpan(context.Background(), tracer)
 	}
 	return ctx, sr, tracer, dummySpan
+}
+
+func getDummyAttributesGetter() AttributesGetter {
+	return func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+		attrs := []attribute.KeyValue{
+			attribute.String("method", string(method)),
+			attribute.String("query", query),
+		}
+
+		for i, a := range args {
+			attrs = append(attrs, attribute.String(
+				fmt.Sprintf("db.args.$%d", i+1),
+				fmt.Sprintf("%v", a.Value)))
+		}
+
+		return attrs
+	}
 }
