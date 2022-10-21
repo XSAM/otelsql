@@ -21,6 +21,9 @@ The minimum supported Go version is `1.18`.
 
 - Upgrade OTel to version `1.10.0`. (#119)
 - Upgrade OTel to version `1.11.0/0.32.3`. (#122)
+- Upgrade OTel to version `1.11.1/0.33.0`. (#126)
+
+  This OTel release contains a feature that the `go.opentelemetry.io/otel/exporters/prometheus` exporter now adds a unit suffix to metric names. This can be disabled using the `WithoutUnits()` option added to that package.
 
 ### Removed
 
