@@ -23,10 +23,9 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
-	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -61,7 +60,13 @@ func initTracer() {
 }
 
 func initMeter() {
-	metricExporter := otelprom.New()
+	// The exporter embeds a default OpenTelemetry Reader and
+	// implements prometheus.Collector, allowing it to be used as
+	// both a Reader and Collector.
+	metricExporter, err := prometheus.New()
+	if err != nil {
+		log.Fatal(err)
+	}
 	meterProvider := metric.NewMeterProvider(
 		metric.WithReader(metricExporter),
 		metric.WithResource(resource.NewWithAttributes(
@@ -71,13 +76,7 @@ func initMeter() {
 	)
 	global.SetMeterProvider(meterProvider)
 
-	registry := prometheus.NewRegistry()
-	err := registry.Register(metricExporter.Collector)
-	if err != nil {
-		fmt.Printf("error registering collector: %v", err)
-		return
-	}
-	http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+	http.Handle("/metrics", promhttp.Handler())
 	go func() {
 		_ = http.ListenAndServe(":2222", nil)
 	}()
