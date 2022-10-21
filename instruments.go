@@ -79,14 +79,14 @@ func newDBStatsInstruments(meter metric.Meter) (*dbStatsInstruments, error) {
 	}
 
 	if instruments.connectionWaitTotal, err = meter.AsyncInt64().Counter(
-		strings.Join([]string{namespace, subsystem, "wait_total"}, "."),
+		strings.Join([]string{namespace, subsystem, "wait"}, "."),
 		instrument.WithDescription("The total number of connections waited for"),
 	); err != nil {
 		return nil, fmt.Errorf("failed to create connectionWaitTotal instrument, %v", err)
 	}
 
 	if instruments.connectionWaitDurationTotal, err = meter.AsyncFloat64().Counter(
-		strings.Join([]string{namespace, subsystem, "wait_duration_total"}, "."),
+		strings.Join([]string{namespace, subsystem, "wait_duration"}, "."),
 		instrument.WithDescription("The total time blocked waiting for a new connection"),
 		instrument.WithUnit(unit.Milliseconds),
 	); err != nil {
@@ -94,21 +94,21 @@ func newDBStatsInstruments(meter metric.Meter) (*dbStatsInstruments, error) {
 	}
 
 	if instruments.connectionClosedMaxIdleTotal, err = meter.AsyncInt64().Counter(
-		strings.Join([]string{namespace, subsystem, "closed_max_idle_total"}, "."),
+		strings.Join([]string{namespace, subsystem, "closed_max_idle"}, "."),
 		instrument.WithDescription("The total number of connections closed due to SetMaxIdleConns"),
 	); err != nil {
 		return nil, fmt.Errorf("failed to create connectionClosedMaxIdleTotal instrument, %v", err)
 	}
 
 	if instruments.connectionClosedMaxIdleTimeTotal, err = meter.AsyncInt64().Counter(
-		strings.Join([]string{namespace, subsystem, "closed_max_idle_time_total"}, "."),
+		strings.Join([]string{namespace, subsystem, "closed_max_idle_time"}, "."),
 		instrument.WithDescription("The total number of connections closed due to SetConnMaxIdleTime"),
 	); err != nil {
 		return nil, fmt.Errorf("failed to create connectionClosedMaxIdleTimeTotal instrument, %v", err)
 	}
 
 	if instruments.connectionClosedMaxLifetimeTotal, err = meter.AsyncInt64().Counter(
-		strings.Join([]string{namespace, subsystem, "closed_max_lifetime_total"}, "."),
+		strings.Join([]string{namespace, subsystem, "closed_max_lifetime"}, "."),
 		instrument.WithDescription("The total number of connections closed due to SetConnMaxLifetime"),
 	); err != nil {
 		return nil, fmt.Errorf("failed to create connectionClosedMaxLifetimeTotal instrument, %v", err)
