@@ -62,7 +62,7 @@ func (c *otConnector) Driver() driver.Driver {
 	return c.otDriver
 }
 
-// dsnConnector is copied from sql.dsnConnector
+// dsnConnector is copied from sql.dsnConnector.
 type dsnConnector struct {
 	dsn    string
 	driver driver.Driver

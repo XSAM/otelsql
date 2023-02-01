@@ -36,12 +36,12 @@ var (
 )
 
 // SpanNameFormatter is an interface that used to format span names.
-// TODO(Sam): change this to function instead of interface
+// TODO(Sam): change this to function instead of interface.
 type SpanNameFormatter interface {
 	Format(ctx context.Context, method Method, query string) string
 }
 
-// AttributesGetter provides additional attributes on spans creation
+// AttributesGetter provides additional attributes on spans creation.
 type AttributesGetter func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue
 
 type config struct {
