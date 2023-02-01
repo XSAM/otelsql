@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"sync"
 
-	"go.opentelemetry.io/otel/metric/instrument"
+	"go.opentelemetry.io/otel/metric"
 )
 
 var registerLock sync.Mutex
@@ -117,65 +117,56 @@ func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) error {
 		return err
 	}
 
-	err = meter.RegisterCallback([]instrument.Asynchronous{
-		instruments.connectionMaxOpen,
+	_, err = meter.RegisterCallback(func(_ context.Context, observer metric.Observer) error {
+		dbStats := db.Stats()
+
+		recordDBStatsMetrics(dbStats, instruments, cfg, observer)
+		return nil
+	}, instruments.connectionMaxOpen,
 		instruments.connectionOpen,
 		instruments.connectionWaitTotal,
 		instruments.connectionWaitDurationTotal,
 		instruments.connectionClosedMaxIdleTotal,
 		instruments.connectionClosedMaxIdleTimeTotal,
-		instruments.connectionClosedMaxLifetimeTotal,
-	}, func(ctx context.Context) {
-		dbStats := db.Stats()
-
-		recordDBStatsMetrics(ctx, dbStats, instruments, cfg)
-	})
+		instruments.connectionClosedMaxLifetimeTotal)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func recordDBStatsMetrics(ctx context.Context, dbStats sql.DBStats, instruments *dbStatsInstruments, cfg config) {
-	instruments.connectionMaxOpen.Observe(
-		ctx,
+func recordDBStatsMetrics(dbStats sql.DBStats, instruments *dbStatsInstruments, cfg config, observer metric.Observer) {
+	observer.ObserveInt64(instruments.connectionMaxOpen,
 		int64(dbStats.MaxOpenConnections),
 		cfg.Attributes...,
 	)
 
-	instruments.connectionOpen.Observe(
-		ctx,
+	observer.ObserveInt64(instruments.connectionOpen,
 		int64(dbStats.InUse),
 		append(cfg.Attributes, connectionStatusKey.String("inuse"))...,
 	)
-	instruments.connectionOpen.Observe(
-		ctx,
+	observer.ObserveInt64(instruments.connectionOpen,
 		int64(dbStats.Idle),
 		append(cfg.Attributes, connectionStatusKey.String("idle"))...,
 	)
 
-	instruments.connectionWaitTotal.Observe(
-		ctx,
+	observer.ObserveInt64(instruments.connectionWaitTotal,
 		dbStats.WaitCount,
 		cfg.Attributes...,
 	)
-	instruments.connectionWaitDurationTotal.Observe(
-		ctx,
+	observer.ObserveFloat64(instruments.connectionWaitDurationTotal,
 		float64(dbStats.WaitDuration.Nanoseconds())/1e6,
 		cfg.Attributes...,
 	)
-	instruments.connectionClosedMaxIdleTotal.Observe(
-		ctx,
+	observer.ObserveInt64(instruments.connectionClosedMaxIdleTotal,
 		dbStats.MaxIdleClosed,
 		cfg.Attributes...,
 	)
-	instruments.connectionClosedMaxIdleTimeTotal.Observe(
-		ctx,
+	observer.ObserveInt64(instruments.connectionClosedMaxIdleTimeTotal,
 		dbStats.MaxIdleTimeClosed,
 		cfg.Attributes...,
 	)
-	instruments.connectionClosedMaxLifetimeTotal.Observe(
-		ctx,
+	observer.ObserveInt64(instruments.connectionClosedMaxLifetimeTotal,
 		dbStats.MaxLifetimeClosed,
 		cfg.Attributes...,
 	)

@@ -22,6 +22,8 @@ go.opentelemetry.io/otel/metric v0.35.0 h1:aPT5jk/w7F9zW51L7WgRqNKDElBdyRLGuBtI5
 go.opentelemetry.io/otel/metric v0.35.0/go.mod h1:qAcbhaTRFU6uG8QM7dDo7XvFsWcugziq/5YI065TokQ=
 go.opentelemetry.io/otel/sdk v1.12.0 h1:8npliVYV7qc0t1FKdpU08eMnOjgPFMnriPhn0HH4q3o=
 go.opentelemetry.io/otel/sdk v1.12.0/go.mod h1:WYcvtgquYvgODEvxOry5owO2y9MyciW7JqMz6cpXShE=
+go.opentelemetry.io/otel/sdk/metric v0.35.0 h1:gryV4W5GzpOhKK48/lZb8ldyWIs3DRugSVlQZmCwELA=
+go.opentelemetry.io/otel/sdk/metric v0.35.0/go.mod h1:eDyp1GxSiwV98kr7w4pzrszQh/eze9MqBqPd2bCPmyE=
 go.opentelemetry.io/otel/trace v1.12.0 h1:p28in++7Kd0r2d8gSt931O57fdjUyWxkVbESuILAeUc=
 go.opentelemetry.io/otel/trace v1.12.0/go.mod h1:pHlgBynn6s25qJ2szD+Bv+iwKJttjHSI3lUAyf0GNuQ=
 golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 h1:h+EGohizhe9XlX18rfpa8k8RAc5XyaeamM+0VHRd4lc=
