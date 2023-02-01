@@ -1,10 +1,23 @@
 # See https://golangci-lint.run/usage/configuration
 linters:
+  # Disable everything by default so upgrades to not include new "default
+  # enabled" linters.
+  disable-all: true
+  # Specifically enable linters we want to use.
   enable:
-    - misspell
-    - goimports
-    - revive
+    - depguard
+    - errcheck
+    - godot
     - gofmt
+    - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - revive
+    - staticcheck
+    - typecheck
+    - unused
 
 issues:
   exclude-rules:
