@@ -86,8 +86,6 @@ func WithMeterProvider(provider metric.MeterProvider) Option {
 //
 // This option defaults to disable.
 //
-// # Experimental
-//
 // Notice: This option is EXPERIMENTAL and may be changed or removed in a
 // later release.
 func WithSQLCommenter(enabled bool) Option {
