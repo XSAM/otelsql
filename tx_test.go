@@ -57,9 +57,10 @@ var defaultattribute = attribute.Key("test").String("foo")
 
 func TestOtTx_Commit(t *testing.T) {
 	testCases := []struct {
-		name         string
-		error        bool
-		noParentSpan bool
+		name             string
+		error            bool
+		noParentSpan     bool
+		attributesGetter AttributesGetter
 	}{
 		{
 			name: "no error",
@@ -72,6 +73,10 @@ func TestOtTx_Commit(t *testing.T) {
 			name:         "no parent span",
 			noParentSpan: true,
 		},
+		{
+			name:             "with attribute getter",
+			attributesGetter: getDummyAttributesGetter(),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -81,6 +86,7 @@ func TestOtTx_Commit(t *testing.T) {
 			mt := newMockTx(tc.error)
 
 			// New tx
+			cfg.AttributesGetter = tc.attributesGetter
 			tx := newTx(ctx, mt, cfg)
 			// Commit
 			err := tx.Commit()
@@ -99,8 +105,9 @@ func TestOtTx_Commit(t *testing.T) {
 				parentSpan:         dummySpan,
 				error:              tc.error,
 				expectedAttributes: cfg.Attributes,
-				expectedMethod:     MethodTxCommit,
+				method:             MethodTxCommit,
 				noParentSpan:       tc.noParentSpan,
+				attributesGetter:   tc.attributesGetter,
 			})
 
 			assert.Equal(t, 1, mt.commitCount)
@@ -110,9 +117,10 @@ func TestOtTx_Commit(t *testing.T) {
 
 func TestOtTx_Rollback(t *testing.T) {
 	testCases := []struct {
-		name         string
-		error        bool
-		noParentSpan bool
+		name             string
+		error            bool
+		noParentSpan     bool
+		attributesGetter AttributesGetter
 	}{
 		{
 			name: "no error",
@@ -125,6 +133,10 @@ func TestOtTx_Rollback(t *testing.T) {
 			name:         "no parent span",
 			noParentSpan: true,
 		},
+		{
+			name:             "with attribute getter",
+			attributesGetter: getDummyAttributesGetter(),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -134,6 +146,7 @@ func TestOtTx_Rollback(t *testing.T) {
 			mt := newMockTx(tc.error)
 
 			// New tx
+			cfg.AttributesGetter = tc.attributesGetter
 			tx := newTx(ctx, mt, cfg)
 
 			// Rollback
@@ -153,8 +166,9 @@ func TestOtTx_Rollback(t *testing.T) {
 				parentSpan:         dummySpan,
 				error:              tc.error,
 				expectedAttributes: cfg.Attributes,
-				expectedMethod:     MethodTxRollback,
+				method:             MethodTxRollback,
 				noParentSpan:       tc.noParentSpan,
+				attributesGetter:   tc.attributesGetter,
 			})
 
 			assert.Equal(t, 1, mt.rollbackCount)

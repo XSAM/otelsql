@@ -8,6 +8,42 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.18.0] - 2023-02-01
+
+### Changed
+
+- Upgrade OTel to version `1.12.0/0.35.0`. (#139)
+- Upgrade all `semconv` packages to use `v1.17.0`. (#141)
+
+## [0.17.1] - 2022-12-13
+
+### Changed
+
+- Upgrade OTel to version `1.11.2/0.34.0`. (#134)
+
+## [0.17.0] - 2022-10-21
+
+### ⚠️ Notice ⚠️
+
+The minimum supported Go version is `1.18`.
+
+### Added
+
+- Go 1.19 to supported versions. (#118)
+- `WithAttributesGetter` option provides additional attributes on spans creation. (#125)
+
+### Changed
+
+- Upgrade OTel to version `1.10.0`. (#119)
+- Upgrade OTel to version `1.11.0/0.32.3`. (#122)
+- Upgrade OTel to version `1.11.1/0.33.0`. (#126)
+
+  This OTel release contains a feature that the `go.opentelemetry.io/otel/exporters/prometheus` exporter now adds a unit suffix to metric names. This can be disabled using the `WithoutUnits()` option added to that package.
+
+### Removed
+
+- Support for Go `1.17`. Support is now only for Go `1.18` and Go `1.19`. (#123)
+
 ## [0.16.0] - 2022-08-25
 
 ### Added
@@ -178,7 +214,10 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 - Example code for a basic usage.
 - Apache-2.0 license.
 
-[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/XSAM/otelsql/releases/tag/v0.18.0
+[0.17.1]: https://github.com/XSAM/otelsql/releases/tag/v0.17.1
+[0.17.0]: https://github.com/XSAM/otelsql/releases/tag/v0.17.0
 [0.16.0]: https://github.com/XSAM/otelsql/releases/tag/v0.16.0
 [0.15.0]: https://github.com/XSAM/otelsql/releases/tag/v0.15.0
 [0.14.1]: https://github.com/XSAM/otelsql/releases/tag/v0.14.1

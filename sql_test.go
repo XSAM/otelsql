@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 )
 
 var driverName string
@@ -143,18 +143,15 @@ func TestRegisterDBStatsMetrics(t *testing.T) {
 	db, err := sql.Open(driverName, "")
 	require.NoError(t, err)
 
-	err = RegisterDBStatsMetrics(db)
+	r := sdkmetric.NewManualReader()
+	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(r))
+
+	err = RegisterDBStatsMetrics(db, WithMeterProvider(mp))
 	assert.NoError(t, err)
-}
 
-func TestRecordDBStatsMetricsNoPanic(t *testing.T) {
-	db, err := sql.Open(driverName, "")
+	// Should collect 7 metrics
+	got, err := r.Collect(context.Background())
 	require.NoError(t, err)
-
-	instruments, err := newDBStatsInstruments(metric.NewNoopMeterProvider().Meter("test"))
-	require.NoError(t, err)
-
-	cfg := newConfig()
-
-	recordDBStatsMetrics(context.Background(), db.Stats(), instruments, cfg)
+	assert.Len(t, got.ScopeMetrics, 1)
+	assert.Len(t, got.ScopeMetrics[0].Metrics, 7)
 }

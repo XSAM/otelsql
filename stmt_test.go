@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
 type mockStmt struct {
@@ -74,13 +74,16 @@ var (
 )
 
 func TestOtStmt_ExecContext(t *testing.T) {
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
+	query := "query"
+	args := []driver.NamedValue{{Value: "foo"}}
+	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
 	testCases := []struct {
-		name         string
-		error        bool
-		noParentSpan bool
-		disableQuery bool
-		attrs        []attribute.KeyValue
+		name             string
+		error            bool
+		noParentSpan     bool
+		disableQuery     bool
+		attrs            []attribute.KeyValue
+		attributesGetter AttributesGetter
 	}{
 		{
 			name:  "no error",
@@ -100,6 +103,11 @@ func TestOtStmt_ExecContext(t *testing.T) {
 			noParentSpan: true,
 			attrs:        expectedAttrs,
 		},
+		{
+			name:             "with attribute getter",
+			attributesGetter: getDummyAttributesGetter(),
+			attrs:            expectedAttrs,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -110,9 +118,10 @@ func TestOtStmt_ExecContext(t *testing.T) {
 
 			// New stmt
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
-			stmt := newStmt(ms, cfg, "query")
+			cfg.AttributesGetter = tc.attributesGetter
+			stmt := newStmt(ms, cfg, query)
 			// Exec
-			_, err := stmt.ExecContext(ctx, []driver.NamedValue{{Name: "test"}})
+			_, err := stmt.ExecContext(ctx, args)
 			if tc.error {
 				require.Error(t, err)
 			} else {
@@ -128,24 +137,30 @@ func TestOtStmt_ExecContext(t *testing.T) {
 				parentSpan:         dummySpan,
 				error:              tc.error,
 				expectedAttributes: append(cfg.Attributes, tc.attrs...),
-				expectedMethod:     MethodStmtExec,
+				method:             MethodStmtExec,
 				noParentSpan:       tc.noParentSpan,
+				attributesGetter:   tc.attributesGetter,
+				query:              query,
+				args:               args,
 			})
 
 			assert.Equal(t, 1, ms.execCount)
-			assert.Equal(t, []driver.NamedValue{{Name: "test"}}, ms.ExecContextArgs)
+			assert.Equal(t, []driver.NamedValue{{Value: "foo"}}, ms.ExecContextArgs)
 		})
 	}
 }
 
 func TestOtStmt_QueryContext(t *testing.T) {
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String("query")}
+	query := "query"
+	args := []driver.NamedValue{{Value: "foo"}}
+	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
 	testCases := []struct {
-		name         string
-		error        bool
-		noParentSpan bool
-		disableQuery bool
-		attrs        []attribute.KeyValue
+		name             string
+		error            bool
+		noParentSpan     bool
+		disableQuery     bool
+		attrs            []attribute.KeyValue
+		attributesGetter AttributesGetter
 	}{
 		{
 			name:  "no error",
@@ -165,6 +180,11 @@ func TestOtStmt_QueryContext(t *testing.T) {
 			noParentSpan: true,
 			attrs:        expectedAttrs,
 		},
+		{
+			name:             "with attribute getter",
+			attributesGetter: getDummyAttributesGetter(),
+			attrs:            expectedAttrs,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -175,9 +195,10 @@ func TestOtStmt_QueryContext(t *testing.T) {
 
 			// New stmt
 			cfg.SpanOptions.DisableQuery = tc.disableQuery
-			stmt := newStmt(ms, cfg, "query")
+			cfg.AttributesGetter = tc.attributesGetter
+			stmt := newStmt(ms, cfg, query)
 			// Query
-			rows, err := stmt.QueryContext(ctx, []driver.NamedValue{{Name: "test"}})
+			rows, err := stmt.QueryContext(ctx, args)
 			if tc.error {
 				require.Error(t, err)
 			} else {
@@ -193,12 +214,15 @@ func TestOtStmt_QueryContext(t *testing.T) {
 				parentSpan:         dummySpan,
 				error:              tc.error,
 				expectedAttributes: append(cfg.Attributes, tc.attrs...),
-				expectedMethod:     MethodStmtQuery,
+				method:             MethodStmtQuery,
 				noParentSpan:       tc.noParentSpan,
+				attributesGetter:   tc.attributesGetter,
+				query:              query,
+				args:               args,
 			})
 
 			assert.Equal(t, 1, ms.queryCount)
-			assert.Equal(t, []driver.NamedValue{{Name: "test"}}, ms.queryContextArgs)
+			assert.Equal(t, []driver.NamedValue{{Value: "foo"}}, ms.queryContextArgs)
 			if !tc.error {
 				assert.IsType(t, &otRows{}, rows)
 			}

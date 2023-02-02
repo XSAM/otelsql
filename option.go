@@ -77,18 +77,27 @@ func WithMeterProvider(provider metric.MeterProvider) Option {
 // by injecting a comment into SQL statements.
 //
 // e.g., a SQL query
-//  SELECT * from FOO
+//
+//	SELECT * from FOO
+//
 // will become
-//  SELECT * from FOO /*traceparent='00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',tracestate='congo%3Dt61rcWkgMzE%2Crojo%3D00f067aa0ba902b7'*/
+//
+//	SELECT * from FOO /*traceparent='00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',tracestate='congo%3Dt61rcWkgMzE%2Crojo%3D00f067aa0ba902b7'*/
 //
 // This option defaults to disable.
-//
-// Experimental
 //
 // Notice: This option is EXPERIMENTAL and may be changed or removed in a
 // later release.
 func WithSQLCommenter(enabled bool) Option {
 	return OptionFunc(func(cfg *config) {
 		cfg.SQLCommenterEnabled = enabled
+	})
+}
+
+// WithAttributesGetter takes AttributesGetter that will be called on every
+// span creations.
+func WithAttributesGetter(attributesGetter AttributesGetter) Option {
+	return OptionFunc(func(cfg *config) {
+		cfg.AttributesGetter = attributesGetter
 	})
 }

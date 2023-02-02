@@ -40,6 +40,8 @@ if err != nil {
 }
 ```
 
+Check [Option](https://pkg.go.dev/github.com/XSAM/otelsql#Option) for more features like adding context propagation to SQL queries when enabling [`WithSQLCommenter`](https://pkg.go.dev/github.com/XSAM/otelsql#WithSQLCommenter).
+
 See [godoc](https://pkg.go.dev/mod/github.com/XSAM/otelsql) and [a docker-compose example](./example/README.md) for details.
 
 ## Trace Instruments
@@ -56,11 +58,11 @@ Use [`SpanOptions`](https://pkg.go.dev/github.com/XSAM/otelsql#SpanOptions) to a
 |                                              |                                                                  |       |                      |            | method           | method name, like `sql.conn.query` |
 | db.sql.connection.max_open                   | Maximum number of open connections to the database               |       | Asynchronous Gauge   | int64      |                  |                                    |
 | db.sql.connection.open                       | The number of established connections both in use and idle       |       | Asynchronous Gauge   | int64      | status           | idle, inuse                        |
-| db.sql.connection.wait_total                 | The total number of connections waited for                       |       | Asynchronous Counter | int64      |                  |                                    |
-| db.sql.connection.wait_duration_total        | The total time blocked waiting for a new connection              | ms    | Asynchronous Counter | float64    |                  |                                    |
-| db.sql.connection.closed_max_idle_total      | The total number of connections closed due to SetMaxIdleConns    |       | Asynchronous Counter | int64      |                  |                                    |
-| db.sql.connection.closed_max_idle_time_total | The total number of connections closed due to SetConnMaxIdleTime |       | Asynchronous Counter | int64      |                  |                                    |
-| db.sql.connection.closed_max_lifetime_total  | The total number of connections closed due to SetConnMaxLifetime |       | Asynchronous Counter | int64      |                  |                                    |
+| db.sql.connection.wait                 | The total number of connections waited for                       |       | Asynchronous Counter | int64      |                  |                                    |
+| db.sql.connection.wait_duration        | The total time blocked waiting for a new connection              | ms    | Asynchronous Counter | float64    |                  |                                    |
+| db.sql.connection.closed_max_idle      | The total number of connections closed due to SetMaxIdleConns    |       | Asynchronous Counter | int64      |                  |                                    |
+| db.sql.connection.closed_max_idle_time | The total number of connections closed due to SetConnMaxIdleTime |       | Asynchronous Counter | int64      |                  |                                    |
+| db.sql.connection.closed_max_lifetime  | The total number of connections closed due to SetConnMaxLifetime |       | Asynchronous Counter | int64      |                  |                                    |
 
 ## Compatibility
 
@@ -68,16 +70,16 @@ This project is tested on the following systems.
 
 | OS      | Go Version | Architecture |
 | ------- | ---------- | ------------ |
+| Ubuntu  | 1.19       | amd64        |
 | Ubuntu  | 1.18       | amd64        |
-| Ubuntu  | 1.17       | amd64        |
+| Ubuntu  | 1.19       | 386          |
 | Ubuntu  | 1.18       | 386          |
-| Ubuntu  | 1.17       | 386          |
+| MacOS   | 1.19       | amd64        |
 | MacOS   | 1.18       | amd64        |
-| MacOS   | 1.17       | amd64        |
+| Windows | 1.19       | amd64        |
 | Windows | 1.18       | amd64        |
-| Windows | 1.17       | amd64        |
+| Windows | 1.19       | 386          |
 | Windows | 1.18       | 386          |
-| Windows | 1.17       | 386          |
 
 While this project should work for other systems, no compatibility guarantees
 are made for those systems currently.

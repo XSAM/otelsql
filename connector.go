@@ -46,10 +46,7 @@ func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err 
 
 	var span trace.Span
 	if !c.cfg.SpanOptions.OmitConnectorConnect {
-		ctx, span = c.cfg.Tracer().Start(ctx, c.cfg.SpanNameFormatter.Format(ctx, method, ""),
-			trace.WithSpanKind(trace.SpanKindClient),
-			trace.WithAttributes(c.cfg.Attributes...),
-		)
+		ctx, span = createSpan(ctx, c.cfg, method, false, "", nil)
 		defer span.End()
 	}
 
@@ -65,7 +62,7 @@ func (c *otConnector) Driver() driver.Driver {
 	return c.otDriver
 }
 
-// dsnConnector is copied from sql.dsnConnector
+// dsnConnector is copied from sql.dsnConnector.
 type dsnConnector struct {
 	dsn    string
 	driver driver.Driver
