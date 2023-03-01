@@ -16,7 +16,9 @@ package otelsql
 
 import (
 	"context"
+	"database/sql"
 	"database/sql/driver"
+	"errors"
 
 	"go.opentelemetry.io/otel/trace"
 )
@@ -49,7 +51,8 @@ func newConn(conn driver.Conn, cfg config) *otConn {
 func (c *otConn) Ping(ctx context.Context) (err error) {
 	pinger, ok := c.Conn.(driver.Pinger)
 	if !ok {
-		return driver.ErrSkip
+		// Driver doesn't implement, nothing to do
+		return nil
 	}
 
 	method := MethodConnPing
@@ -141,11 +144,6 @@ func (c *otConn) QueryContext(ctx context.Context, query string, args []driver.N
 }
 
 func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.Stmt, err error) {
-	preparer, ok := c.Conn.(driver.ConnPrepareContext)
-	if !ok {
-		return nil, driver.ErrSkip
-	}
-
 	method := MethodConnPrepare
 	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
 	defer func() {
@@ -156,22 +154,32 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 	if !c.cfg.SpanOptions.OmitConnPrepare {
 		ctx, span = createSpan(ctx, c.cfg, method, true, query, nil)
 		defer span.End()
+		defer recordSpanErrorDeferred(span, c.cfg.SpanOptions, &err)
 	}
 
-	stmt, err = preparer.PrepareContext(ctx, c.cfg.SQLCommenter.withComment(ctx, query))
-	if err != nil {
-		recordSpanError(span, c.cfg.SpanOptions, err)
-		return nil, err
+	commentedQuery := c.cfg.SQLCommenter.withComment(ctx, query)
+
+	if preparer, ok := c.Conn.(driver.ConnPrepareContext); ok {
+		if stmt, err = preparer.PrepareContext(ctx, commentedQuery); err != nil {
+			return nil, err
+		}
+	} else {
+		if stmt, err = c.Conn.Prepare(commentedQuery); err != nil {
+			return nil, err
+		}
+
+		select {
+		default:
+		case <-ctx.Done():
+			stmt.Close()
+			return nil, ctx.Err()
+		}
 	}
+
 	return newStmt(stmt, c.cfg, query), nil
 }
 
 func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.Tx, err error) {
-	connBeginTx, ok := c.Conn.(driver.ConnBeginTx)
-	if !ok {
-		return nil, driver.ErrSkip
-	}
-
 	method := MethodConnBeginTx
 	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
 	defer func() {
@@ -180,11 +188,38 @@ func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.
 
 	beginTxCtx, span := createSpan(ctx, c.cfg, method, false, "", nil)
 	defer span.End()
+	defer recordSpanErrorDeferred(span, c.cfg.SpanOptions, &err)
 
-	tx, err = connBeginTx.BeginTx(beginTxCtx, opts)
-	if err != nil {
-		recordSpanError(span, c.cfg.SpanOptions, err)
-		return nil, err
+	if connBeginTx, ok := c.Conn.(driver.ConnBeginTx); ok {
+		if tx, err = connBeginTx.BeginTx(beginTxCtx, opts); err != nil {
+			return nil, err
+		}
+	} else {
+		// Code borrowed from ctxutil.go in the go standard library.
+		// Check the transaction level. If the transaction level is non-default
+		// then return an error here as the BeginTx driver value is not supported.
+		if opts.Isolation != driver.IsolationLevel(sql.LevelDefault) {
+			return nil, errors.New("sql: driver does not support non-default isolation level")
+		}
+
+		// If a read-only transaction is requested return an error as the
+		// BeginTx driver value is not supported.
+		if opts.ReadOnly {
+			return nil, errors.New("sql: driver does not support read-only transactions")
+		}
+
+		if tx, err = c.Conn.Begin(); err != nil { //nolint:staticcheck
+			return nil, err
+		}
+
+		if ctx.Done() != nil {
+			select {
+			default:
+			case <-ctx.Done():
+				_ = tx.Rollback()
+				return nil, ctx.Err()
+			}
+		}
 	}
 	return newTx(ctx, tx, c.cfg), nil
 }
@@ -192,7 +227,8 @@ func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.
 func (c *otConn) ResetSession(ctx context.Context) (err error) {
 	sessionResetter, ok := c.Conn.(driver.SessionResetter)
 	if !ok {
-		return driver.ErrSkip
+		// Driver does not implement, there is nothing to do.
+		return nil
 	}
 
 	method := MethodConnResetSession

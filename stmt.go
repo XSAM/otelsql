@@ -44,11 +44,6 @@ func newStmt(stmt driver.Stmt, cfg config, query string) *otStmt {
 }
 
 func (s *otStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (result driver.Result, err error) {
-	execer, ok := s.Stmt.(driver.StmtExecContext)
-	if !ok {
-		return nil, driver.ErrSkip
-	}
-
 	method := MethodStmtExec
 	onDefer := recordMetric(ctx, s.cfg.Instruments, s.cfg.Attributes, method)
 	defer func() {
@@ -58,21 +53,28 @@ func (s *otStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (res
 	var span trace.Span
 	ctx, span = createSpan(ctx, s.cfg, method, true, s.query, args)
 	defer span.End()
+	defer recordSpanErrorDeferred(span, s.cfg.SpanOptions, &err)
 
-	result, err = execer.ExecContext(ctx, args)
-	if err != nil {
-		recordSpanError(span, s.cfg.SpanOptions, err)
+	if execer, ok := s.Stmt.(driver.StmtExecContext); ok {
+		return execer.ExecContext(ctx, args)
+	}
+
+	// StmtExecContext.ExecContext is not permitted to return ErrSkip. fall back to Exec.
+	var dargs []driver.Value
+	if dargs, err = namedValueToValue(args); err != nil {
 		return nil, err
 	}
-	return result, nil
+
+	select {
+	default:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+
+	return s.Stmt.Exec(dargs) //nolint:staticcheck
 }
 
 func (s *otStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (rows driver.Rows, err error) {
-	query, ok := s.Stmt.(driver.StmtQueryContext)
-	if !ok {
-		return nil, driver.ErrSkip
-	}
-
 	method := MethodStmtQuery
 	onDefer := recordMetric(ctx, s.cfg.Instruments, s.cfg.Attributes, method)
 	defer func() {
@@ -81,12 +83,30 @@ func (s *otStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (ro
 
 	queryCtx, span := createSpan(ctx, s.cfg, method, true, s.query, args)
 	defer span.End()
+	defer recordSpanErrorDeferred(span, s.cfg.SpanOptions, &err)
 
-	rows, err = query.QueryContext(queryCtx, args)
-	if err != nil {
-		recordSpanError(span, s.cfg.SpanOptions, err)
-		return nil, err
+	if query, ok := s.Stmt.(driver.StmtQueryContext); ok {
+		if rows, err = query.QueryContext(queryCtx, args); err != nil {
+			return nil, err
+		}
+	} else {
+		// StmtQueryContext.QueryContext is not permitted to return ErrSkip. fall back to Query.
+		var dargs []driver.Value
+		if dargs, err = namedValueToValue(args); err != nil {
+			return nil, err
+		}
+
+		select {
+		default:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+
+		if rows, err = s.Stmt.Query(dargs); err != nil { //nolint:staticcheck
+			return nil, err
+		}
 	}
+
 	return newRows(ctx, rows, s.cfg), nil
 }
 
