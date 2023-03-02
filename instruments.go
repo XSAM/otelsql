@@ -20,7 +20,6 @@ import (
 
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/unit"
 )
 
 const (
@@ -49,7 +48,7 @@ func newInstruments(meter metric.Meter) (*instruments, error) {
 	if instruments.latency, err = meter.Float64Histogram(
 		strings.Join([]string{namespace, "latency"}, "."),
 		instrument.WithDescription("The latency of calls in milliseconds"),
-		instrument.WithUnit(unit.Milliseconds),
+		instrument.WithUnit("ms"),
 	); err != nil {
 		return nil, fmt.Errorf("failed to create latency instrument, %v", err)
 	}
@@ -85,7 +84,7 @@ func newDBStatsInstruments(meter metric.Meter) (*dbStatsInstruments, error) {
 	if instruments.connectionWaitDurationTotal, err = meter.Float64ObservableCounter(
 		strings.Join([]string{namespace, subsystem, "wait_duration"}, "."),
 		instrument.WithDescription("The total time blocked waiting for a new connection"),
-		instrument.WithUnit(unit.Milliseconds),
+		instrument.WithUnit("ms"),
 	); err != nil {
 		return nil, fmt.Errorf("failed to create connectionWaitDurationTotal instrument, %v", err)
 	}
