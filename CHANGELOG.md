@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Avoid returning `ErrSkip` when not permitted by sql/driver (#153)
+
 ## [0.20.0] - 2023-03-02
 
 ### Changed
