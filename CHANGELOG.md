@@ -11,7 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - Avoid returning `ErrSkip` when not permitted by sql/driver (#153)
-- Upgrade all `semconv` packages to use `v1.18.0`. (TBA)
+- Upgrade all `semconv` packages to use `v1.18.0`. (#156)
 
 ## [0.20.0] - 2023-03-02
 
