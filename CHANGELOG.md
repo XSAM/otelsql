@@ -8,9 +8,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.21.0] - 2023-04-16
+
+### ⚠️ Notice ⚠️
+
+This update contains a breaking change of correcting the behavior of returning `driver.ErrSkip` when not permitted by `sql/driver`.
+
+- If your driver uses the old `sql/driver` interfaces, which does not use the `Context` as a parameter, this update may let your driver work with this library.
+- If your driver uses the new `sql/driver` interfaces, which use the `Context` as a parameter, this update should not affect your code.
+
 ### Changed
 
-- Avoid returning `ErrSkip` when not permitted by sql/driver (#153)
+- Avoid returning `driver.ErrSkip` when not permitted by `sql/driver`. (#153)
 - Upgrade all `semconv` packages to use `v1.18.0`. (#156)
 
 ## [0.20.0] - 2023-03-02
@@ -235,7 +244,8 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 - Example code for a basic usage.
 - Apache-2.0 license.
 
-[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.20.0...HEAD
+[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.21.0...HEAD
+[0.21.0]: https://github.com/XSAM/otelsql/releases/tag/v0.21.0
 [0.20.0]: https://github.com/XSAM/otelsql/releases/tag/v0.20.0
 [0.19.0]: https://github.com/XSAM/otelsql/releases/tag/v0.19.0
 [0.18.0]: https://github.com/XSAM/otelsql/releases/tag/v0.18.0
