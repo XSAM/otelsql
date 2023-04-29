@@ -21,13 +21,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 func TestOptions(t *testing.T) {
 	tracerProvider := sdktrace.NewTracerProvider()
-	meterProvider := metric.NewNoopMeterProvider()
+	meterProvider := noop.NewMeterProvider()
 
 	dummyAttributesGetter := func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
 		return []attribute.KeyValue{attribute.String("foo", "bar")}

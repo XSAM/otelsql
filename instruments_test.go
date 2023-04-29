@@ -19,11 +19,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 )
 
 func TestNewInstruments(t *testing.T) {
-	instruments, err := newInstruments(metric.NewNoopMeterProvider().Meter("test"))
+	instruments, err := newInstruments(noop.NewMeterProvider().Meter("test"))
 	require.NoError(t, err)
 
 	assert.NotNil(t, instruments)
@@ -31,7 +31,7 @@ func TestNewInstruments(t *testing.T) {
 }
 
 func TestNewDBStatsInstruments(t *testing.T) {
-	instruments, err := newDBStatsInstruments(metric.NewNoopMeterProvider().Meter("test"))
+	instruments, err := newDBStatsInstruments(noop.NewMeterProvider().Meter("test"))
 	require.NoError(t, err)
 
 	assert.NotNil(t, instruments)

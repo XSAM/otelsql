@@ -121,7 +121,7 @@ type SpanOptions struct {
 
 type defaultSpanNameFormatter struct{}
 
-func (f *defaultSpanNameFormatter) Format(ctx context.Context, method Method, query string) string {
+func (f *defaultSpanNameFormatter) Format(_ context.Context, method Method, _ string) string {
 	return string(method)
 }
 
