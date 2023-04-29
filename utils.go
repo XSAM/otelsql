@@ -22,6 +22,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -70,7 +71,7 @@ func recordMetric(ctx context.Context, instruments *instruments, defaultAttribut
 		instruments.latency.Record(
 			ctx,
 			duration,
-			attributes...,
+			metric.WithAttributes(attributes...),
 		)
 	}
 }

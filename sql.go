@@ -138,36 +138,36 @@ func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) error {
 func recordDBStatsMetrics(dbStats sql.DBStats, instruments *dbStatsInstruments, cfg config, observer metric.Observer) {
 	observer.ObserveInt64(instruments.connectionMaxOpen,
 		int64(dbStats.MaxOpenConnections),
-		cfg.Attributes...,
+		metric.WithAttributes(cfg.Attributes...),
 	)
 
 	observer.ObserveInt64(instruments.connectionOpen,
 		int64(dbStats.InUse),
-		append(cfg.Attributes, connectionStatusKey.String("inuse"))...,
+		metric.WithAttributes(append(cfg.Attributes, connectionStatusKey.String("inuse"))...),
 	)
 	observer.ObserveInt64(instruments.connectionOpen,
 		int64(dbStats.Idle),
-		append(cfg.Attributes, connectionStatusKey.String("idle"))...,
+		metric.WithAttributes(append(cfg.Attributes, connectionStatusKey.String("idle"))...),
 	)
 
 	observer.ObserveInt64(instruments.connectionWaitTotal,
 		dbStats.WaitCount,
-		cfg.Attributes...,
+		metric.WithAttributes(cfg.Attributes...),
 	)
 	observer.ObserveFloat64(instruments.connectionWaitDurationTotal,
 		float64(dbStats.WaitDuration.Nanoseconds())/1e6,
-		cfg.Attributes...,
+		metric.WithAttributes(cfg.Attributes...),
 	)
 	observer.ObserveInt64(instruments.connectionClosedMaxIdleTotal,
 		dbStats.MaxIdleClosed,
-		cfg.Attributes...,
+		metric.WithAttributes(cfg.Attributes...),
 	)
 	observer.ObserveInt64(instruments.connectionClosedMaxIdleTimeTotal,
 		dbStats.MaxIdleTimeClosed,
-		cfg.Attributes...,
+		metric.WithAttributes(cfg.Attributes...),
 	)
 	observer.ObserveInt64(instruments.connectionClosedMaxLifetimeTotal,
 		dbStats.MaxLifetimeClosed,
-		cfg.Attributes...,
+		metric.WithAttributes(cfg.Attributes...),
 	)
 }
