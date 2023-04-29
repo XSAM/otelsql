@@ -98,7 +98,7 @@ func (m *mockConn) ResetSession(ctx context.Context) error {
 	return nil
 }
 
-func (m *mockConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
+func (m *mockConn) BeginTx(ctx context.Context, _ driver.TxOptions) (driver.Tx, error) {
 	m.beginTxCount++
 	m.beginTxCtx = ctx
 	if m.shouldError {
@@ -117,7 +117,7 @@ func (m *mockConn) PrepareContext(ctx context.Context, query string) (driver.Stm
 	return newMockStmt(false), nil
 }
 
-func (m *mockConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+func (m *mockConn) QueryContext(ctx context.Context, query string, _ []driver.NamedValue) (driver.Rows, error) {
 	m.queryContextCount++
 	m.queryContextCtx = ctx
 	m.queryContextQuery = query
@@ -127,7 +127,7 @@ func (m *mockConn) QueryContext(ctx context.Context, query string, args []driver
 	return newMockRows(false), nil
 }
 
-func (m *mockConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+func (m *mockConn) ExecContext(ctx context.Context, query string, _ []driver.NamedValue) (driver.Result, error) {
 	m.execContextCount++
 	m.execContextCtx = ctx
 	m.execContextQuery = query
@@ -146,7 +146,7 @@ func (m *mockConn) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (m *mockConn) Prepare(query string) (driver.Stmt, error) {
+func (m *mockConn) Prepare(_ string) (driver.Stmt, error) {
 	return newMockStmt(false), nil
 }
 
