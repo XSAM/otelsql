@@ -154,52 +154,66 @@ func TestOtStmt_ExecContext(t *testing.T) {
 		}
 
 		t.Run(testname, func(t *testing.T) {
-			for _, tc := range testCases {
-				t.Run(tc.name, func(t *testing.T) {
-					// Prepare traces
-					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
+				testname := "spanFilterOmit"
+				if spanFilterFn == nil {
+					testname = "spanFilterNil"
+				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
+					testname = "spanFilterKeep"
+				}
 
-					var ms MockStmt
-					if legacy {
-						ms = newMockLegacyStmt(tc.error)
-					} else {
-						ms = newMockStmt(tc.error)
-					}
+				t.Run(testname, func(t *testing.T) {
+					for _, tc := range testCases {
+						t.Run(tc.name, func(t *testing.T) {
+							// Prepare traces
+							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-					// New stmt
-					cfg := newMockConfig(t, tracer)
-					cfg.SpanOptions.DisableQuery = tc.disableQuery
-					cfg.AttributesGetter = tc.attributesGetter
-					stmt := newStmt(ms, cfg, query)
-					// Exec
-					_, err := stmt.ExecContext(ctx, args)
-					if tc.error {
-						require.Error(t, err)
-					} else {
-						require.NoError(t, err)
-					}
+							var ms MockStmt
+							if legacy {
+								ms = newMockLegacyStmt(tc.error)
+							} else {
+								ms = newMockStmt(tc.error)
+							}
 
-					spanList := sr.Ended()
-					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
-					// One dummy span and a span created in tx
-					require.Equal(t, expectedSpanCount, len(spanList))
+							// New stmt
+							cfg := newMockConfig(t, tracer)
+							cfg.SpanOptions.DisableQuery = tc.disableQuery
+							cfg.SpanOptions.SpanFilter = spanFilterFn
+							cfg.AttributesGetter = tc.attributesGetter
+							stmt := newStmt(ms, cfg, query)
+							// Exec
+							_, err := stmt.ExecContext(ctx, args)
+							if tc.error {
+								require.Error(t, err)
+							} else {
+								require.NoError(t, err)
+							}
 
-					assertSpanList(t, spanList, spanAssertionParameter{
-						parentSpan:         dummySpan,
-						error:              tc.error,
-						expectedAttributes: append(cfg.Attributes, tc.attrs...),
-						method:             MethodStmtExec,
-						noParentSpan:       tc.noParentSpan,
-						attributesGetter:   tc.attributesGetter,
-						query:              query,
-						args:               args,
-					})
+							spanList := sr.Ended()
+							omit := !filterSpan(ctx, cfg.SpanOptions, MethodStmtExec, query, args)
+							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
+							// One dummy span and a span created in tx
+							require.Equal(t, expectedSpanCount, len(spanList))
 
-					assert.Equal(t, 1, ms.ExecContextCount())
-					if ms.ExecContextArgs() != nil {
-						assert.Equal(t, []driver.NamedValue{{Value: "foo"}}, ms.ExecContextArgs())
-					} else {
-						assert.Equal(t, []driver.Value{"foo"}, ms.ExecArgs())
+							assertSpanList(t, spanList, spanAssertionParameter{
+								parentSpan:         dummySpan,
+								error:              tc.error,
+								expectedAttributes: append(cfg.Attributes, tc.attrs...),
+								method:             MethodStmtExec,
+								noParentSpan:       tc.noParentSpan,
+								attributesGetter:   tc.attributesGetter,
+								omitSpan:           omit,
+								query:              query,
+								args:               args,
+							})
+
+							assert.Equal(t, 1, ms.ExecContextCount())
+							if ms.ExecContextArgs() != nil {
+								assert.Equal(t, []driver.NamedValue{{Value: "foo"}}, ms.ExecContextArgs())
+							} else {
+								assert.Equal(t, []driver.Value{"foo"}, ms.ExecArgs())
+							}
+						})
 					}
 				})
 			}
@@ -251,55 +265,69 @@ func TestOtStmt_QueryContext(t *testing.T) {
 		}
 
 		t.Run(testname, func(t *testing.T) {
-			for _, tc := range testCases {
-				t.Run(tc.name, func(t *testing.T) {
-					// Prepare traces
-					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
+				testname := "spanFilterOmit"
+				if spanFilterFn == nil {
+					testname = "spanFilterNil"
+				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
+					testname = "spanFilterKeep"
+				}
 
-					var ms MockStmt
-					if legacy {
-						ms = newMockLegacyStmt(tc.error)
-					} else {
-						ms = newMockStmt(tc.error)
-					}
+				t.Run(testname, func(t *testing.T) {
+					for _, tc := range testCases {
+						t.Run(tc.name, func(t *testing.T) {
+							// Prepare traces
+							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-					// New stmt
-					cfg := newMockConfig(t, tracer)
-					cfg.SpanOptions.DisableQuery = tc.disableQuery
-					cfg.AttributesGetter = tc.attributesGetter
-					stmt := newStmt(ms, cfg, query)
-					// Query
-					rows, err := stmt.QueryContext(ctx, args)
-					if tc.error {
-						require.Error(t, err)
-					} else {
-						require.NoError(t, err)
-					}
+							var ms MockStmt
+							if legacy {
+								ms = newMockLegacyStmt(tc.error)
+							} else {
+								ms = newMockStmt(tc.error)
+							}
 
-					spanList := sr.Ended()
-					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
-					// One dummy span and a span created in tx
-					require.Equal(t, expectedSpanCount, len(spanList))
+							// New stmt
+							cfg := newMockConfig(t, tracer)
+							cfg.SpanOptions.DisableQuery = tc.disableQuery
+							cfg.SpanOptions.SpanFilter = spanFilterFn
+							cfg.AttributesGetter = tc.attributesGetter
+							stmt := newStmt(ms, cfg, query)
+							// Query
+							rows, err := stmt.QueryContext(ctx, args)
+							if tc.error {
+								require.Error(t, err)
+							} else {
+								require.NoError(t, err)
+							}
 
-					assertSpanList(t, spanList, spanAssertionParameter{
-						parentSpan:         dummySpan,
-						error:              tc.error,
-						expectedAttributes: append(cfg.Attributes, tc.attrs...),
-						method:             MethodStmtQuery,
-						noParentSpan:       tc.noParentSpan,
-						attributesGetter:   tc.attributesGetter,
-						query:              query,
-						args:               args,
-					})
+							spanList := sr.Ended()
+							omit := !filterSpan(ctx, cfg.SpanOptions, MethodStmtQuery, query, args)
+							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
+							// One dummy span and a span created in tx
+							require.Equal(t, expectedSpanCount, len(spanList))
 
-					assert.Equal(t, 1, ms.QueryContextCount())
-					if ms.QueryContextArgs() != nil {
-						assert.Equal(t, []driver.NamedValue{{Value: "foo"}}, ms.QueryContextArgs())
-					} else {
-						assert.Equal(t, []driver.Value{"foo"}, ms.QueryArgs())
-					}
-					if !tc.error {
-						assert.IsType(t, &otRows{}, rows)
+							assertSpanList(t, spanList, spanAssertionParameter{
+								parentSpan:         dummySpan,
+								error:              tc.error,
+								expectedAttributes: append(cfg.Attributes, tc.attrs...),
+								method:             MethodStmtQuery,
+								noParentSpan:       tc.noParentSpan,
+								attributesGetter:   tc.attributesGetter,
+								omitSpan:           omit,
+								query:              query,
+								args:               args,
+							})
+
+							assert.Equal(t, 1, ms.QueryContextCount())
+							if ms.QueryContextArgs() != nil {
+								assert.Equal(t, []driver.NamedValue{{Value: "foo"}}, ms.QueryContextArgs())
+							} else {
+								assert.Equal(t, []driver.Value{"foo"}, ms.QueryArgs())
+							}
+							if !tc.error {
+								assert.IsType(t, &otRows{}, rows)
+							}
+						})
 					}
 				})
 			}

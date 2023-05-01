@@ -135,7 +135,9 @@ func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) error {
 	return nil
 }
 
-func recordDBStatsMetrics(dbStats sql.DBStats, instruments *dbStatsInstruments, cfg config, observer metric.Observer) {
+func recordDBStatsMetrics(
+	dbStats sql.DBStats, instruments *dbStatsInstruments, cfg config, observer metric.Observer,
+) {
 	observer.ObserveInt64(instruments.connectionMaxOpen,
 		int64(dbStats.MaxOpenConnections),
 		metric.WithAttributes(cfg.Attributes...),

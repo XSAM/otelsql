@@ -43,6 +43,8 @@ type SpanNameFormatter interface {
 // AttributesGetter provides additional attributes on spans creation.
 type AttributesGetter func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue
 
+type SpanFilter func(ctx context.Context, method Method, query string, args []driver.NamedValue) bool
+
 type config struct {
 	TracerProvider trace.TracerProvider
 	Tracer         trace.Tracer
@@ -116,6 +118,10 @@ type SpanOptions struct {
 
 	// OmitConnectorConnect if set to true will suppress sql.connector.connect spans
 	OmitConnectorConnect bool
+
+	// SpanFilter, if set, will be invoked before each call to create a span. If it returns
+	// false, the span will not be created.
+	SpanFilter SpanFilter
 }
 
 type defaultSpanNameFormatter struct{}

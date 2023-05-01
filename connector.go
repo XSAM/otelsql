@@ -45,7 +45,7 @@ func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err 
 	}()
 
 	var span trace.Span
-	if !c.cfg.SpanOptions.OmitConnectorConnect {
+	if !c.cfg.SpanOptions.OmitConnectorConnect && filterSpan(ctx, c.cfg.SpanOptions, method, "", nil) {
 		ctx, span = createSpan(ctx, c.cfg, method, false, "", nil)
 		defer span.End()
 	}

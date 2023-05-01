@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- `SpanFilter` configuration in `SpanOptions` to filter spans creation. (#174)
+
 ## [0.23.0] - 2023-05-22
 
 ### Changed

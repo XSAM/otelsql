@@ -45,8 +45,10 @@ func (t *otTx) Commit() (err error) {
 	}()
 
 	var span trace.Span
-	_, span = createSpan(t.ctx, t.cfg, method, false, "", nil)
-	defer span.End()
+	if filterSpan(t.ctx, t.cfg.SpanOptions, method, "", nil) {
+		_, span = createSpan(t.ctx, t.cfg, method, false, "", nil)
+		defer span.End()
+	}
 
 	err = t.tx.Commit()
 	if err != nil {
@@ -64,8 +66,10 @@ func (t *otTx) Rollback() (err error) {
 	}()
 
 	var span trace.Span
-	_, span = createSpan(t.ctx, t.cfg, method, false, "", nil)
-	defer span.End()
+	if filterSpan(t.ctx, t.cfg.SpanOptions, method, "", nil) {
+		_, span = createSpan(t.ctx, t.cfg, method, false, "", nil)
+		defer span.End()
+	}
 
 	err = t.tx.Rollback()
 	if err != nil {

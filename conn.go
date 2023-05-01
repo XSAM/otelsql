@@ -62,14 +62,16 @@ func (c *otConn) Ping(ctx context.Context) (err error) {
 	}()
 
 	if c.cfg.SpanOptions.Ping {
-		var span trace.Span
-		ctx, span = createSpan(ctx, c.cfg, method, false, "", nil)
-		defer func() {
-			if err != nil {
-				recordSpanError(span, c.cfg.SpanOptions, err)
-			}
-			span.End()
-		}()
+		if filterSpan(ctx, c.cfg.SpanOptions, method, "", nil) {
+			var span trace.Span
+			ctx, span = createSpan(ctx, c.cfg, method, false, "", nil)
+			defer func() {
+				if err != nil {
+					recordSpanError(span, c.cfg.SpanOptions, err)
+				}
+				span.End()
+			}()
+		}
 	}
 
 	err = pinger.Ping(ctx)
@@ -84,7 +86,9 @@ func (c *otConn) Exec(query string, args []driver.Value) (driver.Result, error) 
 	return execer.Exec(query, args)
 }
 
-func (c *otConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (res driver.Result, err error) {
+func (c *otConn) ExecContext(
+	ctx context.Context, query string, args []driver.NamedValue,
+) (res driver.Result, err error) {
 	execer, ok := c.Conn.(driver.ExecerContext)
 	if !ok {
 		return nil, driver.ErrSkip
@@ -97,8 +101,10 @@ func (c *otConn) ExecContext(ctx context.Context, query string, args []driver.Na
 	}()
 
 	var span trace.Span
-	ctx, span = createSpan(ctx, c.cfg, method, true, query, args)
-	defer span.End()
+	if filterSpan(ctx, c.cfg.SpanOptions, method, query, args) {
+		ctx, span = createSpan(ctx, c.cfg, method, true, query, args)
+		defer span.End()
+	}
 
 	res, err = execer.ExecContext(ctx, c.cfg.SQLCommenter.withComment(ctx, query), args)
 	if err != nil {
@@ -116,7 +122,9 @@ func (c *otConn) Query(query string, args []driver.Value) (driver.Rows, error) {
 	return queryer.Query(query, args)
 }
 
-func (c *otConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (rows driver.Rows, err error) {
+func (c *otConn) QueryContext(
+	ctx context.Context, query string, args []driver.NamedValue,
+) (rows driver.Rows, err error) {
 	queryer, ok := c.Conn.(driver.QueryerContext)
 	if !ok {
 		return nil, driver.ErrSkip
@@ -130,7 +138,7 @@ func (c *otConn) QueryContext(ctx context.Context, query string, args []driver.N
 
 	var span trace.Span
 	queryCtx := ctx
-	if !c.cfg.SpanOptions.OmitConnQuery {
+	if !c.cfg.SpanOptions.OmitConnQuery && filterSpan(ctx, c.cfg.SpanOptions, method, query, args) {
 		queryCtx, span = createSpan(ctx, c.cfg, method, true, query, args)
 		defer span.End()
 	}
@@ -151,7 +159,7 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 	}()
 
 	var span trace.Span
-	if !c.cfg.SpanOptions.OmitConnPrepare {
+	if !c.cfg.SpanOptions.OmitConnPrepare && filterSpan(ctx, c.cfg.SpanOptions, method, query, nil) {
 		ctx, span = createSpan(ctx, c.cfg, method, true, query, nil)
 		defer span.End()
 		defer recordSpanErrorDeferred(span, c.cfg.SpanOptions, &err)
@@ -186,9 +194,15 @@ func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.
 		onDefer(err)
 	}()
 
-	beginTxCtx, span := createSpan(ctx, c.cfg, method, false, "", nil)
-	defer span.End()
-	defer recordSpanErrorDeferred(span, c.cfg.SpanOptions, &err)
+	var beginTxCtx context.Context
+	if filterSpan(ctx, c.cfg.SpanOptions, method, "", nil) {
+		var span trace.Span
+		beginTxCtx, span = createSpan(ctx, c.cfg, method, false, "", nil)
+		defer span.End()
+		defer recordSpanErrorDeferred(span, c.cfg.SpanOptions, &err)
+	} else {
+		beginTxCtx = ctx
+	}
 
 	if connBeginTx, ok := c.Conn.(driver.ConnBeginTx); ok {
 		if tx, err = connBeginTx.BeginTx(beginTxCtx, opts); err != nil {
@@ -238,7 +252,7 @@ func (c *otConn) ResetSession(ctx context.Context) (err error) {
 	}()
 
 	var span trace.Span
-	if !c.cfg.SpanOptions.OmitConnResetSession {
+	if !c.cfg.SpanOptions.OmitConnResetSession && filterSpan(ctx, c.cfg.SpanOptions, method, "", nil) {
 		ctx, span = createSpan(ctx, c.cfg, method, false, "", nil)
 		defer span.End()
 	}

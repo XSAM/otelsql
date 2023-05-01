@@ -160,7 +160,9 @@ type spanAssertionParameter struct {
 	args               []driver.NamedValue
 }
 
-func assertSpanList(t *testing.T, spanList []sdktrace.ReadOnlySpan, parameter spanAssertionParameter) {
+func assertSpanList(
+	t *testing.T, spanList []sdktrace.ReadOnlySpan, parameter spanAssertionParameter,
+) {
 	var span sdktrace.ReadOnlySpan
 	if !parameter.omitSpan {
 		if !parameter.noParentSpan {
@@ -215,7 +217,9 @@ func getExpectedSpanCount(noParentSpan bool, omitSpan bool) int {
 	return 0
 }
 
-func prepareTraces(noParentSpan bool) (context.Context, *tracetest.SpanRecorder, trace.Tracer, trace.Span) {
+func prepareTraces(
+	noParentSpan bool,
+) (context.Context, *tracetest.SpanRecorder, trace.Tracer, trace.Span) {
 	sr, provider := newTracerProvider()
 	tracer := provider.Tracer("test")
 
@@ -242,4 +246,14 @@ func getDummyAttributesGetter() AttributesGetter {
 
 		return attrs
 	}
+}
+
+// omit is a dummy SpanFilter function which specifies to omit the span.
+var omit SpanFilter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) bool {
+	return false
+}
+
+// keep is a dummy SpanFilter function which specifies to keep the span.
+var keep SpanFilter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) bool {
+	return true
 }
