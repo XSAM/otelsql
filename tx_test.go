@@ -79,39 +79,53 @@ func TestOtTx_Commit(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
-			mt := newMockTx(tc.error)
+	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
+		testname := "spanFilterOmit"
+		if spanFilterFn == nil {
+			testname = "spanFilterNil"
+		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
+			testname = "spanFilterKeep"
+		}
 
-			// New tx
-			cfg := newMockConfig(t, tracer)
-			cfg.AttributesGetter = tc.attributesGetter
-			tx := newTx(ctx, mt, cfg)
-			// Commit
-			err := tx.Commit()
-			if tc.error {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
+		t.Run(testname, func(t *testing.T) {
+			for _, tc := range testCases {
+				t.Run(tc.name, func(t *testing.T) {
+					// Prepare traces
+					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+					mt := newMockTx(tc.error)
+
+					// New tx
+					cfg := newMockConfig(t, tracer)
+					cfg.SpanOptions.SpanFilter = spanFilterFn
+					cfg.AttributesGetter = tc.attributesGetter
+					tx := newTx(ctx, mt, cfg)
+					// Commit
+					err := tx.Commit()
+					if tc.error {
+						require.Error(t, err)
+					} else {
+						require.NoError(t, err)
+					}
+
+					spanList := sr.Ended()
+					omit := !filterSpan(ctx, cfg.SpanOptions, MethodTxCommit, "", []driver.NamedValue{})
+					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
+					// One dummy span and one span created in tx
+					require.Equal(t, expectedSpanCount, len(spanList))
+
+					assertSpanList(t, spanList, spanAssertionParameter{
+						parentSpan:         dummySpan,
+						error:              tc.error,
+						expectedAttributes: cfg.Attributes,
+						method:             MethodTxCommit,
+						noParentSpan:       tc.noParentSpan,
+						attributesGetter:   tc.attributesGetter,
+						omitSpan:           omit,
+					})
+
+					assert.Equal(t, 1, mt.commitCount)
+				})
 			}
-
-			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
-			// One dummy span and one span created in tx
-			require.Equal(t, expectedSpanCount, len(spanList))
-
-			assertSpanList(t, spanList, spanAssertionParameter{
-				parentSpan:         dummySpan,
-				error:              tc.error,
-				expectedAttributes: cfg.Attributes,
-				method:             MethodTxCommit,
-				noParentSpan:       tc.noParentSpan,
-				attributesGetter:   tc.attributesGetter,
-			})
-
-			assert.Equal(t, 1, mt.commitCount)
 		})
 	}
 }
@@ -140,40 +154,54 @@ func TestOtTx_Rollback(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Prepare traces
-			ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
-			mt := newMockTx(tc.error)
+	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
+		testname := "spanFilterOmit"
+		if spanFilterFn == nil {
+			testname = "spanFilterNil"
+		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
+			testname = "spanFilterKeep"
+		}
 
-			// New tx
-			cfg := newMockConfig(t, tracer)
-			cfg.AttributesGetter = tc.attributesGetter
-			tx := newTx(ctx, mt, cfg)
+		t.Run(testname, func(t *testing.T) {
+			for _, tc := range testCases {
+				t.Run(tc.name, func(t *testing.T) {
+					// Prepare traces
+					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+					mt := newMockTx(tc.error)
 
-			// Rollback
-			err := tx.Rollback()
-			if tc.error {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
+					// New tx
+					cfg := newMockConfig(t, tracer)
+					cfg.SpanOptions.SpanFilter = spanFilterFn
+					cfg.AttributesGetter = tc.attributesGetter
+					tx := newTx(ctx, mt, cfg)
+
+					// Rollback
+					err := tx.Rollback()
+					if tc.error {
+						require.Error(t, err)
+					} else {
+						require.NoError(t, err)
+					}
+
+					spanList := sr.Ended()
+					omit := !filterSpan(ctx, cfg.SpanOptions, MethodTxRollback, "", []driver.NamedValue{})
+					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
+					// One dummy span and a span created in tx
+					require.Equal(t, expectedSpanCount, len(spanList))
+
+					assertSpanList(t, spanList, spanAssertionParameter{
+						parentSpan:         dummySpan,
+						error:              tc.error,
+						expectedAttributes: cfg.Attributes,
+						method:             MethodTxRollback,
+						noParentSpan:       tc.noParentSpan,
+						attributesGetter:   tc.attributesGetter,
+						omitSpan:           omit,
+					})
+
+					assert.Equal(t, 1, mt.rollbackCount)
+				})
 			}
-
-			spanList := sr.Ended()
-			expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, false)
-			// One dummy span and a span created in tx
-			require.Equal(t, expectedSpanCount, len(spanList))
-
-			assertSpanList(t, spanList, spanAssertionParameter{
-				parentSpan:         dummySpan,
-				error:              tc.error,
-				expectedAttributes: cfg.Attributes,
-				method:             MethodTxRollback,
-				noParentSpan:       tc.noParentSpan,
-				attributesGetter:   tc.attributesGetter,
-			})
-
-			assert.Equal(t, 1, mt.rollbackCount)
 		})
 	}
 }

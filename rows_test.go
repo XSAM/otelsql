@@ -73,33 +73,53 @@ func TestOtRows_Close(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Prepare traces
-			ctx, sr, tracer, _ := prepareTraces(false)
+	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
+		testname := "spanFilterOmit"
+		if spanFilterFn == nil {
+			testname = "spanFilterNil"
+		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
+			testname = "spanFilterKeep"
+		}
 
-			mr := newMockRows(tc.error)
-			cfg := newMockConfig(t, tracer)
+		t.Run(testname, func(t *testing.T) {
+			for _, tc := range testCases {
+				t.Run(tc.name, func(t *testing.T) {
+					// Prepare traces
+					ctx, sr, tracer, _ := prepareTraces(false)
 
-			// New rows
-			rows := newRows(ctx, mr, cfg)
-			// Close
-			err := rows.Close()
+					mr := newMockRows(tc.error)
+					cfg := newMockConfig(t, tracer)
+					cfg.SpanOptions.SpanFilter = spanFilterFn
 
-			spanList := sr.Ended()
-			// A span created in newRows()
-			require.Equal(t, 2, len(spanList))
-			span := spanList[1]
-			assert.False(t, span.EndTime().IsZero())
+					// New rows
+					rows := newRows(ctx, mr, cfg)
+					// Close
+					err := rows.Close()
 
-			assert.Equal(t, 1, mr.closeCount)
-			if tc.error {
-				require.Error(t, err)
-				assert.Equal(t, codes.Error, span.Status().Code)
-				assert.Len(t, span.Events(), 1)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, codes.Unset, span.Status().Code)
+					spanList := sr.Ended()
+
+					omit := !filterSpan(ctx, cfg.SpanOptions, MethodRows, "", []driver.NamedValue{})
+
+					expectedSpanCount := getExpectedSpanCount(false, omit)
+
+					// A span created in newRows()
+					require.Equal(t, expectedSpanCount, len(spanList))
+
+					if !omit {
+						span := spanList[1]
+						assert.False(t, span.EndTime().IsZero())
+
+						assert.Equal(t, 1, mr.closeCount)
+						if tc.error {
+							require.Error(t, err)
+							assert.Equal(t, codes.Error, span.Status().Code)
+							assert.Len(t, span.Events(), 1)
+						} else {
+							require.NoError(t, err)
+							assert.Equal(t, codes.Unset, span.Status().Code)
+						}
+					}
+				})
 			}
 		})
 	}
@@ -124,42 +144,60 @@ func TestOtRows_Next(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Prepare traces
-			ctx, sr, tracer, _ := prepareTraces(false)
+	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
+		testname := "spanFilterOmit"
+		if spanFilterFn == nil {
+			testname = "spanFilterNil"
+		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
+			testname = "spanFilterKeep"
+		}
 
-			mr := newMockRows(tc.error)
-			cfg := newMockConfig(t, tracer)
-			cfg.SpanOptions.RowsNext = tc.rowsNextOption
+		t.Run(testname, func(t *testing.T) {
+			for _, tc := range testCases {
+				t.Run(tc.name, func(t *testing.T) {
+					// Prepare traces
+					ctx, sr, tracer, _ := prepareTraces(false)
 
-			// New rows
-			rows := newRows(ctx, mr, cfg)
-			// Next
-			err := rows.Next([]driver.Value{"test"})
+					mr := newMockRows(tc.error)
+					cfg := newMockConfig(t, tracer)
+					cfg.SpanOptions.RowsNext = tc.rowsNextOption
+					cfg.SpanOptions.SpanFilter = spanFilterFn
 
-			spanList := sr.Started()
-			// A span created in newRows()
-			require.Equal(t, 2, len(spanList))
-			span := spanList[1]
-			assert.True(t, span.EndTime().IsZero())
+					// New rows
+					rows := newRows(ctx, mr, cfg)
+					// Next
+					err := rows.Next([]driver.Value{"test"})
 
-			assert.Equal(t, 1, mr.nextCount)
-			assert.Equal(t, []driver.Value{"test"}, mr.nextDest)
-			var expectedEventCount int
-			if tc.error {
-				require.Error(t, err)
-				assert.Equal(t, codes.Error, span.Status().Code)
-				expectedEventCount++
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, codes.Unset, span.Status().Code)
+					omit := !filterSpan(ctx, cfg.SpanOptions, MethodRows, "", []driver.NamedValue{})
+					expectedSpanCount := getExpectedSpanCount(false, omit)
+
+					spanList := sr.Started()
+					// A span created in newRows()
+					require.Equal(t, expectedSpanCount, len(spanList))
+
+					if !omit {
+						span := spanList[1]
+						assert.True(t, span.EndTime().IsZero())
+
+						assert.Equal(t, 1, mr.nextCount)
+						assert.Equal(t, []driver.Value{"test"}, mr.nextDest)
+						var expectedEventCount int
+						if tc.error {
+							require.Error(t, err)
+							assert.Equal(t, codes.Error, span.Status().Code)
+							expectedEventCount++
+						} else {
+							require.NoError(t, err)
+							assert.Equal(t, codes.Unset, span.Status().Code)
+						}
+
+						if tc.rowsNextOption {
+							expectedEventCount++
+						}
+						assert.Len(t, span.Events(), expectedEventCount)
+					}
+				})
 			}
-
-			if tc.rowsNextOption {
-				expectedEventCount++
-			}
-			assert.Len(t, span.Events(), expectedEventCount)
 		})
 	}
 }
@@ -190,42 +228,58 @@ func TestNewRows(t *testing.T) {
 				},
 			}
 
-			for _, tc := range testCases {
-				t.Run(tc.name, func(t *testing.T) {
-					// Prepare traces
-					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
+				testname := "spanFilterOmit"
+				if spanFilterFn == nil {
+					testname = "spanFilterNil"
+				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
+					testname = "spanFilterKeep"
+				}
 
-					mr := newMockRows(false)
-					cfg := newMockConfig(t, tracer)
-					cfg.SpanOptions.OmitRows = omitRows
-					cfg.AttributesGetter = tc.attributesGetter
+				t.Run(testname, func(t *testing.T) {
+					for _, tc := range testCases {
+						t.Run(tc.name, func(t *testing.T) {
+							// Prepare traces
+							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-					// New rows
-					rows := newRows(ctx, mr, cfg)
+							mr := newMockRows(false)
+							cfg := newMockConfig(t, tracer)
+							cfg.SpanOptions.OmitRows = omitRows
+							cfg.SpanOptions.SpanFilter = spanFilterFn
+							cfg.AttributesGetter = tc.attributesGetter
 
-					spanList := sr.Started()
-					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omitRows)
-					// One dummy span and one span created in newRows()
-					require.Equal(t, expectedSpanCount, len(spanList))
+							// New rows
+							rows := newRows(ctx, mr, cfg)
 
-					// Convert []sdktrace.ReadWriteSpan to []sdktrace.ReadOnlySpan explicitly due to the limitation of Go
-					var readOnlySpanList []sdktrace.ReadOnlySpan
-					for _, v := range spanList {
-						readOnlySpanList = append(readOnlySpanList, v)
+							spanList := sr.Started()
+							omit := omitRows
+							if !omit {
+								omit = !filterSpan(ctx, cfg.SpanOptions, MethodRows, "", []driver.NamedValue{})
+							}
+							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
+							// One dummy span and one span created in newRows()
+							require.Equal(t, expectedSpanCount, len(spanList))
+
+							// Convert []sdktrace.ReadWriteSpan to []sdktrace.ReadOnlySpan explicitly due to the limitation of Go
+							var readOnlySpanList []sdktrace.ReadOnlySpan
+							for _, v := range spanList {
+								readOnlySpanList = append(readOnlySpanList, v)
+							}
+
+							assertSpanList(t, readOnlySpanList, spanAssertionParameter{
+								parentSpan:         dummySpan,
+								error:              false,
+								expectedAttributes: cfg.Attributes,
+								method:             MethodRows,
+								noParentSpan:       tc.noParentSpan,
+								spanNotEnded:       true,
+								omitSpan:           omit,
+								attributesGetter:   tc.attributesGetter,
+							})
+
+							assert.Equal(t, mr, rows.Rows)
+						})
 					}
-
-					assertSpanList(t, readOnlySpanList, spanAssertionParameter{
-						parentSpan:         dummySpan,
-						error:              false,
-						expectedAttributes: cfg.Attributes,
-						method:             MethodRows,
-						noParentSpan:       tc.noParentSpan,
-						spanNotEnded:       true,
-						omitSpan:           omitRows,
-						attributesGetter:   tc.attributesGetter,
-					})
-
-					assert.Equal(t, mr, rows.Rows)
 				})
 			}
 		})

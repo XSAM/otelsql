@@ -53,7 +53,12 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 	}
 }
 
-func recordMetric(ctx context.Context, instruments *instruments, defaultAttributes []attribute.KeyValue, method Method) func(error) {
+func recordMetric(
+	ctx context.Context,
+	instruments *instruments,
+	defaultAttributes []attribute.KeyValue,
+	method Method,
+) func(error) {
 	startTime := time.Now()
 
 	return func(err error) {
@@ -76,7 +81,14 @@ func recordMetric(ctx context.Context, instruments *instruments, defaultAttribut
 	}
 }
 
-func createSpan(ctx context.Context, cfg config, method Method, enableDBStatement bool, query string, args []driver.NamedValue) (context.Context, trace.Span) {
+func createSpan(
+	ctx context.Context,
+	cfg config,
+	method Method,
+	enableDBStatement bool,
+	query string,
+	args []driver.NamedValue,
+) (context.Context, trace.Span) {
 	attrs := cfg.Attributes
 	if enableDBStatement && !cfg.SpanOptions.DisableQuery {
 		attrs = append(attrs, semconv.DBStatementKey.String(query))
@@ -89,6 +101,16 @@ func createSpan(ctx context.Context, cfg config, method Method, enableDBStatemen
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithAttributes(attrs...),
 	)
+}
+
+func filterSpan(
+	ctx context.Context,
+	spanOptions SpanOptions,
+	method Method,
+	query string,
+	args []driver.NamedValue,
+) bool {
+	return spanOptions.SpanFilter == nil || spanOptions.SpanFilter(ctx, method, query, args)
 }
 
 // Copied from stdlib database/sql package: src/database/sql/ctxutil.go.

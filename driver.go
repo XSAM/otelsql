@@ -14,9 +14,7 @@
 
 package otelsql
 
-import (
-	"database/sql/driver"
-)
+import "database/sql/driver"
 
 var (
 	_ driver.Driver        = (*otDriver)(nil)

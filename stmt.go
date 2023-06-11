@@ -43,7 +43,9 @@ func newStmt(stmt driver.Stmt, cfg config, query string) *otStmt {
 	}
 }
 
-func (s *otStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (result driver.Result, err error) {
+func (s *otStmt) ExecContext(
+	ctx context.Context, args []driver.NamedValue,
+) (result driver.Result, err error) {
 	method := MethodStmtExec
 	onDefer := recordMetric(ctx, s.cfg.Instruments, s.cfg.Attributes, method)
 	defer func() {
@@ -51,9 +53,12 @@ func (s *otStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (res
 	}()
 
 	var span trace.Span
-	ctx, span = createSpan(ctx, s.cfg, method, true, s.query, args)
-	defer span.End()
-	defer recordSpanErrorDeferred(span, s.cfg.SpanOptions, &err)
+	if filterSpan(ctx, s.cfg.SpanOptions, method, s.query, args) {
+		ctx, span = createSpan(ctx, s.cfg, method, true, s.query, args)
+
+		defer span.End()
+		defer recordSpanErrorDeferred(span, s.cfg.SpanOptions, &err)
+	}
 
 	if execer, ok := s.Stmt.(driver.StmtExecContext); ok {
 		return execer.ExecContext(ctx, args)
@@ -74,16 +79,24 @@ func (s *otStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (res
 	return s.Stmt.Exec(dargs) //nolint:staticcheck
 }
 
-func (s *otStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (rows driver.Rows, err error) {
+func (s *otStmt) QueryContext(
+	ctx context.Context, args []driver.NamedValue,
+) (rows driver.Rows, err error) {
 	method := MethodStmtQuery
 	onDefer := recordMetric(ctx, s.cfg.Instruments, s.cfg.Attributes, method)
 	defer func() {
 		onDefer(err)
 	}()
 
-	queryCtx, span := createSpan(ctx, s.cfg, method, true, s.query, args)
-	defer span.End()
-	defer recordSpanErrorDeferred(span, s.cfg.SpanOptions, &err)
+	var span trace.Span
+	var queryCtx context.Context
+	if filterSpan(ctx, s.cfg.SpanOptions, method, s.query, args) {
+		queryCtx, span = createSpan(ctx, s.cfg, method, true, s.query, args)
+		defer span.End()
+		defer recordSpanErrorDeferred(span, s.cfg.SpanOptions, &err)
+	} else {
+		queryCtx = ctx
+	}
 
 	if query, ok := s.Stmt.(driver.StmtQueryContext); ok {
 		if rows, err = query.QueryContext(queryCtx, args); err != nil {

@@ -45,7 +45,7 @@ func newRows(ctx context.Context, rows driver.Rows, cfg config) *otRows {
 	method := MethodRows
 	onClose := recordMetric(ctx, cfg.Instruments, cfg.Attributes, method)
 
-	if !cfg.SpanOptions.OmitRows {
+	if !cfg.SpanOptions.OmitRows && filterSpan(ctx, cfg.SpanOptions, method, "", nil) {
 		_, span = createSpan(ctx, cfg, method, false, "", nil)
 	}
 
