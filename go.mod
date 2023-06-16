@@ -3,7 +3,6 @@ module github.com/LeonPev/otelsql
 go 1.20
 
 require (
-	github.com/XSAM/otelsql v0.23.0
 	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/metric v1.16.0
