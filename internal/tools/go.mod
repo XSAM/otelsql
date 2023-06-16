@@ -1,4 +1,4 @@
-module github.com/LeonPev/otelsql/internal/tools
+module github.com/XSAM/otelsql/internal/tools
 
 go 1.19
 
