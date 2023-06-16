@@ -136,6 +136,7 @@ func (c *otConn) QueryContext(
 		onDefer(err)
 	}()
 
+	query = c.cfg.SQLCommenter.withComment(ctx, query)
 	var span trace.Span
 	queryCtx := ctx
 	if !c.cfg.SpanOptions.OmitConnQuery && filterSpan(ctx, c.cfg.SpanOptions, method, query, args) {
@@ -143,7 +144,7 @@ func (c *otConn) QueryContext(
 		defer span.End()
 	}
 
-	rows, err = queryer.QueryContext(queryCtx, c.cfg.SQLCommenter.withComment(queryCtx, query), args)
+	rows, err = queryer.QueryContext(queryCtx, query, args)
 	if err != nil {
 		recordSpanError(span, c.cfg.SpanOptions, err)
 		return nil, err
