@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/XSAM/otelsql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
@@ -32,6 +31,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
+
+	"github.com/XSAM/otelsql"
 )
 
 const instrumentationName = "github.com/XSAM/otelsql/example"
