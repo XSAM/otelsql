@@ -1,11 +1,11 @@
-module github.com/LeoPev/otelsql/example
+module github.com/XSAM/otelsql/example
 
 go 1.19
 
-replace github.com/LeoPev/otelsql => ../
+replace github.com/XSAM/otelsql => ../
 
 require (
-	github.com/LeoPev/otelsql v0.0.0
+	github.com/XSAM/otelsql v0.0.0
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/prometheus/client_golang v1.15.1
 	go.opentelemetry.io/otel v1.16.0

@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/XSAM/otelsql"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
