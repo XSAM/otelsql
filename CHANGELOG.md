@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 
 - `SpanFilter` configuration in `SpanOptions` to filter spans creation. (#174)
+- Go 1.21 to supported versions. (#180)
 
 ## [0.23.0] - 2023-05-22
 
