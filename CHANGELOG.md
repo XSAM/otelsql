@@ -12,10 +12,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 This update contains a breaking change of the type of `SpanNameFormatter`. If you use `SpanNameFormatter` in your code, you need to change the type of `SpanNameFormatter` to function.
 
+The minimum supported Go version is `1.20`.
+
 ### Changed
 
 - Upgrade OTel to version `v1.18.0/v0.41.0`. (#184)
 - The type of `SpanNameFormatter` has been changed to function for easier use. (#185)
+
+### Removed
+
+- Support for Go `1.19`. (#186)
 
 ## [0.24.0] - 2023-09-08
 
