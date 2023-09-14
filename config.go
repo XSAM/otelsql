@@ -34,11 +34,8 @@ var (
 	queryMethodKey      = attribute.Key("method")
 )
 
-// SpanNameFormatter is an interface that used to format span names.
-// TODO(Sam): change this to function instead of interface.
-type SpanNameFormatter interface {
-	Format(ctx context.Context, method Method, query string) string
-}
+// SpanNameFormatter supports formatting span names.
+type SpanNameFormatter func(ctx context.Context, method Method, query string) string
 
 // AttributesGetter provides additional attributes on spans creation.
 type AttributesGetter func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue
@@ -124,9 +121,7 @@ type SpanOptions struct {
 	SpanFilter SpanFilter
 }
 
-type defaultSpanNameFormatter struct{}
-
-func (f *defaultSpanNameFormatter) Format(_ context.Context, method Method, _ string) string {
+func defaultSpanNameFormatter(ctx context.Context, method Method, query string) string {
 	return string(method)
 }
 
@@ -135,7 +130,7 @@ func newConfig(options ...Option) config {
 	cfg := config{
 		TracerProvider:    otel.GetTracerProvider(),
 		MeterProvider:     otel.GetMeterProvider(),
-		SpanNameFormatter: &defaultSpanNameFormatter{},
+		SpanNameFormatter: defaultSpanNameFormatter,
 	}
 	for _, opt := range options {
 		opt.Apply(&cfg)
