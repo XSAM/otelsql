@@ -15,6 +15,7 @@
 package otelsql
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,7 +28,13 @@ import (
 
 func TestNewConfig(t *testing.T) {
 	cfg := newConfig(WithSpanOptions(SpanOptions{Ping: true}), WithAttributes(semconv.DBSystemMySQL))
-	assert.Equal(t, config{
+
+	// Compare function result
+	assert.Equal(t, defaultSpanNameFormatter(context.Background(), "foo", "bar"), cfg.SpanNameFormatter(context.Background(), "foo", "bar"))
+	// Ignore function compare
+	cfg.SpanNameFormatter = nil
+
+	assert.EqualValues(t, config{
 		TracerProvider: otel.GetTracerProvider(),
 		Tracer: otel.GetTracerProvider().Tracer(
 			instrumentationName,
@@ -44,8 +51,7 @@ func TestNewConfig(t *testing.T) {
 		Attributes: []attribute.KeyValue{
 			semconv.DBSystemMySQL,
 		},
-		SpanNameFormatter: &defaultSpanNameFormatter{},
-		SQLCommenter:      newCommenter(false),
+		SQLCommenter: newCommenter(false),
 	}, cfg)
 	assert.NotNil(t, cfg.Instruments)
 }
