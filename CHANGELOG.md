@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - Upgrade OTel to version `v1.18.0/v0.41.0`. (#184)
+- The type of `SpanNameFormatter` has been changed to function for easier use. (#185)
 
 ## [0.24.0] - 2023-09-08
 
