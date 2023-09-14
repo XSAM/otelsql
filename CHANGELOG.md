@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### ⚠️ Notice ⚠️
+
+This update contains a breaking change of the type of `SpanNameFormatter`. If you use `SpanNameFormatter` in your code, you need to change the type of `SpanNameFormatter` to function.
+
 ### Changed
 
 - Upgrade OTel to version `v1.18.0/v0.41.0`. (#184)
