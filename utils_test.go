@@ -141,7 +141,7 @@ func newMockConfig(t *testing.T, tracer trace.Tracer) config {
 		Meter:             meter,
 		Instruments:       instruments,
 		Attributes:        []attribute.KeyValue{defaultattribute},
-		SpanNameFormatter: &defaultSpanNameFormatter{},
+		SpanNameFormatter: defaultSpanNameFormatter,
 		SQLCommenter:      newCommenter(false),
 	}
 }

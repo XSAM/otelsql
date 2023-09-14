@@ -56,8 +56,8 @@ func TestOptions(t *testing.T) {
 		},
 		{
 			name:           "WithSpanNameFormatter",
-			option:         WithSpanNameFormatter(&defaultSpanNameFormatter{}),
-			expectedConfig: config{SpanNameFormatter: &defaultSpanNameFormatter{}},
+			option:         WithSpanNameFormatter(nil),
+			expectedConfig: config{SpanNameFormatter: nil},
 		},
 		{
 			name:           "WithSpanOptions",
