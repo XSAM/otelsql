@@ -15,6 +15,7 @@
 package otelsql
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,7 @@ func TestNewConfig(t *testing.T) {
 	cfg := newConfig(WithSpanOptions(SpanOptions{Ping: true}), WithAttributes(semconv.DBSystemMySQL))
 
 	// Compare function result
-	assert.Equal(t, defaultSpanNameFormatter(nil, "foo", "bar"), cfg.SpanNameFormatter(nil, "foo", "bar"))
+	assert.Equal(t, defaultSpanNameFormatter(context.Background(), "foo", "bar"), cfg.SpanNameFormatter(context.Background(), "foo", "bar"))
 	// Ignore function compare
 	cfg.SpanNameFormatter = nil
 
