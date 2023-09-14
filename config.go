@@ -121,7 +121,7 @@ type SpanOptions struct {
 	SpanFilter SpanFilter
 }
 
-func defaultSpanNameFormatter(ctx context.Context, method Method, query string) string {
+func defaultSpanNameFormatter(_ context.Context, method Method, _ string) string {
 	return string(method)
 }
 
