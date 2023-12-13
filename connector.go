@@ -23,7 +23,6 @@ import (
 )
 
 var _ driver.Connector = (*otConnector)(nil)
-
 var _ io.Closer = (*otConnector)(nil)
 
 type otConnector struct {
