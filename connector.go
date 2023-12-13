@@ -17,6 +17,7 @@ package otelsql
 import (
 	"context"
 	"database/sql/driver"
+	"io"
 
 	"go.opentelemetry.io/otel/trace"
 )
@@ -60,6 +61,15 @@ func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err 
 
 func (c *otConnector) Driver() driver.Driver {
 	return c.otDriver
+}
+
+func (c *otConnector) Close() error {
+	// database/sql uses a type assertion to check if connectors implement io.Closer.
+	// The type assertion does not pass through to otConnector.Connector, so we explicitly implement it here.
+	if closer, ok := c.Connector.(io.Closer); ok {
+		return closer.Close()
+	}
+	return nil
 }
 
 // dsnConnector is copied from sql.dsnConnector.
