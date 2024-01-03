@@ -25,7 +25,17 @@ updates:
       - dependency-name: "go.opentelemetry.io/otel/*"
   -
     package-ecosystem: gomod
-    directory: /example
+    directory: /example/stdout
+    labels:
+      - dependencies
+    schedule:
+      day: sunday
+      interval: weekly
+    ignore:
+      - dependency-name: "go.opentelemetry.io/*"
+  -
+    package-ecosystem: gomod
+    directory: /example/otel-collector
     labels:
       - dependencies
     schedule:
