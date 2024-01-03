@@ -35,7 +35,7 @@ import (
 	"github.com/XSAM/otelsql"
 )
 
-const instrumentationName = "github.com/XSAM/otelsql/example"
+const instrumentationName = "github.com/XSAM/otelsql/example/stdout"
 
 var serviceName = semconv.ServiceNameKey.String("otesql-example")
 
