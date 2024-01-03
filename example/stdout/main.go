@@ -107,7 +107,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Example finished updating, please visit :2222")
+	fmt.Println("Example finished updating, please visit localhost:2222/metrics")
 
 	select {}
 }
