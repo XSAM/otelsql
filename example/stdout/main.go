@@ -35,7 +35,7 @@ import (
 	"github.com/XSAM/otelsql"
 )
 
-const instrumentationName = "github.com/XSAM/otelsql/example"
+const instrumentationName = "github.com/XSAM/otelsql/example/stdout"
 
 var serviceName = semconv.ServiceNameKey.String("otesql-example")
 
@@ -107,7 +107,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Example finished updating, please visit :2222")
+	fmt.Println("Example finished updating, please visit localhost:2222/metrics")
 
 	select {}
 }

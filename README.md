@@ -42,7 +42,14 @@ if err != nil {
 
 Check [Option](https://pkg.go.dev/github.com/XSAM/otelsql#Option) for more features like adding context propagation to SQL queries when enabling [`WithSQLCommenter`](https://pkg.go.dev/github.com/XSAM/otelsql#WithSQLCommenter).
 
-See [godoc](https://pkg.go.dev/mod/github.com/XSAM/otelsql) and [a docker-compose example](./example/README.md) for details.
+See [godoc](https://pkg.go.dev/mod/github.com/XSAM/otelsql) for details.
+
+## Examples
+
+This project provides two docker-compose examples to show how to use it.
+
+- [The stdout example](example/stdout) is a simple example to show how to use it with a MySQL database. It prints the trace data to stdout and serves metrics data via prometheus client.
+- [The otel-collector example](example/otel-collector) is a more complex example to show how to use it with a MySQL database and an OpenTelemetry Collector. It sends the trace data and metrics data to an OpenTelemetry Collector. Then, it shows data visually on Jaeger and Prometheus servers.
 
 ## Trace Instruments
 

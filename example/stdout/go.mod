@@ -1,8 +1,8 @@
-module github.com/XSAM/otelsql/example
+module github.com/XSAM/otelsql/example/stdout
 
 go 1.20
 
-replace github.com/XSAM/otelsql => ../
+replace github.com/XSAM/otelsql => ../../
 
 require (
 	github.com/XSAM/otelsql v0.0.0

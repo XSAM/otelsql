@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-EXAMPLES := ./example
 TOOLS_MOD_DIR := ./internal/tools
 
 # All directories with go.mod files related to opentelemetry library. Used for building, testing and linting.
@@ -25,7 +24,7 @@ TIMEOUT = 60
 .DEFAULT_GOAL := precommit
 
 .PHONY: precommit ci
-precommit: license-check lint build examples test-default
+precommit: license-check lint build test-default
 ci: precommit check-clean-work-tree test-coverage
 
 # Tools
@@ -47,13 +46,7 @@ tools: $(GOLANGCI_LINT)
 
 # Build
 
-.PHONY: examples generate build
-examples:
-	@set -e; for dir in $(EXAMPLES); do \
-	  echo "$(GO) build $${dir}/..."; \
-	  (cd "$${dir}" && \
-	   $(GO) build -o ./bin/main .); \
-	done
+.PHONY: generate build
 
 generate: $(STRINGER)
 	set -e; for dir in $(ALL_GO_MOD_DIRS); do \
