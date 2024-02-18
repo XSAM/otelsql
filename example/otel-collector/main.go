@@ -153,12 +153,18 @@ func main() {
 		}
 	}()
 
-	runSQLQuery(ctx)
+	db := connectDB()
+	defer db.Close()
+
+	err = runSQLQuery(ctx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fmt.Println("Example finished")
 }
 
-func runSQLQuery(ctx context.Context) {
+func connectDB() *sql.DB {
 	// Connect to database
 	db, err := otelsql.Open("mysql", mysqlDSN, otelsql.WithAttributes(
 		semconv.DBSystemMySQL,
@@ -166,22 +172,18 @@ func runSQLQuery(ctx context.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
 
+	// Register DB stats to meter
 	err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
 		semconv.DBSystemMySQL,
 	))
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	err = run(ctx, db)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return db
 }
 
-func run(ctx context.Context, db *sql.DB) error {
+func runSQLQuery(ctx context.Context, db *sql.DB) error {
 	// Create a parent span (Optional)
 	tracer := otel.GetTracerProvider()
 	ctx, span := tracer.Tracer(instrumentationName).Start(ctx, "example")
