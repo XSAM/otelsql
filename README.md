@@ -44,6 +44,10 @@ Check [Option](https://pkg.go.dev/github.com/XSAM/otelsql#Option) for more featu
 
 See [godoc](https://pkg.go.dev/mod/github.com/XSAM/otelsql) for details.
 
+## Blog
+
+[Getting started with otelsql, the OpenTelemetry instrumentation for Go SQL](https://opentelemetry.io/blog/2024/getting-started-with-otelsql), is a blog post that explains how to use otelsql in miutes.
+
 ## Examples
 
 This project provides two docker-compose examples to show how to use it.
