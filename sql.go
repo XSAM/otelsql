@@ -29,12 +29,12 @@ var registerLock sync.Mutex
 
 var maxDriverSlot = 1000
 
-// Register initializes and registers OTel wrapped database driver
-// identified by its driverName, using provided Option.
-// It is possible to register multiple wrappers for the same database driver if
-// needing different Option for different connections.
+// Register инициализирует и регистрирует OTel обёрнутый database driver
+// идентефициронный с помощью driverName,используя дополнительные настройки Option.
+// Возможно заргестрировать multiple wrappers для одинаковых database driver если
+// вы нуждаетесь в разных дополнительных настройках Option.
 func Register(driverName string, options ...Option) (string, error) {
-	// Retrieve the driver implementation we need to wrap with instrumentation
+	// Извлечение реализации driver для последующей обёртки с помощью инстрементария.
 	db, err := sql.Open(driverName, "")
 	if err != nil {
 		return "", err
@@ -47,9 +47,9 @@ func Register(driverName string, options ...Option) (string, error) {
 	registerLock.Lock()
 	defer registerLock.Unlock()
 
-	// Since we might want to register multiple OTel drivers to have different
-	// configurations, but potentially the same underlying database driver, we
-	// cycle through to find available driver names.
+	// Если вы завели multiple OTel drivers с разными 
+	// конфигурациями, но имеем одинаковые database driver, мы
+	// проходимся циклом, чтобы найти доступный driver.
 	driverName = driverName + "-otelsql-"
 	for i := 0; i < maxDriverSlot; i++ {
 		var (
@@ -69,14 +69,14 @@ func Register(driverName string, options ...Option) (string, error) {
 	return "", errors.New("unable to register driver, all slots have been taken")
 }
 
-// WrapDriver takes a SQL driver and wraps it with OTel instrumentation.
+// WrapDriver принимает SQL driver и обороачивает с помощью инструментария OTel.
 func WrapDriver(dri driver.Driver, options ...Option) driver.Driver {
 	return newDriver(dri, newConfig(options...))
 }
 
-// Open is a wrapper over sql.Open with OTel instrumentation.
+// Open это обёртка над sql.Open, реализованная с помощью инструментария OTel.
 func Open(driverName, dataSourceName string, options ...Option) (*sql.DB, error) {
-	// Retrieve the driver implementation we need to wrap with instrumentation
+  // Извлечение реализации driver для последующей обёртки с помощью инстрементария.
 	db, err := sql.Open(driverName, "")
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func Open(driverName, dataSourceName string, options ...Option) (*sql.DB, error)
 	return sql.OpenDB(dsnConnector{dsn: dataSourceName, driver: otDriver}), nil
 }
 
-// OpenDB is a wrapper over sql.OpenDB with OTel instrumentation.
+// OpenDB это обёртка над sql.OpenDB, реализованная с помощью инструментария OTel.
 func OpenDB(c driver.Connector, options ...Option) *sql.DB {
 	d := newOtDriver(c.Driver(), newConfig(options...))
 	connector := newConnector(c, d)
@@ -107,7 +107,7 @@ func OpenDB(c driver.Connector, options ...Option) *sql.DB {
 	return sql.OpenDB(connector)
 }
 
-// RegisterDBStatsMetrics register sql.DBStats metrics with OTel instrumentation.
+// RegisterDBStatsMetrics регистрирует sql.DBStats metrics с помощью инструментария OTel.
 func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) error {
 	cfg := newConfig(opts...)
 	meter := cfg.Meter

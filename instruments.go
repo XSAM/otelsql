@@ -36,10 +36,12 @@ type dbStatsInstruments struct {
 }
 
 type instruments struct {
-	// The latency of calls in milliseconds
+	// latency(задержка) вызовов в миллисекундах
 	latency metric.Float64Histogram
 }
 
+// newInstuments возвращает структура insruments с иницилизированным 
+// полем latency, который считает задрежку в миллисекундах
 func newInstruments(meter metric.Meter) (*instruments, error) {
 	var instruments instruments
 	var err error
@@ -54,6 +56,7 @@ func newInstruments(meter metric.Meter) (*instruments, error) {
 	return &instruments, nil
 }
 
+// newDBStatsInstruments возвращает иницилизированную структуру dbStatsInstruments
 func newDBStatsInstruments(meter metric.Meter) (*dbStatsInstruments, error) {
 	var instruments dbStatsInstruments
 	var err error

@@ -34,14 +34,15 @@ var (
 	queryMethodKey      = attribute.Key("method")
 )
 
-// SpanNameFormatter supports formatting span names.
+// SpanNameFormatter помогает иницилизировать имена для spans.
 type SpanNameFormatter func(ctx context.Context, method Method, query string) string
 
-// AttributesGetter provides additional attributes on spans creation.
+// AttributesGetter помогает иницилизировать spans при их создании.
 type AttributesGetter func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue
 
 type SpanFilter func(ctx context.Context, method Method, query string, args []driver.NamedValue) bool
 
+// config структура, содержащее все необходимое для трассировки базы данных.
 type config struct {
 	TracerProvider trace.TracerProvider
 	Tracer         trace.Tracer
@@ -53,71 +54,68 @@ type config struct {
 
 	SpanOptions SpanOptions
 
-	// Attributes will be set to each span.
+	// Attributes, которые будут добавлены во все spans.
 	Attributes []attribute.KeyValue
 
-	// SpanNameFormatter will be called to produce span's name.
-	// Default use method as span name
+	// SpanNameFormatter будет вызван для присваивания имени span.
+	// По умолчанию использует название метод как имя span.
 	SpanNameFormatter SpanNameFormatter
 
-	// SQLCommenterEnabled enables context propagation for database
-	// by injecting a comment into SQL statements.
+	// SQLCommenterEnabled включает проброс context для database
+	// при помощи включения комментария в SQL statements.
 	//
-	// Experimental
+	// Эксперементально!
 	//
-	// Notice: This config is EXPERIMENTAL and may be changed or removed in a
-	// later release.
+	// Notice: Эта опция ЭКСПЕРЕМЕНТАЛЬНА и, возможно, будет изменена или удалена в
+	// более поздник релизах.
 	SQLCommenterEnabled bool
 	SQLCommenter        *commenter
 
-	// AttributesGetter will be called to produce additional attributes while creating spans.
-	// Default returns nil
+	// AttributesGetter функция, которая будет вызвана для  инициализации дополнительных attributes 
+  // во время создания spans.
+	// По умолчанию возвращает nil
 	AttributesGetter AttributesGetter
 }
 
-// SpanOptions holds configuration of tracing span to decide
-// whether to enable some features.
-// By default all options are set to false intentionally when creating a wrapped
-// driver and provide the most sensible default with both performance and
-// security in mind.
+// SpanOptions структура, содержащая некоторые опции для тонко настройки tracing spans.
+// По умолчанию все опции отключены.
 type SpanOptions struct {
-	// Ping, if set to true, will enable the creation of spans on Ping requests.
+	// Ping, если выставлено значение true, включит создание spans по Ping requests.
 	Ping bool
 
-	// RowsNext, if set to true, will enable the creation of events in spans on RowsNext
-	// calls. This can result in many events.
+	// RowsNext, если высталено значение true, включит создание  events в spans на вызов RowsNext
 	RowsNext bool
 
-	// DisableErrSkip, if set to true, will suppress driver.ErrSkip errors in spans.
+	// DisableErrSkip,если выставлено значение true, будет подавлять driver.ErrSkip errors в spans.
 	DisableErrSkip bool
 
-	// DisableQuery if set to true, will suppress db.statement in spans.
+	// DisableQuery если выставлено значение true, будет подавлено db.statement в spans.
 	DisableQuery bool
 
-	// RecordError, if set, will be invoked with the current error, and if the func returns true
-	// the record will be recorded on the current span.
+	// RecordError, если включено, будет вызвана с текущей ошибкой, если функция возвращает true
+	// то запись будет записана в текущий span.
 	//
-	// If this is not set it will default to record all errors (possible not ErrSkip, see option
+	// В противном случае будет записывать все ошибки в текущий span (possible not ErrSkip, see option
 	// DisableErrSkip).
 	RecordError func(err error) bool
 
-	// OmitConnResetSession if set to true will suppress sql.conn.reset_session spans
+	// OmitConnResetSession, если выставлено значение true, будет подавлять sql.conn.reset_session spans
 	OmitConnResetSession bool
 
-	// OmitConnPrepare if set to true will suppress sql.conn.prepare spans
+	// OmitConnPrepare, если выставлено true, будет подавлять sql.conn.prepare spans
 	OmitConnPrepare bool
 
-	// OmitConnQuery if set to true will suppress sql.conn.query spans
+	// OmitConnQuery, если выставлено true, будет подавлять sql.conn.query spans
 	OmitConnQuery bool
 
-	// OmitRows if set to true will suppress sql.rows spans
+	// OmitRows, если выставлено true, будет подавлять sql.rows spans
 	OmitRows bool
 
-	// OmitConnectorConnect if set to true will suppress sql.connector.connect spans
+	// OmitConnectorConnect, если выставлено true, будет подавлять sql.connector.connect spans
 	OmitConnectorConnect bool
 
-	// SpanFilter, if set, will be invoked before each call to create a span. If it returns
-	// false, the span will not be created.
+	// SpanFilter, функция, которая будет вызвана перед каждым вызовом span. Если функция возвращает
+	// false, span will не будет создан.
 	SpanFilter SpanFilter
 }
 
@@ -125,7 +123,7 @@ func defaultSpanNameFormatter(_ context.Context, method Method, _ string) string
 	return string(method)
 }
 
-// newConfig returns a config with all Options set.
+// newConfig функция, возвращающая config, иницилизированный переданными опциями options.
 func newConfig(options ...Option) config {
 	cfg := config{
 		TracerProvider:    otel.GetTracerProvider(),

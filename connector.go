@@ -25,12 +25,16 @@ import (
 var _ driver.Connector = (*otConnector)(nil)
 var _ io.Closer = (*otConnector)(nil)
 
+// otConnector структура, описывающая connector
+// для database/sql connector
 type otConnector struct {
 	driver.Connector
 	otDriver *otDriver
 	cfg      config
 }
 
+// newConnector иницилизирует otCollector с переданными настройками cfg,
+// и драйвером otDriver.
 func newConnector(connector driver.Connector, otDriver *otDriver) *otConnector {
 	return &otConnector{
 		Connector: connector,
@@ -39,6 +43,8 @@ func newConnector(connector driver.Connector, otDriver *otDriver) *otConnector {
 	}
 }
 
+// Connect метод структуры otConnector, осуществляющий подключение
+// и возращающий интерфейс driver.Conn и ошибку
 func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err error) {
 	method := MethodConnectorConnect
 	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
@@ -60,29 +66,34 @@ func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err 
 	return newConn(connection, c.cfg), nil
 }
 
+// метод otConnector Driver возвращает
+// поле структуры otConnector otDriver
 func (c *otConnector) Driver() driver.Driver {
 	return c.otDriver
 }
 
 func (c *otConnector) Close() error {
-	// database/sql uses a type assertion to check if connectors implement io.Closer.
-	// The type assertion does not pass through to otConnector.Connector, so we explicitly implement it here.
+	// database/sql использует type assertion для проверки удоволетворяет ли connector io.Closer.
 	if closer, ok := c.Connector.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil
 }
 
-// dsnConnector is copied from sql.dsnConnector.
+// dsnConnector сорпирован с sql.dsnConnector.
 type dsnConnector struct {
 	dsn    string
 	driver driver.Driver
 }
 
+// Connect метод структуры dsnConnector, осуществленяющий подклчение
+// и возвращающий driver.Conn и ошибку.
 func (t dsnConnector) Connect(_ context.Context) (driver.Conn, error) {
 	return t.driver.Open(t.dsn)
 }
 
+// Driver метод структуры dsnConnector возвращает
+// драйвер, хранящийся в структуре dsnConnector
 func (t dsnConnector) Driver() driver.Driver {
 	return t.driver
 }

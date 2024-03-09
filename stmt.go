@@ -64,7 +64,7 @@ func (s *otStmt) ExecContext(
 		return execer.ExecContext(ctx, args)
 	}
 
-	// StmtExecContext.ExecContext is not permitted to return ErrSkip. fall back to Exec.
+	// StmtExecContext.ExecContext не разрешено возвращать ErrSkip. вернуться к Exec.
 	var dargs []driver.Value
 	if dargs, err = namedValueToValue(args); err != nil {
 		return nil, err
@@ -103,7 +103,7 @@ func (s *otStmt) QueryContext(
 			return nil, err
 		}
 	} else {
-		// StmtQueryContext.QueryContext is not permitted to return ErrSkip. fall back to Query.
+		// StmtQueryContext.QueryContext не разрешено возвращать ErrSkip. вернуться to Query.
 		var dargs []driver.Value
 		if dargs, err = namedValueToValue(args); err != nil {
 			return nil, err

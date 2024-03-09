@@ -57,9 +57,9 @@ func newRows(ctx context.Context, rows driver.Rows, cfg config) *otRows {
 	}
 }
 
-// HasNextResultSet calls the implements the driver.RowsNextResultSet for otRows.
-// It returns the the underlying result of HasNextResultSet from the otRows.parent
-// if the parent implements driver.RowsNextResultSet.
+// HasNextResultSet вызывает реализацию driver.RowsNextResultSet для otRows.
+// Возвращает результат HasNextResultSet от otRows.parent
+// если parent реализует driver.RowsNextResultSet.
 func (r otRows) HasNextResultSet() bool {
 	if v, ok := r.Rows.(driver.RowsNextResultSet); ok {
 		return v.HasNextResultSet()
@@ -68,9 +68,9 @@ func (r otRows) HasNextResultSet() bool {
 	return false
 }
 
-// NextResultSet calls the implements the driver.RowsNextResultSet for otRows.
-// It returns the the underlying result of NextResultSet from the otRows.parent
-// if the parent implements driver.RowsNextResultSet.
+// NextResultSet вызывает реализацию driver.RowsNextResultSet для otRows.
+// Возвращает NextResultSet от otRows.parent
+// если parent удовоетворяет driver.RowsNextResultSet.
 func (r otRows) NextResultSet() error {
 	if v, ok := r.Rows.(driver.RowsNextResultSet); ok {
 		return v.NextResultSet()
@@ -79,9 +79,9 @@ func (r otRows) NextResultSet() error {
 	return io.EOF
 }
 
-// ColumnTypeDatabaseTypeName calls the implements the driver.RowsColumnTypeDatabaseTypeName for otRows.
-// It returns the the underlying result of ColumnTypeDatabaseTypeName from the otRows.Rows
-// if the Rows implements driver.RowsColumnTypeDatabaseTypeName.
+// ColumnTypeDatabaseTypeName вызывает реализацию driver.RowsColumnTypeDatabaseTypeName для otRows.
+// Возвращает результат ColumnTypeDatabaseTypeName от otRows.Rows
+// если Rows реализует driver.RowsColumnTypeDatabaseTypeName.
 func (r otRows) ColumnTypeDatabaseTypeName(index int) string {
 	if v, ok := r.Rows.(driver.RowsColumnTypeDatabaseTypeName); ok {
 		return v.ColumnTypeDatabaseTypeName(index)
@@ -90,9 +90,9 @@ func (r otRows) ColumnTypeDatabaseTypeName(index int) string {
 	return ""
 }
 
-// ColumnTypeLength calls the implements the driver.RowsColumnTypeLength for otRows.
-// It returns the the underlying result of ColumnTypeLength from the otRows.Rows
-// if the Rows implements driver.RowsColumnTypeLength.
+// ColumnTypeLength вызывает реализацию driver.RowsColumnTypeLength для otRows.
+// Возвращает результат ColumnTypeLength от otRows.Rows
+// если Rows реализует driver.RowsColumnTypeLength.
 func (r otRows) ColumnTypeLength(index int) (length int64, ok bool) {
 	if v, ok := r.Rows.(driver.RowsColumnTypeLength); ok {
 		return v.ColumnTypeLength(index)
@@ -101,9 +101,9 @@ func (r otRows) ColumnTypeLength(index int) (length int64, ok bool) {
 	return 0, false
 }
 
-// ColumnTypeNullable calls the implements the driver.RowsColumnTypeNullable for otRows.
-// It returns the the underlying result of ColumnTypeNullable from the otRows.Rows
-// if the Rows implements driver.RowsColumnTypeNullable.
+// ColumnTypeNullable вызывает реализацию driver.RowsColumnTypeNullable для otRows.
+// Возвращает результат ColumnTypeNullable от otRows.Rows
+// если Rows реализует driver.RowsColumnTypeNullable.
 func (r otRows) ColumnTypeNullable(index int) (nullable, ok bool) {
 	if v, ok := r.Rows.(driver.RowsColumnTypeNullable); ok {
 		return v.ColumnTypeNullable(index)
@@ -112,9 +112,9 @@ func (r otRows) ColumnTypeNullable(index int) (nullable, ok bool) {
 	return false, false
 }
 
-// ColumnTypePrecisionScale calls the implements the driver.RowsColumnTypePrecisionScale for otRows.
-// It returns the the underlying result of ColumnTypePrecisionScale from the otRows.Rows
-// if the Rows implements driver.RowsColumnTypePrecisionScale.
+// ColumnTypePrecisionScale вызывает реализацию driver.RowsColumnTypePrecisionScale для otRows.
+// Возвращает результат ColumnTypePrecisionScale от otRows.Rows
+// если Rows реализует driver.RowsColumnTypePrecisionScale.
 func (r otRows) ColumnTypePrecisionScale(index int) (precision, scale int64, ok bool) {
 	if v, ok := r.Rows.(driver.RowsColumnTypePrecisionScale); ok {
 		return v.ColumnTypePrecisionScale(index)
@@ -144,7 +144,7 @@ func (r otRows) Next(dest []driver.Value) (err error) {
 	}
 
 	err = r.Rows.Next(dest)
-	// io.EOF is not an error. It is expected to happen during iteration.
+	// io.EOF это не ошибка. Это непредвиденное обстоятельство во время итерации.
 	if err != nil && err != io.EOF {
 		recordSpanError(r.span, r.cfg.SpanOptions, err)
 	}

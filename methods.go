@@ -14,10 +14,10 @@
 
 package otelsql
 
-// Method specifics operation in the database/sql package.
+// Method описывает операцию в database/sql package.
 type Method string
 
-// Event specifics events in the database/sql package.
+// Event описывает событие в database/sql package.
 type Event string
 
 const (
