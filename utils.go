@@ -89,6 +89,10 @@ func createSpan(
 	query string,
 	args []driver.NamedValue,
 ) (context.Context, trace.Span) {
+	span := trace.SpanFromContext(ctx)
+	if !span.IsRecording() {
+		return ctx, span
+	}
 	attrs := cfg.Attributes
 	if enableDBStatement && !cfg.SpanOptions.DisableQuery {
 		attrs = append(attrs, semconv.DBStatementKey.String(query))
