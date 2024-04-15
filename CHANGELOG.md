@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.30.0] - 2024-04-15
+
 ### ⚠️ Notice ⚠️
 
 The minimum supported Go version is `1.21`.
@@ -334,7 +336,8 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 - Example code for a basic usage.
 - Apache-2.0 license.
 
-[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.29.0...HEAD
+[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.30.0...HEAD
+[0.30.0]: https://github.com/XSAM/otelsql/releases/tag/v0.30.0
 [0.29.0]: https://github.com/XSAM/otelsql/releases/tag/v0.29.0
 [0.28.0]: https://github.com/XSAM/otelsql/releases/tag/v0.28.0
 [0.27.0]: https://github.com/XSAM/otelsql/releases/tag/v0.27.0
