@@ -8,6 +8,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### ⚠️ Notice ⚠️
+
+The minimum supported Go version is `1.21`.
+
+### Removed
+
+- Support for Go `1.20`. (#239)
+
 ## [0.29.0] - 2024-02-26
 
 ### Changed
