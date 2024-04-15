@@ -2,8 +2,6 @@ module github.com/XSAM/otelsql/example/stdout
 
 go 1.21
 
-toolchain go1.22.1
-
 replace github.com/XSAM/otelsql => ../../
 
 require (
