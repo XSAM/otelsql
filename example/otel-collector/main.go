@@ -46,14 +46,11 @@ var mysqlDSN = "root:otel_password@tcp(mysql)/db?parseTime=true"
 
 // Initialize a gRPC connection to be used by both the tracer and meter
 // providers.
-func initConn(ctx context.Context) (*grpc.ClientConn, error) {
+func initConn() (*grpc.ClientConn, error) {
 	// Make a gRPC connection with otel collector.
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	conn, err := grpc.DialContext(ctx, "otel-collector:4317",
+	conn, err := grpc.NewClient("otel-collector:4317",
 		// Note the use of insecure transport here. TLS is recommended in production.
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gRPC connection to collector: %w", err)
@@ -128,7 +125,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	conn, err := initConn(ctx)
+	conn, err := initConn()
 	if err != nil {
 		log.Fatal(err)
 	}

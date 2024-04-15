@@ -12,6 +12,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The minimum supported Go version is `1.21`.
 
+### Changed
+
+- Upgrade OTel to version `v1.25.0/v0.47.0`. (#238)
+
 ### Removed
 
 - Support for Go `1.20`. (#239)
