@@ -337,7 +337,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 
 type namedValueChecker struct{ err error }
 
-func (nvc *namedValueChecker) CheckNamedValue(nv *driver.NamedValue) error {
+func (nvc *namedValueChecker) CheckNamedValue(_ *driver.NamedValue) error {
 	return nvc.err
 }
 
