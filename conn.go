@@ -184,7 +184,7 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 		}
 	}
 
-	return newStmt(stmt, c.cfg, query), nil
+	return newStmt(stmt, c.cfg, query, c), nil
 }
 
 func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.Tx, err error) {
