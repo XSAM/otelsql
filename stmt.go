@@ -32,14 +32,16 @@ type otStmt struct {
 	driver.Stmt
 	cfg config
 
-	query string
+	query  string
+	otConn *otConn
 }
 
-func newStmt(stmt driver.Stmt, cfg config, query string) *otStmt {
+func newStmt(stmt driver.Stmt, cfg config, query string, otConn *otConn) *otStmt {
 	return &otStmt{
-		Stmt:  stmt,
-		cfg:   cfg,
-		query: query,
+		Stmt:   stmt,
+		cfg:    cfg,
+		query:  query,
+		otConn: otConn,
 	}
 }
 
@@ -126,7 +128,19 @@ func (s *otStmt) QueryContext(
 func (s *otStmt) CheckNamedValue(namedValue *driver.NamedValue) error {
 	namedValueChecker, ok := s.Stmt.(driver.NamedValueChecker)
 	if !ok {
-		return driver.ErrSkip
+		// Fallback to the connection's named value checker.
+		//
+		// The [database/sql] package checks for value checkers in the following order,
+		// stopping at the first found match: Stmt.NamedValueChecker, Conn.NamedValueChecker,
+		// Stmt.ColumnConverter, [DefaultParameterConverter].
+		//
+		// Since otelsql implements the NamedValueChecker for both Stmt and Conn, the
+		// fallback logic in the Go is not working.
+		// Source: https://go.googlesource.com/go/+/refs/tags/go1.22.2/src/database/sql/convert.go#128
+		//
+		// This is a workaround to make sure the named value checker is checked on the connection level after
+		// the statement level.
+		return s.otConn.CheckNamedValue(namedValue)
 	}
 
 	return namedValueChecker.CheckNamedValue(namedValue)
