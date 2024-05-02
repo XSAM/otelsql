@@ -130,3 +130,11 @@ check-clean-work-tree:
 	  git status; \
 	  exit 1; \
 	fi
+
+.PHONY: go-mod-tidy
+go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)
+go-mod-tidy/%: DIR=$*
+go-mod-tidy/%:
+	@echo "$(GO) mod tidy in $(DIR)" \
+		&& cd $(DIR) \
+		&& $(GO) mod tidy
