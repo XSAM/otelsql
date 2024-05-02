@@ -13,6 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fallback the check of `driver.NamedValueChecker` from Stmt to Conn. (#243)
   So, the `otelsql` can keep the original check order in `database/sql` for value checkers in the following order,
   stopping at the first found match: `Stmt.NamedValueChecker`, `Conn.NamedValueChecker`.
+- Upgrade OTel to version `v1.26.0/v0.48.0`. (#244)
 
 ## [0.30.0] - 2024-04-15
 
