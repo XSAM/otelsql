@@ -43,7 +43,7 @@ services:
       - otel-collector
 
   jaeger:
-    image: jaegertracing/all-in-one:1.52
+    image: jaegertracing/all-in-one:1.57
     ports:
       - 16686:16686
 
