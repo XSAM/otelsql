@@ -69,13 +69,13 @@ func TestRecordSpanError(t *testing.T) {
 		{
 			name:          "avoid recording error due to RecordError option",
 			err:           errors.New("error"),
-			opts:          SpanOptions{RecordError: func(err error) bool { return false }},
+			opts:          SpanOptions{RecordError: func(_ error) bool { return false }},
 			expectedError: false,
 		},
 		{
 			name:          "record error returns true",
 			err:           errors.New("error"),
-			opts:          SpanOptions{RecordError: func(err error) bool { return true }},
+			opts:          SpanOptions{RecordError: func(_ error) bool { return true }},
 			expectedError: true,
 		},
 		{
@@ -232,7 +232,7 @@ func prepareTraces(
 }
 
 func getDummyAttributesGetter() AttributesGetter {
-	return func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+	return func(_ context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
 		attrs := []attribute.KeyValue{
 			attribute.String("method", string(method)),
 			attribute.String("query", query),

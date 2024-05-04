@@ -29,7 +29,7 @@ func TestOptions(t *testing.T) {
 	tracerProvider := sdktrace.NewTracerProvider()
 	meterProvider := noop.NewMeterProvider()
 
-	dummyAttributesGetter := func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+	dummyAttributesGetter := func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 		return []attribute.KeyValue{attribute.String("foo", "bar")}
 	}
 

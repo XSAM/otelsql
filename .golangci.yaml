@@ -5,7 +5,6 @@ linters:
   disable-all: true
   # Specifically enable linters we want to use.
   enable:
-    - depguard
     - errcheck
     - godot
     - gofmt
