@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade OTel to version `v1.27.0/v0.49.0`. (#284)
+
 ## [0.31.0] - 2024-05-02
 
 ### Changed
