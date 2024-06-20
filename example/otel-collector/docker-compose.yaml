@@ -33,7 +33,7 @@ services:
       - jaeger
 
   prometheus:
-    image: prom/prometheus:v2.52.0
+    image: prom/prometheus:v2.53.0
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml
     ports:
