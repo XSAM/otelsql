@@ -13,7 +13,7 @@
 # limitations under the License.
 services:
   mysql:
-    image: mysql:8.4
+    image: mysql:9.0
     ports:
       - 3306:3306
     environment:
