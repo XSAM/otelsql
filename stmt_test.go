@@ -180,6 +180,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
+							cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
 							stmt := newStmt(ms, cfg, query, nil)
 							// Exec
 							_, err := stmt.ExecContext(ctx, args)
@@ -291,6 +292,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
+							cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
 							stmt := newStmt(ms, cfg, query, nil)
 							// Query
 							rows, err := stmt.QueryContext(ctx, args)

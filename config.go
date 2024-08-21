@@ -40,6 +40,9 @@ type SpanNameFormatter func(ctx context.Context, method Method, query string) st
 // AttributesGetter provides additional attributes on spans creation.
 type AttributesGetter func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue
 
+// InstrumentAttributesGetter provides additional attributes while recording metrics.
+type InstrumentAttributesGetter func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue
+
 type SpanFilter func(ctx context.Context, method Method, query string, args []driver.NamedValue) bool
 
 type config struct {
@@ -73,6 +76,10 @@ type config struct {
 	// AttributesGetter will be called to produce additional attributes while creating spans.
 	// Default returns nil
 	AttributesGetter AttributesGetter
+
+	// InstrumentAttributesGetter will be called to produce additional attributes while recording metrics.
+	// Default returns nil
+	InstrumentAttributesGetter InstrumentAttributesGetter
 }
 
 // SpanOptions holds configuration of tracing span to decide

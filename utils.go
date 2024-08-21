@@ -20,7 +20,6 @@ import (
 	"errors"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.18.0"
@@ -56,15 +55,20 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 func recordMetric(
 	ctx context.Context,
 	instruments *instruments,
-	defaultAttributes []attribute.KeyValue,
+	cfg config,
 	method Method,
+	query string,
+	args []driver.NamedValue,
 ) func(error) {
 	startTime := time.Now()
 
 	return func(err error) {
 		duration := float64(time.Since(startTime).Nanoseconds()) / 1e6
 
-		attributes := defaultAttributes
+		attributes := cfg.Attributes
+		if cfg.InstrumentAttributesGetter != nil {
+			attributes = append(attributes, cfg.InstrumentAttributesGetter(ctx, method, query, args)...)
+		}
 		if err != nil {
 			attributes = append(attributes, queryStatusKey.String("error"))
 		} else {

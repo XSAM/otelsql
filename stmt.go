@@ -49,7 +49,7 @@ func (s *otStmt) ExecContext(
 	ctx context.Context, args []driver.NamedValue,
 ) (result driver.Result, err error) {
 	method := MethodStmtExec
-	onDefer := recordMetric(ctx, s.cfg.Instruments, s.cfg.Attributes, method)
+	onDefer := recordMetric(ctx, s.cfg.Instruments, s.cfg, method, s.query, args)
 	defer func() {
 		onDefer(err)
 	}()
@@ -85,7 +85,7 @@ func (s *otStmt) QueryContext(
 	ctx context.Context, args []driver.NamedValue,
 ) (rows driver.Rows, err error) {
 	method := MethodStmtQuery
-	onDefer := recordMetric(ctx, s.cfg.Instruments, s.cfg.Attributes, method)
+	onDefer := recordMetric(ctx, s.cfg.Instruments, s.cfg, method, s.query, args)
 	defer func() {
 		onDefer(err)
 	}()

@@ -110,6 +110,7 @@ func TestOtConnector_Connect(t *testing.T) {
 							cfg.SpanOptions.OmitConnectorConnect = omitConnectorConnect
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
+							cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
 							mConnector := newMockConnector(nil, tc.error)
 							connector := newConnector(mConnector, &otDriver{cfg: cfg})
 							conn, err := connector.Connect(ctx)
