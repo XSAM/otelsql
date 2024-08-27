@@ -56,7 +56,7 @@ func (c *otConn) Ping(ctx context.Context) (err error) {
 	}
 
 	method := MethodConnPing
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, "", nil)
 	defer func() {
 		onDefer(err)
 	}()
@@ -95,7 +95,7 @@ func (c *otConn) ExecContext(
 	}
 
 	method := MethodConnExec
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, query, args)
 	defer func() {
 		onDefer(err)
 	}()
@@ -131,7 +131,7 @@ func (c *otConn) QueryContext(
 	}
 
 	method := MethodConnQuery
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, query, args)
 	defer func() {
 		onDefer(err)
 	}()
@@ -153,7 +153,7 @@ func (c *otConn) QueryContext(
 
 func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.Stmt, err error) {
 	method := MethodConnPrepare
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, query, nil)
 	defer func() {
 		onDefer(err)
 	}()
@@ -189,7 +189,7 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 
 func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.Tx, err error) {
 	method := MethodConnBeginTx
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, "", nil)
 	defer func() {
 		onDefer(err)
 	}()
@@ -246,7 +246,7 @@ func (c *otConn) ResetSession(ctx context.Context) (err error) {
 	}
 
 	method := MethodConnResetSession
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, "", nil)
 	defer func() {
 		onDefer(err)
 	}()

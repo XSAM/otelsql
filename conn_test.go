@@ -221,6 +221,7 @@ func TestOtConn_Ping(t *testing.T) {
 					cfg := newMockConfig(t, tracer)
 					cfg.SpanOptions.Ping = tc.pingOption
 					cfg.AttributesGetter = tc.attributesGetter
+					cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 					mc := newMockConn(tc.error)
 					otelConn := newConn(mc, cfg)
@@ -320,6 +321,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 					cfg.AttributesGetter = tc.attributesGetter
+					cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
 					mc := newMockConn(tc.error)
 					otelConn := newConn(mc, cfg)
 
@@ -422,6 +424,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 							cfg.SpanOptions.OmitConnQuery = omitConnQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
+							cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
 							mc := newMockConn(tc.error)
 							otelConn := newConn(mc, cfg)
 
@@ -554,6 +557,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 									cfg.SpanOptions.OmitConnPrepare = omitConnPrepare
 									cfg.SpanOptions.SpanFilter = spanFilterFn
 									cfg.AttributesGetter = tc.attributesGetter
+									cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
 
 									var mc MockConn
 									if legacy {
@@ -758,6 +762,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 							cfg.SpanOptions.OmitConnResetSession = omitResetSession
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
+							cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
 							mc := newMockConn(tc.error)
 							otelConn := newConn(mc, cfg)
 

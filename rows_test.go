@@ -247,6 +247,7 @@ func TestNewRows(t *testing.T) {
 							cfg.SpanOptions.OmitRows = omitRows
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
+							cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
 
 							// New rows
 							rows := newRows(ctx, mr, cfg)

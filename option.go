@@ -101,3 +101,10 @@ func WithAttributesGetter(attributesGetter AttributesGetter) Option {
 		cfg.AttributesGetter = attributesGetter
 	})
 }
+
+// WithInstrumentAttributesGetter takes InstrumentAttributesGetter that will be called every time metric is recorded to instruments.
+func WithInstrumentAttributesGetter(instrumentAttributesGetter InstrumentAttributesGetter) Option {
+	return OptionFunc(func(cfg *config) {
+		cfg.InstrumentAttributesGetter = instrumentAttributesGetter
+	})
+}

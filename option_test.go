@@ -79,6 +79,11 @@ func TestOptions(t *testing.T) {
 			option:         WithAttributesGetter(dummyAttributesGetter),
 			expectedConfig: config{AttributesGetter: dummyAttributesGetter},
 		},
+		{
+			name:           "WithInstrumentAttributesGetter",
+			option:         WithInstrumentAttributesGetter(dummyAttributesGetter),
+			expectedConfig: config{InstrumentAttributesGetter: dummyAttributesGetter},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -89,6 +94,8 @@ func TestOptions(t *testing.T) {
 
 			if tc.expectedConfig.AttributesGetter != nil {
 				assert.Equal(t, tc.expectedConfig.AttributesGetter(context.Background(), "", "", nil), cfg.AttributesGetter(context.Background(), "", "", nil))
+			} else if tc.expectedConfig.InstrumentAttributesGetter != nil {
+				assert.Equal(t, tc.expectedConfig.InstrumentAttributesGetter(context.Background(), "", "", nil), cfg.InstrumentAttributesGetter(context.Background(), "", "", nil))
 			} else {
 				assert.Equal(t, tc.expectedConfig, cfg)
 			}

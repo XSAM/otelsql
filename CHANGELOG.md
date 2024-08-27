@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- `WithInstrumentAttributesGetter` option provides additional attributes when `latency` histogram is recorded. (#334)
+
 ## [0.32.0] - 2024-07-05
 
 ### Changed

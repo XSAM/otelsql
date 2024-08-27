@@ -41,7 +41,7 @@ func newConnector(connector driver.Connector, otDriver *otDriver) *otConnector {
 
 func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err error) {
 	method := MethodConnectorConnect
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg.Attributes, method)
+	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, "", nil)
 	defer func() {
 		onDefer(err)
 	}()
