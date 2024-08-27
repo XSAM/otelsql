@@ -25,7 +25,7 @@ services:
       retries: 10
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.105.0
+    image: otel/opentelemetry-collector-contrib:0.108.0
     command: ["--config=/etc/otel-collector.yaml"]
     volumes:
       - ./otel-collector.yaml:/etc/otel-collector.yaml
@@ -33,7 +33,7 @@ services:
       - jaeger
 
   prometheus:
-    image: prom/prometheus:v2.53.1
+    image: prom/prometheus:v2.54.1
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml
     ports:
