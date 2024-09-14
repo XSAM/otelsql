@@ -8,6 +8,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- The `Open` method uses the `dataSourceName` when calling `sql.Open`. (#359)
+
+  This change improves compatibility with certain drivers that perform a verification of the `dataSourceName` before establishing a connection.
+
 ## [0.33.0] - 2024-08-27
 
 ### Added
@@ -214,6 +220,7 @@ This update contains a breaking change of the removal of `SpanOptions.AllowRoot`
 ### Added
 
 - SpanOptions to suppress creation of spans. (#87, #102)
+
   - `OmitConnResetSession`
   - `OmitConnPrepare`
   - `OmitConnQuery`
