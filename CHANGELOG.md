@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+The minimum supported Go version is `1.22`.
+
 ### Changed
 
 - Upgrade OTel to version `v1.30.0/v0.52.0`. (#356)
@@ -17,6 +19,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - The `Open` method uses the `dataSourceName` when calling `sql.Open`. (#359)
 
   This change improves compatibility with certain drivers that perform a verification of the `dataSourceName` before establishing a connection.
+
+### Removed
+
+- Support for Go `1.21`. (#356)
 
 ## [0.33.0] - 2024-08-27
 

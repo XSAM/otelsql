@@ -82,15 +82,10 @@ This project is tested on the following systems.
 | OS      | Go Version | Architecture |
 | ------- | ---------- | ------------ |
 | Ubuntu  | 1.22       | amd64        |
-| Ubuntu  | 1.21       | amd64        |
 | Ubuntu  | 1.22       | 386          |
-| Ubuntu  | 1.21       | 386          |
 | MacOS   | 1.22       | amd64        |
-| MacOS   | 1.21       | amd64        |
 | Windows | 1.22       | amd64        |
-| Windows | 1.21       | amd64        |
 | Windows | 1.22       | 386          |
-| Windows | 1.21       | 386          |
 
 While this project should work for other systems, no compatibility guarantees
 are made for those systems currently.
