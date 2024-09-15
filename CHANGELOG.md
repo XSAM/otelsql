@@ -12,13 +12,10 @@ The minimum supported Go version is `1.22`.
 
 ### Changed
 
-- Upgrade OTel to version `v1.30.0/v0.52.0`. (#356)
-
-### Fixed
-
 - The `Open` method uses the `dataSourceName` when calling `sql.Open`. (#359)
 
   This change improves compatibility with certain drivers that perform a verification of the `dataSourceName` before establishing a connection.
+- Upgrade OTel to version `v1.30.0/v0.52.0`. (#356)
 
 ### Removed
 
