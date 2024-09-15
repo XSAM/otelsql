@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The minimum supported Go version is `1.22`.
 
+### Added
+
+- Go 1.23 to supported versions. (#361)
+
 ### Changed
 
 - The `Open` method uses the `dataSourceName` when calling `sql.Open`. (#359)
