@@ -5,7 +5,7 @@ go 1.22
 replace github.com/XSAM/otelsql => ../../
 
 require (
-	github.com/XSAM/otelsql v0.33.0
+	github.com/XSAM/otelsql v0.34.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/prometheus/client_golang v1.20.3
 	go.opentelemetry.io/otel v1.30.0
