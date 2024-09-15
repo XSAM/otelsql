@@ -8,7 +8,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Fixed
+### Changed
 
 - The `Open` method uses the `dataSourceName` when calling `sql.Open`. (#359)
 
