@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade OTel to version `v1.30.0/v0.52.0`. (#356)
+
 ### Fixed
 
 - The `Open` method uses the `dataSourceName` when calling `sql.Open`. (#359)
