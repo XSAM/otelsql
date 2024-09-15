@@ -76,8 +76,15 @@ func WrapDriver(dri driver.Driver, options ...Option) driver.Driver {
 
 // Open is a wrapper over sql.Open with OTel instrumentation.
 func Open(driverName, dataSourceName string, options ...Option) (*sql.DB, error) {
-	// Retrieve the driver implementation we need to wrap with instrumentation
-	db, err := sql.Open(driverName, "")
+	// Retrieve the driver implementation we need to wrap with instrumentation.
+	// The dataSourceName is used to bypass the driver's Open method, as some
+	// drivers validate the data source name first before actually opening
+	// connections.
+	// Any connection opened here (usually no connection will be opened) is not
+	// used, and it will be closed immediately to prevent leaking connections.
+	// Usually, no connection will be opened here if the driver implements
+	// the driver.DriverContext interface.
+	db, err := sql.Open(driverName, dataSourceName)
 	if err != nil {
 		return nil, err
 	}
