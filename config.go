@@ -80,6 +80,11 @@ type config struct {
 	// InstrumentAttributesGetter will be called to produce additional attributes while recording metrics to instruments.
 	// Default returns nil
 	InstrumentAttributesGetter InstrumentAttributesGetter
+
+	// DisableSkipErrMeasurement, if set to true, will suppress driver.ErrSkip as an error status in measurements.
+	// The measurement will be recorded as status=ok.
+	// Default is false
+	DisableSkipErrMeasurement bool
 }
 
 // SpanOptions holds configuration of tracing span to decide
