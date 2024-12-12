@@ -6,6 +6,12 @@ receivers:
       grpc:
         endpoint: "0.0.0.0:4317"
 processors:
+  batch:
+  # https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/memorylimiterprocessor
+  memory_limiter:
+    # 75% of total memory
+    limit_percentage: 75
+    check_interval: 1s
 extensions:
   health_check: {}
 exporters:
@@ -15,17 +21,18 @@ exporters:
       insecure: true
   prometheus:
     endpoint: 0.0.0.0:9090
-  logging:
+  debug:
+    verbosity: detailed
 
 service:
   extensions: [health_check]
   pipelines:
     traces:
       receivers: [otlp]
-      processors: []
+      processors: [memory_limiter, batch]
       exporters: [otlp]
 
     metrics:
       receivers: [otlp]
-      processors: []
-      exporters: [prometheus, logging]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus]
