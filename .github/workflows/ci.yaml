@@ -18,6 +18,13 @@ jobs:
         with:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
           cache-dependency-path: "**/go.sum"
+      - name: Tools cache
+        uses: actions/cache@v4
+        env:
+          cache-name: go-tools-cache
+        with:
+          path: ~/.tools
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./internal/tools/**') }}
       - name: Run linters
         run: make license-check lint
       - name: Build
@@ -33,6 +40,13 @@ jobs:
         with:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
           cache-dependency-path: "**/go.sum"
+      - name: Tools cache
+        uses: actions/cache@v4
+        env:
+          cache-name: go-tools-cache
+        with:
+          path: ~/.tools
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./internal/tools/**') }}
       - name: Run tests with race detector
         run: make test-race
 
@@ -44,6 +58,13 @@ jobs:
         with:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
           cache-dependency-path: "**/go.sum"
+      - name: Tools cache
+        uses: actions/cache@v4
+        env:
+          cache-name: go-tools-cache
+        with:
+          path: ~/.tools
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./internal/tools/**') }}
       - name: Run coverage tests
         run: |
           make test-coverage
@@ -84,6 +105,13 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
           cache-dependency-path: "**/go.sum"
+      - name: Tools cache
+        uses: actions/cache@v4
+        env:
+          cache-name: go-tools-cache
+        with:
+          path: ~/.tools
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./internal/tools/**') }}
       - name: Run tests
         env:
           GOARCH: ${{ matrix.arch }}
