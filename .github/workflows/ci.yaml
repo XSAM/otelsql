@@ -17,7 +17,6 @@ jobs:
     - uses: actions/setup-go@v5
       with:
         go-version: ${{ env.DEFAULT_GO_VERSION }}
-        check-latest: true
         cache-dependency-path: "**/go.sum"
     - name: Run linters
       run: make license-check lint
@@ -33,7 +32,6 @@ jobs:
     - uses: actions/setup-go@v5
       with:
         go-version: ${{ env.DEFAULT_GO_VERSION }}
-        check-latest: true
         cache-dependency-path: "**/go.sum"
     - name: Run tests with race detector
       run: make test-race
@@ -45,7 +43,6 @@ jobs:
     - uses: actions/setup-go@v5
       with:
         go-version: ${{ env.DEFAULT_GO_VERSION }}
-        check-latest: true
         cache-dependency-path: "**/go.sum"
     - name: Run coverage tests
       run: |
@@ -85,8 +82,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-go@v5
       with:
-        go-version: ${{ env.DEFAULT_GO_VERSION }}
-        check-latest: true
+        go-version: ${{ matrix.go-version }}
         cache-dependency-path: "**/go.sum"
     - name: Run tests
       env:
