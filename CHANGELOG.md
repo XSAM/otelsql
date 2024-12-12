@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-- `DisableSkipErrMeasurement` option suppresses the recording of `driver.ErrSkip` measurements as errors if enabled. (#389)
+- `DisableSkipErrMeasurement` option suppresses `driver.ErrSkip` as an error status in measurements if enabled. (#389)
 
 ## [0.35.0] - 2024-10-11
 
