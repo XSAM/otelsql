@@ -23,7 +23,7 @@ jobs:
         env:
           cache-name: go-tools-cache
         with:
-          path: ~/.tools
+          path: .tools
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./internal/tools/**') }}
       - name: Run linters
         run: make license-check lint
@@ -45,7 +45,7 @@ jobs:
         env:
           cache-name: go-tools-cache
         with:
-          path: ~/.tools
+          path: .tools
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./internal/tools/**') }}
       - name: Run tests with race detector
         run: make test-race
@@ -63,7 +63,7 @@ jobs:
         env:
           cache-name: go-tools-cache
         with:
-          path: ~/.tools
+          path: .tools
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./internal/tools/**') }}
       - name: Run coverage tests
         run: |
@@ -110,7 +110,7 @@ jobs:
         env:
           cache-name: go-tools-cache
         with:
-          path: ~/.tools
+          path: .tools
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./internal/tools/**') }}
       - name: Run tests
         env:
