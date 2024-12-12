@@ -84,6 +84,11 @@ func TestOptions(t *testing.T) {
 			option:         WithInstrumentAttributesGetter(dummyAttributesGetter),
 			expectedConfig: config{InstrumentAttributesGetter: dummyAttributesGetter},
 		},
+		{
+			name:           "WithDisableSkipErrMeasurement",
+			option:         WithDisableSkipErrMeasurement(true),
+			expectedConfig: config{DisableSkipErrMeasurement: true},
+		},
 	}
 
 	for _, tc := range testCases {

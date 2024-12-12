@@ -108,3 +108,11 @@ func WithInstrumentAttributesGetter(instrumentAttributesGetter InstrumentAttribu
 		cfg.InstrumentAttributesGetter = instrumentAttributesGetter
 	})
 }
+
+// WittDisableSkipErrMeasurement, if set to true, will suppress driver.ErrSkip as an error status in measurements.
+// The measurement will be recorded as status=ok.
+func WithDisableSkipErrMeasurement(disable bool) Option {
+	return OptionFunc(func(cfg *config) {
+		cfg.DisableSkipErrMeasurement = disable
+	})
+}
