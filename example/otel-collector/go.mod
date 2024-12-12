@@ -1,6 +1,6 @@
 module github.com/XSAM/otelsql/example/otel-collector
 
-go 1.22.0
+go 1.22.7
 
 replace github.com/XSAM/otelsql => ../../
 
