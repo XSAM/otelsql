@@ -13,30 +13,12 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - name: Install Go
-      uses: actions/setup-go@v5
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
       with:
         go-version: ${{ env.DEFAULT_GO_VERSION }}
-    - name: Checkout Repo
-      uses: actions/checkout@v4
-    - name: Setup Environment
-      run: |
-        echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
-        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-    - name: Module cache
-      uses: actions/cache@v4
-      env:
-        cache-name: go-mod-cache
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-    - name: Tools cache
-      uses: actions/cache@v4
-      env:
-        cache-name: go-tools-cache
-      with:
-        path: ~/.tools
-        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./internal/tools/**') }}
+        check-latest: true
+        cache-dependency-path: "**/go.sum"
     - name: Run linters
       run: make license-check lint
     - name: Build
