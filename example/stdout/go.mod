@@ -1,18 +1,18 @@
 module github.com/XSAM/otelsql/example/stdout
 
-go 1.22
+go 1.22.0
 
 replace github.com/XSAM/otelsql => ../../
 
 require (
 	github.com/XSAM/otelsql v0.35.0
 	github.com/go-sql-driver/mysql v1.8.1
-	github.com/prometheus/client_golang v1.20.4
-	go.opentelemetry.io/otel v1.31.0
-	go.opentelemetry.io/otel/exporters/prometheus v0.53.0
-	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.31.0
-	go.opentelemetry.io/otel/sdk v1.31.0
-	go.opentelemetry.io/otel/sdk/metric v1.31.0
+	github.com/prometheus/client_golang v1.20.5
+	go.opentelemetry.io/otel v1.33.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.55.0
+	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.33.0
+	go.opentelemetry.io/otel/sdk v1.33.0
+	go.opentelemetry.io/otel/sdk/metric v1.33.0
 )
 
 require (
@@ -25,10 +25,11 @@ require (
 	github.com/klauspost/compress v1.17.10 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.60.0 // indirect
+	github.com/prometheus/common v0.61.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	go.opentelemetry.io/otel/metric v1.31.0 // indirect
-	go.opentelemetry.io/otel/trace v1.31.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	google.golang.org/protobuf v1.35.1 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/otel/metric v1.33.0 // indirect
+	go.opentelemetry.io/otel/trace v1.33.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	google.golang.org/protobuf v1.35.2 // indirect
 )

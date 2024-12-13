@@ -12,6 +12,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - `DisableSkipErrMeasurement` option suppresses `driver.ErrSkip` as an error status in measurements if enabled. (#389)
 
+### Changed
+
+- Upgrade OTel to `v1.33.0/v0.55.0`. (#396)
+
 ## [0.35.0] - 2024-10-11
 
 ### Changed
