@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.36.0] - 2024-12-18
+
 ### Added
 
 - `DisableSkipErrMeasurement` option suppresses `driver.ErrSkip` as an error status in measurements if enabled. (#389)
@@ -395,7 +397,8 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 - Example code for a basic usage.
 - Apache-2.0 license.
 
-[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.35.0...HEAD
+[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.36.0...HEAD
+[0.36.0]: https://github.com/XSAM/otelsql/releases/tag/v0.36.0
 [0.35.0]: https://github.com/XSAM/otelsql/releases/tag/v0.35.0
 [0.34.0]: https://github.com/XSAM/otelsql/releases/tag/v0.34.0
 [0.33.0]: https://github.com/XSAM/otelsql/releases/tag/v0.33.0
