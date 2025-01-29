@@ -56,7 +56,7 @@ type config struct {
 
 	SpanOptions SpanOptions
 
-	// Attributes will be set to each span.
+	// Attributes will be set to each span and measurement.
 	Attributes []attribute.KeyValue
 
 	// SpanNameFormatter will be called to produce span's name.
