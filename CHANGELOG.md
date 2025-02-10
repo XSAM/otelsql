@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- `WithInstrumentErrorAttributesGetter` option to provide additional error-related attributes. (#440)
+
 ### Removed
 
 - Drop support for Go `1.23`. (#447)

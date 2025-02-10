@@ -33,6 +33,10 @@ func TestOptions(t *testing.T) {
 		return []attribute.KeyValue{attribute.String("foo", "bar")}
 	}
 
+	dummyErrorAttributesGetter := func(_ error) []attribute.KeyValue {
+		return []attribute.KeyValue{attribute.String("errorKey", "errorVal")}
+	}
+
 	testCases := []struct {
 		name           string
 		option         Option
@@ -89,6 +93,11 @@ func TestOptions(t *testing.T) {
 			option:         WithDisableSkipErrMeasurement(true),
 			expectedConfig: config{DisableSkipErrMeasurement: true},
 		},
+		{
+			name:           "WithInstrumentErrorAttributesGetter",
+			option:         WithInstrumentErrorAttributesGetter(dummyErrorAttributesGetter),
+			expectedConfig: config{InstrumentErrorAttributesGetter: dummyErrorAttributesGetter},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -101,6 +110,8 @@ func TestOptions(t *testing.T) {
 				assert.Equal(t, tc.expectedConfig.AttributesGetter(context.Background(), "", "", nil), cfg.AttributesGetter(context.Background(), "", "", nil))
 			} else if tc.expectedConfig.InstrumentAttributesGetter != nil {
 				assert.Equal(t, tc.expectedConfig.InstrumentAttributesGetter(context.Background(), "", "", nil), cfg.InstrumentAttributesGetter(context.Background(), "", "", nil))
+			} else if tc.expectedConfig.InstrumentErrorAttributesGetter != nil {
+				assert.Equal(t, tc.expectedConfig.InstrumentErrorAttributesGetter(assert.AnError), cfg.InstrumentErrorAttributesGetter(assert.AnError))
 			} else {
 				assert.Equal(t, tc.expectedConfig, cfg)
 			}

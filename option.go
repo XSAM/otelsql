@@ -116,3 +116,10 @@ func WithDisableSkipErrMeasurement(disable bool) Option {
 		cfg.DisableSkipErrMeasurement = disable
 	})
 }
+
+// WithInstrumentErrorAttributesGetter takes InstrumentErrorAttributesGetter that will be called every time metric is recorded to instruments.
+func WithInstrumentErrorAttributesGetter(instrumentErrorAttributesGetter InstrumentErrorAttributesGetter) Option {
+	return OptionFunc(func(cfg *config) {
+		cfg.InstrumentErrorAttributesGetter = instrumentErrorAttributesGetter
+	})
+}
