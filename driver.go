@@ -43,6 +43,12 @@ func (d *otDriver) Open(name string) (driver.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: Parse the data source name to get the server address.
+	// TODO: need to parse name to get server.address
+	// This must not overwrite the server.address provided by WithAttributes
+
+	// Need to use a new config.
 	return newConn(rawConn, d.cfg), nil
 }
 
@@ -51,5 +57,11 @@ func (d *otDriver) OpenConnector(name string) (driver.Connector, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: need to parse name to get server.address
+	// This must not overwrite the server.address provided by WithAttributes
+
+	// This method need to be refactor, to add a config parameter to prevent reusing the same config from previous config
+	// The array needs to be reset
 	return newConnector(rawConnector, d), err
 }

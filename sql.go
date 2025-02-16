@@ -33,6 +33,9 @@ var maxDriverSlot = 1000
 // identified by its driverName, using provided Option.
 // It is possible to register multiple wrappers for the same database driver if
 // needing different Option for different connections.
+//
+// The driver created from this function will populate the "server.address" attribute by parsing dataSourceName.
+// You can override this attribute by using WithAttributes with the same key.
 func Register(driverName string, options ...Option) (string, error) {
 	// Retrieve the driver implementation we need to wrap with instrumentation
 	db, err := sql.Open(driverName, "")
@@ -70,11 +73,17 @@ func Register(driverName string, options ...Option) (string, error) {
 }
 
 // WrapDriver takes a SQL driver and wraps it with OTel instrumentation.
+//
+// The driver created from this function will populate the "server.address" attribute by parsing dataSourceName.
+// You can override this attribute by using WithAttributes with the same key.
 func WrapDriver(dri driver.Driver, options ...Option) driver.Driver {
 	return newDriver(dri, newConfig(options...))
 }
 
 // Open is a wrapper over sql.Open with OTel instrumentation.
+//
+// The driver created from this function will populate the "server.address" attribute by parsing dataSourceName.
+// You can override this attribute by using WithAttributes with the same key.
 func Open(driverName, dataSourceName string, options ...Option) (*sql.DB, error) {
 	// Retrieve the driver implementation we need to wrap with instrumentation.
 	// The dataSourceName is used to bypass the driver's Open method, as some
@@ -107,6 +116,8 @@ func Open(driverName, dataSourceName string, options ...Option) (*sql.DB, error)
 }
 
 // OpenDB is a wrapper over sql.OpenDB with OTel instrumentation.
+//
+// This function does not populate the "server.address" attribute automatically.
 func OpenDB(c driver.Connector, options ...Option) *sql.DB {
 	d := newOtDriver(c.Driver(), newConfig(options...))
 	connector := newConnector(c, d)
@@ -115,6 +126,8 @@ func OpenDB(c driver.Connector, options ...Option) *sql.DB {
 }
 
 // RegisterDBStatsMetrics register sql.DBStats metrics with OTel instrumentation.
+//
+// This function does not populate the "server.address" attribute automatically.
 func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) error {
 	cfg := newConfig(opts...)
 	meter := cfg.Meter
