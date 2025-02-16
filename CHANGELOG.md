@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Upgrade OTel to `v1.34.0/v0.56.0`. (#412)
 - Update the comment for the `WithAttributes` option to correctly describe the behavior on measurement creation. (#413)
+- Upgrade semantic conventions to `semconv/v1.24.0`. (#418)
 
 ## [0.36.0] - 2024-12-18
 
