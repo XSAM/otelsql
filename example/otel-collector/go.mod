@@ -1,6 +1,8 @@
 module github.com/XSAM/otelsql/example/otel-collector
 
-go 1.22.7
+go 1.23
+
+toolchain go1.24.0
 
 replace github.com/XSAM/otelsql => ../../
 
@@ -18,6 +20,7 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
+	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
