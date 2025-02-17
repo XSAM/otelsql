@@ -75,7 +75,7 @@ func AttributesFromDSN(dsn string) []attribute.KeyValue {
 	if portStr != "" {
 		port, err := strconv.ParseInt(portStr, 10, 64)
 		if err == nil {
-			attrs = append(attrs, semconv.ServerPort(int(port)))
+			attrs = append(attrs, semconv.ServerPortKey.Int64(port))
 		}
 	}
 
