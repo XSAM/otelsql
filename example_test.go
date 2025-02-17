@@ -18,6 +18,8 @@ import (
 	"database/sql"
 	"database/sql/driver"
 
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+
 	"github.com/XSAM/otelsql"
 )
 
@@ -74,5 +76,27 @@ func ExampleRegister() {
 		panic(err)
 	}
 	defer db.Close()
+	// Output:
+}
+
+func ExampleAttributesFromDSN() {
+	attrs := append(otelsql.AttributesFromDSN(mysqlDSN), semconv.DBSystemMySQL)
+
+	// Connect to database
+	db, err := otelsql.Open("mysql", mysqlDSN, otelsql.WithAttributes(
+		attrs...,
+	))
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	// Register DB stats to meter
+	err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
+		attrs...,
+	))
+	if err != nil {
+		panic(err)
+	}
 	// Output:
 }
