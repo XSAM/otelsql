@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- `AttributesFromDSN` method to generate `server.address` and `server.port` attributes from a DSN. (#419)
+
 ### Changed
 
 - Upgrade OTel to `v1.34.0/v0.56.0`. (#412)
