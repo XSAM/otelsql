@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 
 - `AttributesFromDSN` method to generate `server.address` and `server.port` attributes from a DSN. (#419)
+- Go 1.24 to supported versions. (#422)
 
 ### Changed
 

@@ -81,14 +81,19 @@ This project is tested on the following systems.
 
 | OS      | Go Version | Architecture |
 | ------- | ---------- | ------------ |
+| Ubuntu  | 1.24       | amd64        |
 | Ubuntu  | 1.23       | amd64        |
 | Ubuntu  | 1.22       | amd64        |
+| Ubuntu  | 1.24       | 386          |
 | Ubuntu  | 1.23       | 386          |
 | Ubuntu  | 1.22       | 386          |
+| MacOS   | 1.24       | amd64        |
 | MacOS   | 1.23       | amd64        |
 | MacOS   | 1.22       | amd64        |
+| Windows | 1.24       | amd64        |
 | Windows | 1.23       | amd64        |
 | Windows | 1.22       | amd64        |
+| Windows | 1.24       | 386          |
 | Windows | 1.23       | 386          |
 | Windows | 1.22       | 386          |
 
