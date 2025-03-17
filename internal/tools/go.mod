@@ -2,7 +2,7 @@ module github.com/XSAM/otelsql/internal/tools
 
 go 1.22.1
 
-require github.com/golangci/golangci-lint v1.63.4
+require github.com/golangci/golangci-lint v1.64.8
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.2.1 // indirect
