@@ -43,6 +43,9 @@ type AttributesGetter func(ctx context.Context, method Method, query string, arg
 // InstrumentAttributesGetter provides additional attributes while recording metrics to instruments.
 type InstrumentAttributesGetter func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue
 
+// ErrorAttributesGetter provides additional attributes while recording metrics to instruments derived from the provided error.
+type ErrorAttributesGetter func(err error) []attribute.KeyValue
+
 type SpanFilter func(ctx context.Context, method Method, query string, args []driver.NamedValue) bool
 
 type config struct {
@@ -80,6 +83,8 @@ type config struct {
 	// InstrumentAttributesGetter will be called to produce additional attributes while recording metrics to instruments.
 	// Default returns nil
 	InstrumentAttributesGetter InstrumentAttributesGetter
+
+	ErrorAttributesGetter ErrorAttributesGetter
 
 	// DisableSkipErrMeasurement, if set to true, will suppress driver.ErrSkip as an error status in measurements.
 	// The measurement will be recorded as status=ok.

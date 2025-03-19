@@ -70,6 +70,10 @@ func recordMetric(
 			attributes = append(attributes, cfg.InstrumentAttributesGetter(ctx, method, query, args)...)
 		}
 		if err != nil {
+			if cfg.ErrorAttributesGetter != nil {
+				attributes = append(attributes, cfg.ErrorAttributesGetter(err)...)
+			}
+
 			if cfg.DisableSkipErrMeasurement && err == driver.ErrSkip {
 				attributes = append(attributes, queryStatusKey.String("ok"))
 			} else {

@@ -260,6 +260,14 @@ var keep SpanFilter = func(_ context.Context, _ Method, _ string, _ []driver.Nam
 }
 
 func TestRecordMetric(t *testing.T) {
+	dummyAttributesGetter := func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
+		return []attribute.KeyValue{defaultattribute}
+	}
+
+	dummyErrorAttributesGetter := func(_ error) []attribute.KeyValue {
+		return []attribute.KeyValue{defaultattribute}
+	}
+
 	type args struct {
 		ctx    context.Context
 		cfg    config
@@ -272,6 +280,7 @@ func TestRecordMetric(t *testing.T) {
 		args           args
 		recordErr      error
 		expectedStatus string
+		expectedAttr   attribute.KeyValue
 	}{
 		{
 			name: "metric with no error",
@@ -313,6 +322,28 @@ func TestRecordMetric(t *testing.T) {
 			recordErr:      driver.ErrSkip,
 			expectedStatus: "ok",
 		},
+		{
+			name: "metric with instrumentAttributesGetter",
+			args: args{
+				cfg:    newConfig(WithInstrumentAttributesGetter(dummyAttributesGetter)),
+				method: MethodConnQuery,
+				query:  "example query",
+			},
+			recordErr:      nil,
+			expectedStatus: "ok",
+			expectedAttr:   defaultattribute,
+		},
+		{
+			name: "metric with errorAttributesGetter",
+			args: args{
+				cfg:    newConfig(WithErrorAttributesGetter(dummyErrorAttributesGetter)),
+				method: MethodConnQuery,
+				query:  "example query",
+			},
+			recordErr:      assert.AnError,
+			expectedStatus: "error",
+			expectedAttr:   defaultattribute,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -323,6 +354,7 @@ func TestRecordMetric(t *testing.T) {
 			recordFunc := recordMetric(tt.args.ctx, mockInstruments, tt.args.cfg, tt.args.method, tt.args.query, tt.args.args)
 			recordFunc(tt.recordErr)
 			assert.Equal(t, tt.expectedStatus, mockLatency.status)
+			assert.True(t, mockLatency.hasAttr(tt.expectedAttr))
 		})
 	}
 }
@@ -331,10 +363,23 @@ type float64HistogramMock struct {
 	// Add metric.Float64Histogram so we only need to implement the function we care about for the mock
 	metric.Float64Histogram
 	status string
+	attrs  attribute.Set
 }
 
 func (m *float64HistogramMock) Record(_ context.Context, _ float64, opts ...metric.RecordOption) {
-	attr := metric.NewRecordConfig(opts).Attributes()
-	statusVal, _ := attr.Value(queryStatusKey)
+	attrs := metric.NewRecordConfig(opts).Attributes()
+	statusVal, _ := attrs.Value(queryStatusKey)
 	m.status = statusVal.AsString()
+	m.attrs = attrs
+}
+
+func (m *float64HistogramMock) hasAttr(attr attribute.KeyValue) bool {
+	if (attr == attribute.KeyValue{}) {
+		return true
+	}
+	value, found := m.attrs.Value(attr.Key)
+	if !found {
+		return false
+	}
+	return value == attr.Value
 }
