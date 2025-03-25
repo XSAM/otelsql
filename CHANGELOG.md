@@ -12,6 +12,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - `WithInstrumentErrorAttributesGetter` option to provide additional error-related attributes. (#440)
 
+### Changed
+
+- Upgrade OTel to `v1.35.0/v0.57.0`. (#437)
+
 ### Removed
 
 - Drop support for Go `1.23`. (#447)
