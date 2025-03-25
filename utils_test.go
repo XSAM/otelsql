@@ -260,6 +260,18 @@ var keep SpanFilter = func(_ context.Context, _ Method, _ string, _ []driver.Nam
 }
 
 func TestRecordMetric(t *testing.T) {
+	methodAttr := attribute.String("method", string(MethodConnQuery))
+	testAttr := attribute.String("dummyKey", "dummyVal")
+	testErrorAttr := attribute.String("errorKey", "errorVal")
+
+	dummyAttributesGetter := func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
+		return []attribute.KeyValue{testAttr}
+	}
+
+	dummyErrorAttributesGetter := func(_ error) []attribute.KeyValue {
+		return []attribute.KeyValue{testErrorAttr}
+	}
+
 	type args struct {
 		ctx    context.Context
 		cfg    config
@@ -268,10 +280,10 @@ func TestRecordMetric(t *testing.T) {
 		args   []driver.NamedValue
 	}
 	tests := []struct {
-		name           string
-		args           args
-		recordErr      error
-		expectedStatus string
+		name          string
+		args          args
+		recordErr     error
+		expectedAttrs attribute.Set
 	}{
 		{
 			name: "metric with no error",
@@ -280,8 +292,8 @@ func TestRecordMetric(t *testing.T) {
 				method: MethodConnQuery,
 				query:  "example query",
 			},
-			recordErr:      nil,
-			expectedStatus: "ok",
+			recordErr:     nil,
+			expectedAttrs: attribute.NewSet(methodAttr, statusAttr("ok")),
 		},
 		{
 			name: "metric with an error",
@@ -290,8 +302,8 @@ func TestRecordMetric(t *testing.T) {
 				method: MethodConnQuery,
 				query:  "example query",
 			},
-			recordErr:      assert.AnError,
-			expectedStatus: "error",
+			recordErr:     assert.AnError,
+			expectedAttrs: attribute.NewSet(methodAttr, statusAttr("error")),
 		},
 		{
 			name: "metric with skip error but not disabled",
@@ -300,8 +312,8 @@ func TestRecordMetric(t *testing.T) {
 				method: MethodConnQuery,
 				query:  "example query",
 			},
-			recordErr:      driver.ErrSkip,
-			expectedStatus: "error",
+			recordErr:     driver.ErrSkip,
+			expectedAttrs: attribute.NewSet(methodAttr, statusAttr("error")),
 		},
 		{
 			name: "metric with skip error but disabled",
@@ -310,8 +322,38 @@ func TestRecordMetric(t *testing.T) {
 				method: MethodConnQuery,
 				query:  "example query",
 			},
-			recordErr:      driver.ErrSkip,
-			expectedStatus: "ok",
+			recordErr:     driver.ErrSkip,
+			expectedAttrs: attribute.NewSet(methodAttr, statusAttr("ok")),
+		},
+		{
+			name: "metric with instrumentAttributesGetter",
+			args: args{
+				cfg:    newConfig(WithInstrumentAttributesGetter(dummyAttributesGetter)),
+				method: MethodConnQuery,
+				query:  "example query",
+			},
+			recordErr:     nil,
+			expectedAttrs: attribute.NewSet(testAttr, methodAttr, statusAttr("ok")),
+		},
+		{
+			name: "metric with instrumentErrorAttributesGetter",
+			args: args{
+				cfg:    newConfig(WithInstrumentErrorAttributesGetter(dummyErrorAttributesGetter)),
+				method: MethodConnQuery,
+				query:  "example query",
+			},
+			recordErr:     assert.AnError,
+			expectedAttrs: attribute.NewSet(testErrorAttr, methodAttr, statusAttr("error")),
+		},
+		{
+			name: "metric with instrumentErrorAttributesGetter and no error",
+			args: args{
+				cfg:    newConfig(WithInstrumentErrorAttributesGetter(dummyErrorAttributesGetter)),
+				method: MethodConnQuery,
+				query:  "example query",
+			},
+			recordErr:     nil,
+			expectedAttrs: attribute.NewSet(methodAttr, statusAttr("ok")),
 		},
 	}
 	for _, tt := range tests {
@@ -322,7 +364,7 @@ func TestRecordMetric(t *testing.T) {
 			}
 			recordFunc := recordMetric(tt.args.ctx, mockInstruments, tt.args.cfg, tt.args.method, tt.args.query, tt.args.args)
 			recordFunc(tt.recordErr)
-			assert.Equal(t, tt.expectedStatus, mockLatency.status)
+			assert.Equal(t, tt.expectedAttrs, mockLatency.attrs)
 		})
 	}
 }
@@ -330,11 +372,13 @@ func TestRecordMetric(t *testing.T) {
 type float64HistogramMock struct {
 	// Add metric.Float64Histogram so we only need to implement the function we care about for the mock
 	metric.Float64Histogram
-	status string
+	attrs attribute.Set
 }
 
 func (m *float64HistogramMock) Record(_ context.Context, _ float64, opts ...metric.RecordOption) {
-	attr := metric.NewRecordConfig(opts).Attributes()
-	statusVal, _ := attr.Value(queryStatusKey)
-	m.status = statusVal.AsString()
+	m.attrs = metric.NewRecordConfig(opts).Attributes()
+}
+
+func statusAttr(status string) attribute.KeyValue {
+	return attribute.String("status", status)
 }
