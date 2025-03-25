@@ -26,6 +26,13 @@
     {
       "matchPackageNames": ["golang.org/x/**"],
       "groupName": "golang.org/x"
+    },
+    {
+      "description": "Group dependencies for examples in one PR",
+      "matchFileNames": ["examples/**"],
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["indirect"],
+      "groupName": "examples"
     }
   ]
 }
