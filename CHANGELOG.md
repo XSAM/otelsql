@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.38.0] - 2025-03-26
+
 ### Added
 
 - `WithInstrumentErrorAttributesGetter` option to provide additional error-related attributes. (#440)
@@ -18,7 +20,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
-- Drop support for Go `1.23`. (#447)
+- Drop support for Go `1.22`. (#447)
 
 ## [0.37.0] - 2025-02-16
 
@@ -422,7 +424,8 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 - Example code for a basic usage.
 - Apache-2.0 license.
 
-[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.37.0...HEAD
+[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.38.0...HEAD
+[0.38.0]: https://github.com/XSAM/otelsql/releases/tag/v0.38.0
 [0.37.0]: https://github.com/XSAM/otelsql/releases/tag/v0.37.0
 [0.36.0]: https://github.com/XSAM/otelsql/releases/tag/v0.36.0
 [0.35.0]: https://github.com/XSAM/otelsql/releases/tag/v0.35.0
