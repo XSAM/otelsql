@@ -22,7 +22,7 @@
     {
       "matchPackageNames": ["google.golang.org/genproto/googleapis/**"],
       "groupName": "googleapis",
-      "schedule": ["0 0 1 * *"]
+      "schedule": ["* * 1 * *"]
     },
     {
       "matchPackageNames": ["golang.org/x/**"],
