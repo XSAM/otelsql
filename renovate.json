@@ -30,7 +30,7 @@
     },
     {
       "description": "Group dependencies for examples in one PR",
-      "matchFileNames": ["examples/**"],
+      "matchFileNames": ["example/**"],
       "matchManagers": ["gomod"],
       "matchDepTypes": ["indirect"],
       "groupName": "examples"
