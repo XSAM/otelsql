@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
 type MockStmt interface {
@@ -113,7 +113,7 @@ var (
 func TestOtStmt_ExecContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
+	expectedAttrs := []attribute.KeyValue{semconv.DBQueryText(query)}
 	testCases := []struct {
 		name             string
 		error            bool
@@ -127,7 +127,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 			attrs: expectedAttrs,
 		},
 		{
-			name:         "no query db.statement",
+			name:         "no query db.query.text",
 			disableQuery: true,
 		},
 		{
@@ -225,7 +225,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 func TestOtStmt_QueryContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
+	expectedAttrs := []attribute.KeyValue{semconv.DBQueryText(query)}
 	testCases := []struct {
 		name             string
 		error            bool
@@ -239,7 +239,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 			attrs: expectedAttrs,
 		},
 		{
-			name:         "no query db.statement",
+			name:         "no query db.query.text",
 			disableQuery: true,
 		},
 		{
@@ -399,5 +399,4 @@ func TestOtStmt_CheckNamedValue(t *testing.T) {
 			assert.Equal(t, tc.err, err)
 		})
 	}
-
 }

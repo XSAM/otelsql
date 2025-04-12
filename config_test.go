@@ -22,12 +22,12 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
 func TestNewConfig(t *testing.T) {
-	cfg := newConfig(WithSpanOptions(SpanOptions{Ping: true}), WithAttributes(semconv.DBSystemMySQL))
+	cfg := newConfig(WithSpanOptions(SpanOptions{Ping: true}), WithAttributes(semconv.DBSystemNameMySQL))
 
 	// Compare function result
 	assert.Equal(t, defaultSpanNameFormatter(context.Background(), "foo", "bar"), cfg.SpanNameFormatter(context.Background(), "foo", "bar"))
@@ -49,7 +49,7 @@ func TestNewConfig(t *testing.T) {
 		Instruments: cfg.Instruments,
 		SpanOptions: SpanOptions{Ping: true},
 		Attributes: []attribute.KeyValue{
-			semconv.DBSystemMySQL,
+			semconv.DBSystemNameMySQL,
 		},
 		SQLCommenter: newCommenter(false),
 	}, cfg)

@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -37,8 +37,10 @@ type MockConn interface {
 	BeginTxCount() int
 }
 
-var _ MockConn = (*mockConn)(nil)
-var _ driver.Conn = (*mockConn)(nil)
+var (
+	_ MockConn    = (*mockConn)(nil)
+	_ driver.Conn = (*mockConn)(nil)
+)
 
 type mockConn struct {
 	shouldError bool
@@ -268,7 +270,7 @@ func TestOtConn_Ping(t *testing.T) {
 func TestOtConn_ExecContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
+	expectedAttrs := []attribute.KeyValue{semconv.DBQueryText(query)}
 
 	testCases := []struct {
 		name             string
@@ -283,7 +285,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 			attrs: expectedAttrs,
 		},
 		{
-			name:         "no query db.statement",
+			name:         "no query db.query.text",
 			disableQuery: true,
 		},
 		{
@@ -362,7 +364,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 func TestOtConn_QueryContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
+	expectedAttrs := []attribute.KeyValue{semconv.DBQueryText(query)}
 
 	for _, omitConnQuery := range []bool{true, false} {
 		var testname string
@@ -393,7 +395,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 							attrs: expectedAttrs,
 						},
 						{
-							name:         "no query db.statement",
+							name:         "no query db.query.text",
 							disableQuery: true,
 						},
 						{
@@ -488,7 +490,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 func TestOtConn_PrepareContext(t *testing.T) {
 	query := "query"
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
+	expectedAttrs := []attribute.KeyValue{semconv.DBQueryText(query)}
 
 	for _, legacy := range []bool{true, false} {
 		var testname string
@@ -526,7 +528,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 									attrs: expectedAttrs,
 								},
 								{
-									name:         "no query db.statement",
+									name:         "no query db.query.text",
 									disableQuery: true,
 								},
 								{
@@ -714,7 +716,6 @@ func TestOtConn_BeginTx(t *testing.T) {
 }
 
 func TestOtConn_ResetSession(t *testing.T) {
-
 	testCases := []struct {
 		name             string
 		error            bool

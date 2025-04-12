@@ -22,7 +22,7 @@ import (
 
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -103,7 +103,7 @@ func createSpan(
 ) (context.Context, trace.Span) {
 	attrs := cfg.Attributes
 	if enableDBStatement && !cfg.SpanOptions.DisableQuery {
-		attrs = append(attrs, semconv.DBStatementKey.String(query))
+		attrs = append(attrs, semconv.DBQueryText(query))
 	}
 	if cfg.AttributesGetter != nil {
 		attrs = append(attrs, cfg.AttributesGetter(ctx, method, query, args)...)

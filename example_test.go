@@ -18,7 +18,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 
 	"github.com/XSAM/otelsql"
 )
@@ -80,7 +80,7 @@ func ExampleRegister() {
 }
 
 func ExampleAttributesFromDSN() {
-	attrs := append(otelsql.AttributesFromDSN(mysqlDSN), semconv.DBSystemMySQL)
+	attrs := append(otelsql.AttributesFromDSN(mysqlDSN), semconv.DBSystemNameMySQL)
 
 	// Connect to database
 	db, err := otelsql.Open("mysql", mysqlDSN, otelsql.WithAttributes(
