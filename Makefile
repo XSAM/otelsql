@@ -60,7 +60,7 @@ build: generate
 	set -e; for dir in $(ALL_GO_MOD_DIRS); do \
 	  echo "$(GO) build $${dir}/..."; \
 	  (cd "$${dir}" && \
-	    $(GO) build -o ./bin/main ./... && \
+	    $(GO) build ./... && \
 		$(GO) list ./... \
 		  | grep -v third_party \
 		  | xargs $(GO) test -vet=off -run xxxxxMatchNothingxxxxx >/dev/null); \

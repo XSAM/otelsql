@@ -26,7 +26,7 @@ import (
 // https://opentelemetry.io/docs/specs/semconv/database/
 const OTelSemConvStabilityOptIn = "OTEL_SEMCONV_STABILITY_OPT_IN"
 
-// OTelSemConvStabilityOptInType represents the type of semantic convention stability opt-in
+// OTelSemConvStabilityOptInType represents the type of semantic convention stability opt-in.
 type OTelSemConvStabilityOptInType int
 
 const (
@@ -53,7 +53,7 @@ func ParseOTelSemConvStabilityOptIn() OTelSemConvStabilityOptInType {
 	return OTelSemConvStabilityOptInNone
 }
 
-// containsValue checks if a comma-separated string contains a specific value
+// containsValue checks if a comma-separated string contains a specific value.
 func containsValue(list, value string) bool {
 	values := strings.Split(list, ",")
 	for _, item := range values {

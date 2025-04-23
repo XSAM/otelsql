@@ -9,3 +9,5 @@ Thumbs.db
 coverage.*
 bin/
 vendor/
+example/otel-collector/otel-collector
+example/stdout/stdout
