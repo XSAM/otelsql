@@ -93,13 +93,13 @@ type config struct {
 	// Default is false
 	DisableSkipErrMeasurement bool
 
-	// DBQueryTextAttributes, if set, will be called to produce related attributes on `db.query.text`.
-	// It follows the value of environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`.
-	DBQueryTextAttributes func(query string) []attribute.KeyValue
-
 	// SemConvStabilityOptIn controls which database semantic convention are emitted.
 	// It follows the value of environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`.
 	SemConvStabilityOptIn internalsemconv.OTelSemConvStabilityOptInType
+
+	// DBQueryTextAttributes will be called to produce related attributes on `db.query.text`.
+	// It follows the value of environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`.
+	DBQueryTextAttributes func(query string) []attribute.KeyValue
 }
 
 // SpanOptions holds configuration of tracing span to decide

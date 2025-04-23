@@ -115,15 +115,18 @@ func TestConfigSemConvStabilityOptIn(t *testing.T) {
 			// Verify format of returned attributes based on opt-in type
 			switch tc.expectedOptIn {
 			case internalsemconv.OTelSemConvStabilityOptInNone:
-				assert.Len(t, attrs, 1)
-				assert.Contains(t, attrs[0].Key, string(semconvlegacy.DBStatementKey))
+				assert.Equal(t, attrs, []attribute.KeyValue{
+					semconvlegacy.DBStatementKey.String(query),
+				})
 			case internalsemconv.OTelSemConvStabilityOptInDup:
-				assert.Len(t, attrs, 2)
-				assert.Contains(t, attrs[0].Key, string(semconvlegacy.DBStatementKey))
-				assert.Contains(t, attrs[1].Key, string(semconv.DBQueryTextKey))
+				assert.Equal(t, attrs, []attribute.KeyValue{
+					semconvlegacy.DBStatementKey.String(query),
+					semconv.DBQueryTextKey.String(query),
+				})
 			case internalsemconv.OTelSemConvStabilityOptInStable:
-				assert.Len(t, attrs, 1)
-				assert.Contains(t, attrs[0].Key, string(semconv.DBQueryTextKey))
+				assert.Equal(t, attrs, []attribute.KeyValue{
+					semconv.DBQueryTextKey.String(query),
+				})
 			}
 		})
 	}

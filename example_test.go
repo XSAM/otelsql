@@ -18,8 +18,9 @@ import (
 	"database/sql"
 	"database/sql/driver"
 
-	"github.com/XSAM/otelsql"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
+
+	"github.com/XSAM/otelsql"
 )
 
 func init() {
