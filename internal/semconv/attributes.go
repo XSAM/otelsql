@@ -23,9 +23,9 @@ import (
 // NewDBQueryTextAttributes returns a function that generates appropriate database query attributes
 // based on the provided OTelSemConvStabilityOptInType.
 //
-// - OTelSemConvStabilityOptInNone: Only legacy db.statement attribute
-// - OTelSemConvStabilityOptInDup: Both legacy db.statement and stable db.query.text attributes
-// - OTelSemConvStabilityOptInStable: Only stable db.query.text attribute
+//   - OTelSemConvStabilityOptInNone: Only legacy db.statement attribute
+//   - OTelSemConvStabilityOptInDup: Both legacy db.statement and stable db.query.text attributes
+//   - OTelSemConvStabilityOptInStable: Only stable db.query.text attribute
 func NewDBQueryTextAttributes(optInType OTelSemConvStabilityOptInType) func(query string) []attribute.KeyValue {
 	switch optInType {
 	case OTelSemConvStabilityOptInDup:
