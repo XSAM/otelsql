@@ -15,6 +15,8 @@
 package semconv
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -71,6 +73,115 @@ func TestNewDBQueryTextAttributes(t *testing.T) {
 			result := fn(query)
 
 			// Verify the result matches what we expect
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// customError is a test error type.
+type customError struct {
+	msg string
+}
+
+func (e customError) Error() string {
+	return e.msg
+}
+
+func TestNewErrorTypeAttribute(t *testing.T) {
+	customErr := customError{msg: "test error"}
+	customErrorTypeValue := semconv.ErrorTypeKey.String("github.com/XSAM/otelsql/internal/semconv.customError")
+
+	tests := []struct {
+		name      string
+		optInType OTelSemConvStabilityOptInType
+		err       error
+		expected  []attribute.KeyValue
+	}{
+		{
+			name:      "none with error",
+			optInType: OTelSemConvStabilityOptInNone,
+			err:       assert.AnError,
+			expected:  nil,
+		},
+		{
+			name:      "dup with custom error",
+			optInType: OTelSemConvStabilityOptInDup,
+			err:       customErr,
+			expected:  []attribute.KeyValue{customErrorTypeValue},
+		},
+		{
+			name:      "dup with nil",
+			optInType: OTelSemConvStabilityOptInDup,
+			err:       nil,
+			expected:  nil,
+		},
+		{
+			name:      "stable with custom error",
+			optInType: OTelSemConvStabilityOptInStable,
+			err:       customErr,
+			expected:  []attribute.KeyValue{customErrorTypeValue},
+		},
+		{
+			name:      "stable with nil",
+			optInType: OTelSemConvStabilityOptInStable,
+			err:       nil,
+			expected:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NewErrorTypeAttribute(tt.optInType)(tt.err)
+
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestErrorType(t *testing.T) {
+	customErr := customError{msg: "test error"}
+	customErrorTypeValue := semconv.ErrorTypeKey.String("github.com/XSAM/otelsql/internal/semconv.customError")
+
+	tests := []struct {
+		name     string
+		err      error
+		expected []attribute.KeyValue
+	}{
+		{
+			name:     "nil error",
+			err:      nil,
+			expected: nil,
+		},
+		{
+			name:     "driver.ErrBadConn",
+			err:      driver.ErrBadConn,
+			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrBadConn")},
+		},
+		{
+			name:     "driver.ErrSkip",
+			err:      driver.ErrSkip,
+			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrSkip")},
+		},
+		{
+			name:     "driver.ErrRemoveArgument",
+			err:      driver.ErrRemoveArgument,
+			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrRemoveArgument")},
+		},
+		{
+			name:     "custom error type",
+			err:      customErr,
+			expected: []attribute.KeyValue{customErrorTypeValue},
+		},
+		{
+			name:     "built-in error",
+			err:      fmt.Errorf("some error"),
+			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("*errors.errorString")},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := errorType(tt.err)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
