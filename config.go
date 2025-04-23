@@ -22,6 +22,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+
+	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 )
 
 const (
@@ -90,6 +92,14 @@ type config struct {
 	// The measurement will be recorded as status=ok.
 	// Default is false
 	DisableSkipErrMeasurement bool
+
+	// SemConvStabilityOptIn controls which database semantic convention are emitted.
+	// It follows the value of environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`.
+	SemConvStabilityOptIn internalsemconv.OTelSemConvStabilityOptInType
+
+	// DBQueryTextAttributes will be called to produce related attributes on `db.query.text`.
+	// It follows the value of environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`.
+	DBQueryTextAttributes func(query string) []attribute.KeyValue
 }
 
 // SpanOptions holds configuration of tracing span to decide
@@ -148,6 +158,9 @@ func newConfig(options ...Option) config {
 		TracerProvider:    otel.GetTracerProvider(),
 		MeterProvider:     otel.GetMeterProvider(),
 		SpanNameFormatter: defaultSpanNameFormatter,
+		// Uses the stable behavior
+		SemConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
+		DBQueryTextAttributes: internalsemconv.NewDBQueryTextAttributes(internalsemconv.OTelSemConvStabilityOptInStable),
 	}
 	for _, opt := range options {
 		opt.Apply(&cfg)
@@ -168,6 +181,12 @@ func newConfig(options ...Option) config {
 	if cfg.Instruments, err = newInstruments(cfg.Meter); err != nil {
 		otel.Handle(err)
 	}
+
+	// Initialize SemConvStabilityOptIn from environment
+	cfg.SemConvStabilityOptIn = internalsemconv.ParseOTelSemConvStabilityOptIn()
+
+	// Initialize DBQueryTextAttributes based on SemConvStabilityOptIn
+	cfg.DBQueryTextAttributes = internalsemconv.NewDBQueryTextAttributes(cfg.SemConvStabilityOptIn)
 
 	return cfg
 }

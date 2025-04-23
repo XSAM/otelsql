@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
 type MockStmt interface {
@@ -113,7 +113,7 @@ var (
 func TestOtStmt_ExecContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
+	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 	testCases := []struct {
 		name             string
 		error            bool
@@ -225,7 +225,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 func TestOtStmt_QueryContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
+	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 	testCases := []struct {
 		name             string
 		error            bool

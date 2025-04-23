@@ -30,6 +30,8 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
+
+	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 )
 
 func TestRecordSpanError(t *testing.T) {
@@ -138,12 +140,14 @@ func newMockConfig(t *testing.T, tracer trace.Tracer) config {
 	require.NoError(t, err)
 
 	return config{
-		Tracer:            tracer,
-		Meter:             meter,
-		Instruments:       instruments,
-		Attributes:        []attribute.KeyValue{defaultattribute},
-		SpanNameFormatter: defaultSpanNameFormatter,
-		SQLCommenter:      newCommenter(false),
+		Tracer:                tracer,
+		Meter:                 meter,
+		Instruments:           instruments,
+		Attributes:            []attribute.KeyValue{defaultattribute},
+		SpanNameFormatter:     defaultSpanNameFormatter,
+		SQLCommenter:          newCommenter(false),
+		SemConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
+		DBQueryTextAttributes: internalsemconv.NewDBQueryTextAttributes(internalsemconv.OTelSemConvStabilityOptInStable),
 	}
 }
 
@@ -381,4 +385,108 @@ func (m *float64HistogramMock) Record(_ context.Context, _ float64, opts ...metr
 
 func statusAttr(status string) attribute.KeyValue {
 	return attribute.String("status", status)
+}
+
+func TestCreateSpan(t *testing.T) {
+	methodName := MethodConnQuery
+	query := "SELECT * FROM users"
+
+	tests := []struct {
+		name                    string
+		enableDBStatement       bool
+		disableQuery            bool
+		customAttributesGetter  AttributesGetter
+		expectedSpanName        string
+		customSpanNameFormatter SpanNameFormatter
+		expectedAttrs           []attribute.KeyValue
+	}{
+		{
+			name:              "basic span with DB statement enabled",
+			enableDBStatement: true,
+			expectedSpanName:  string(methodName),
+			expectedAttrs: []attribute.KeyValue{
+				defaultattribute,
+				attribute.String("db.query.text", query),
+			},
+		},
+		{
+			name:              "span with DB statement disabled",
+			enableDBStatement: false,
+			expectedSpanName:  string(methodName),
+			expectedAttrs: []attribute.KeyValue{
+				defaultattribute,
+			},
+		},
+		{
+			name:              "span with DisableQuery option",
+			enableDBStatement: true,
+			disableQuery:      true,
+			expectedSpanName:  string(methodName),
+			expectedAttrs: []attribute.KeyValue{
+				defaultattribute,
+			},
+		},
+		{
+			name:              "span with custom attributes getter",
+			enableDBStatement: true,
+			customAttributesGetter: func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
+				return []attribute.KeyValue{attribute.String("custom.attr", "custom_value")}
+			},
+			expectedSpanName: string(methodName),
+			expectedAttrs: []attribute.KeyValue{
+				defaultattribute,
+				attribute.String("db.query.text", query),
+				attribute.String("custom.attr", "custom_value"),
+			},
+		},
+		{
+			name:              "span with custom name formatter",
+			enableDBStatement: true,
+			customSpanNameFormatter: func(_ context.Context, _ Method, query string) string {
+				return "Custom-" + query
+			},
+			expectedSpanName: "Custom-SELECT * FROM users",
+			expectedAttrs: []attribute.KeyValue{
+				defaultattribute,
+				attribute.String("db.query.text", query),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			sr, provider := newTracerProvider()
+			tracer := provider.Tracer("test")
+
+			// Use newMockConfig instead of manual config creation
+			cfg := newMockConfig(t, tracer)
+
+			// Customize config for test case
+			if tt.disableQuery {
+				cfg.SpanOptions.DisableQuery = true
+			}
+			if tt.customAttributesGetter != nil {
+				cfg.AttributesGetter = tt.customAttributesGetter
+			}
+			if tt.customSpanNameFormatter != nil {
+				cfg.SpanNameFormatter = tt.customSpanNameFormatter
+			}
+
+			// Act
+			ctx := context.Background()
+			ctx, span := createSpan(ctx, cfg, methodName, tt.enableDBStatement, query, nil)
+			span.End()
+
+			// Get the span
+			spans := sr.Ended()
+			require.Len(t, spans, 1)
+
+			spanData := spans[0]
+			assert.Equal(t, tt.expectedSpanName, spanData.Name())
+			assert.Equal(t, trace.SpanKindClient, spanData.SpanKind())
+			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(ctx))
+			assert.ElementsMatch(t, tt.expectedAttrs, spanData.Attributes())
+		})
+	}
 }

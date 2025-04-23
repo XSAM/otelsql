@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -268,7 +268,7 @@ func TestOtConn_Ping(t *testing.T) {
 func TestOtConn_ExecContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
+	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 
 	testCases := []struct {
 		name             string
@@ -362,7 +362,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 func TestOtConn_QueryContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
+	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 
 	for _, omitConnQuery := range []bool{true, false} {
 		var testname string
@@ -488,7 +488,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 func TestOtConn_PrepareContext(t *testing.T) {
 	query := "query"
-	expectedAttrs := []attribute.KeyValue{semconv.DBStatementKey.String(query)}
+	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 
 	for _, legacy := range []bool{true, false} {
 		var testname string

@@ -22,17 +22,31 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconvlegacy "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
+
+	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 )
 
 func TestNewConfig(t *testing.T) {
-	cfg := newConfig(WithSpanOptions(SpanOptions{Ping: true}), WithAttributes(semconv.DBSystemMySQL))
+	// Set a clean environment for the test
+	t.Setenv(internalsemconv.OTelSemConvStabilityOptIn, "")
+
+	cfg := newConfig(WithSpanOptions(SpanOptions{Ping: true}), WithAttributes(semconv.DBSystemNameMySQL))
 
 	// Compare function result
 	assert.Equal(t, defaultSpanNameFormatter(context.Background(), "foo", "bar"), cfg.SpanNameFormatter(context.Background(), "foo", "bar"))
-	// Ignore function compare
+
+	// Verify DBQueryTextAttributes exists and returns expected format
+	assert.NotNil(t, cfg.DBQueryTextAttributes)
+	attrs := cfg.DBQueryTextAttributes("SELECT 1")
+	assert.Len(t, attrs, 1)
+	assert.Contains(t, attrs[0].Key, string(semconvlegacy.DBStatementKey))
+
+	// Ignore function compares for test equality check
 	cfg.SpanNameFormatter = nil
+	cfg.DBQueryTextAttributes = nil
 
 	assert.EqualValues(t, config{
 		TracerProvider: otel.GetTracerProvider(),
@@ -49,9 +63,71 @@ func TestNewConfig(t *testing.T) {
 		Instruments: cfg.Instruments,
 		SpanOptions: SpanOptions{Ping: true},
 		Attributes: []attribute.KeyValue{
-			semconv.DBSystemMySQL,
+			semconv.DBSystemNameMySQL,
 		},
-		SQLCommenter: newCommenter(false),
+		SQLCommenter:          newCommenter(false),
+		SemConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInNone,
 	}, cfg)
 	assert.NotNil(t, cfg.Instruments)
+}
+
+func TestConfigSemConvStabilityOptIn(t *testing.T) {
+	testCases := []struct {
+		name          string
+		envValue      string
+		expectedOptIn internalsemconv.OTelSemConvStabilityOptInType
+	}{
+		{
+			name:          "none",
+			envValue:      "",
+			expectedOptIn: internalsemconv.OTelSemConvStabilityOptInNone,
+		},
+		{
+			name:          "database/dup",
+			envValue:      "database/dup",
+			expectedOptIn: internalsemconv.OTelSemConvStabilityOptInDup,
+		},
+		{
+			name:          "database",
+			envValue:      "database",
+			expectedOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Use t.Setenv which automatically cleans up after the test
+			t.Setenv(internalsemconv.OTelSemConvStabilityOptIn, tc.envValue)
+
+			// Create new config
+			cfg := newConfig()
+
+			// Check that SemConvStabilityOptIn is correctly set
+			assert.Equal(t, tc.expectedOptIn, cfg.SemConvStabilityOptIn)
+
+			// Check that DBQueryTextAttributes is initialized
+			assert.NotNil(t, cfg.DBQueryTextAttributes)
+
+			// Test with a sample query to verify it returns the expected attributes format
+			const query = "SELECT * FROM test"
+			attrs := cfg.DBQueryTextAttributes(query)
+
+			// Verify format of returned attributes based on opt-in type
+			switch tc.expectedOptIn {
+			case internalsemconv.OTelSemConvStabilityOptInNone:
+				assert.Equal(t, attrs, []attribute.KeyValue{
+					semconvlegacy.DBStatementKey.String(query),
+				})
+			case internalsemconv.OTelSemConvStabilityOptInDup:
+				assert.Equal(t, attrs, []attribute.KeyValue{
+					semconvlegacy.DBStatementKey.String(query),
+					semconv.DBQueryTextKey.String(query),
+				})
+			case internalsemconv.OTelSemConvStabilityOptInStable:
+				assert.Equal(t, attrs, []attribute.KeyValue{
+					semconv.DBQueryTextKey.String(query),
+				})
+			}
+		})
+	}
 }

@@ -8,6 +8,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- Support to emit query related attributes for the v1.24.0 and v1.30.0 semantic conventions based on the value of the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable. (#478)
+
+  - `database/dup`: Emit both `db.statement` and `db.query.text` attributes.
+  - `database`: Emit `db.query.text` attribute.
+  - by default: Emit `db.statement` attribute.
+
 ## [0.38.0] - 2025-03-26
 
 ### Added
