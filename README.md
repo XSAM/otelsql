@@ -75,7 +75,7 @@ Two types of metrics are provided depending on the semantic convention stability
   - Unit: seconds
   - Attributes: [`db.operation.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.32.0/docs/attributes-registry/db.md#db-operation-name) (method name), [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.32.0/docs/attributes-registry/error.md#error-type) (if error occurs)
 
-### Connection Statistics Metrics
+### Connection Statistics Metrics (from Go's sql.DBStats)
 - **db.sql.connection.max_open**: Maximum number of open connections to the database
 - **db.sql.connection.open**: The number of established connections
   - Attributes: `status` (idle, inuse)
