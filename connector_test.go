@@ -106,7 +106,7 @@ func TestOtConnector_Connect(t *testing.T) {
 							// Prepare traces
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-							cfg := newMockConfig(t, tracer)
+							cfg := newMockConfig(t, tracer, nil)
 							cfg.SpanOptions.OmitConnectorConnect = omitConnectorConnect
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter

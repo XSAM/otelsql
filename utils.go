@@ -28,6 +28,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+var timeNow = time.Now
+
 func recordSpanErrorDeferred(span trace.Span, opts SpanOptions, err *error) {
 	recordSpanError(span, opts, *err)
 }
@@ -103,6 +105,7 @@ func recordDuration(
 	)
 }
 
+// TODO: remove instruments from arguments
 func recordMetric(
 	ctx context.Context,
 	instruments *instruments,
@@ -111,11 +114,12 @@ func recordMetric(
 	query string,
 	args []driver.NamedValue,
 ) func(error) {
-	startTime := time.Now()
+	startTime := timeNow()
 
 	return func(err error) {
+		endTime := timeNow()
 		// Convert nanoseconds to seconds
-		duration := float64(time.Since(startTime).Nanoseconds()) / 1e9
+		duration := float64(endTime.Sub(startTime).Nanoseconds()) / 1e9
 
 		attributes := cfg.Attributes
 		if cfg.InstrumentAttributesGetter != nil {

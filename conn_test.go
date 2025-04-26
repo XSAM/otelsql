@@ -218,7 +218,7 @@ func TestOtConn_Ping(t *testing.T) {
 					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 					// New conn
-					cfg := newMockConfig(t, tracer)
+					cfg := newMockConfig(t, tracer, nil)
 					cfg.SpanOptions.Ping = tc.pingOption
 					cfg.AttributesGetter = tc.attributesGetter
 					cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
@@ -317,7 +317,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 					// New conn
-					cfg := newMockConfig(t, tracer)
+					cfg := newMockConfig(t, tracer, nil)
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 					cfg.AttributesGetter = tc.attributesGetter
@@ -419,7 +419,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							cfg := newMockConfig(t, tracer)
+							cfg := newMockConfig(t, tracer, nil)
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
 							cfg.SpanOptions.OmitConnQuery = omitConnQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -552,7 +552,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 									ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 									// New conn
-									cfg := newMockConfig(t, tracer)
+									cfg := newMockConfig(t, tracer, nil)
 									cfg.SpanOptions.DisableQuery = tc.disableQuery
 									cfg.SpanOptions.OmitConnPrepare = omitConnPrepare
 									cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -659,7 +659,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							cfg := newMockConfig(t, tracer)
+							cfg := newMockConfig(t, tracer, nil)
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
 
@@ -758,7 +758,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							cfg := newMockConfig(t, tracer)
+							cfg := newMockConfig(t, tracer, nil)
 							cfg.SpanOptions.OmitConnResetSession = omitResetSession
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter

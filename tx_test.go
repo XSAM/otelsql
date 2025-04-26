@@ -95,7 +95,7 @@ func TestOtTx_Commit(t *testing.T) {
 					mt := newMockTx(tc.error)
 
 					// New tx
-					cfg := newMockConfig(t, tracer)
+					cfg := newMockConfig(t, tracer, nil)
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 					cfg.AttributesGetter = tc.attributesGetter
 					cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
@@ -171,7 +171,7 @@ func TestOtTx_Rollback(t *testing.T) {
 					mt := newMockTx(tc.error)
 
 					// New tx
-					cfg := newMockConfig(t, tracer)
+					cfg := newMockConfig(t, tracer, nil)
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 					cfg.AttributesGetter = tc.attributesGetter
 					cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
