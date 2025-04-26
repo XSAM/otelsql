@@ -134,6 +134,7 @@ func recordMetric(
 		case internalsemconv.OTelSemConvStabilityOptInStable:
 			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
 		case internalsemconv.OTelSemConvStabilityOptInDup:
+			// Intentionally emit both legacy and new metrics for backward compatibility.
 			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, err)
 			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
 		case internalsemconv.OTelSemConvStabilityOptInNone:
