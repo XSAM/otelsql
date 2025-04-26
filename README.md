@@ -99,6 +99,21 @@ Connection statistics metrics (`db.sql.connection.*`) are always emitted regardl
 
 This allows users to gradually migrate to the new OpenTelemetry semantic conventions while maintaining backward compatibility with existing dashboards and alerts.
 
+## Error Type Attribution
+
+When errors occur during database operations, the `error.type` attribute is automatically populated with the type of the error. This provides more detailed information for debugging and monitoring:
+
+1. **For standard driver errors**: Special handling for common driver errors:
+   - `database/sql/driver.ErrBadConn`
+   - `database/sql/driver.ErrSkip`
+   - `database/sql/driver.ErrRemoveArgument`
+
+2. **For custom errors**: The fully qualified type name is used (e.g., `github.com/your/package.CustomError`).
+
+3. **For built-in errors**: The type name is used (e.g., `*errors.errorString` for errors created with `errors.New()`).
+
+**Note**: The `error.type` attribute is only available when using the new stable OpenTelemetry semantic convention metrics. This requires setting `OTEL_SEMCONV_STABILITY_OPT_IN` to either `database/dup` or `database`. With the default setting (empty), which only uses legacy metrics, the `error.type` attribute will not be populated.
+
 ## Compatibility
 
 This project is tested on the following systems.
