@@ -364,7 +364,7 @@ func TestRecordMetric(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockLatency := &float64HistogramMock{}
 			mockInstruments := &instruments{
-				latency: mockLatency,
+				legacyLatency: mockLatency,
 			}
 			recordFunc := recordMetric(tt.args.ctx, mockInstruments, tt.args.cfg, tt.args.method, tt.args.query, tt.args.args)
 			recordFunc(tt.recordErr)

@@ -16,7 +16,6 @@ package otelsql
 
 import (
 	"context"
-	"database/sql/driver"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,17 +44,9 @@ func TestNewConfig(t *testing.T) {
 	assert.Len(t, attrs, 1)
 	assert.Contains(t, attrs[0].Key, string(semconvlegacy.DBStatementKey))
 
-	// Verify ErrorTypeAttribute exists and returns expected format
-	assert.NotNil(t, cfg.ErrorTypeAttributes)
-	errAttrs := cfg.ErrorTypeAttributes(assert.AnError)
-	// Since OTEL_SEMCONV_STABILITY_OPT_IN is empty (OTelSemConvStabilityOptInNone),
-	// ErrorTypeAttribute should return nil
-	assert.Nil(t, errAttrs)
-
 	// Ignore function compares for test equality check
 	cfg.SpanNameFormatter = nil
 	cfg.DBQueryTextAttributes = nil
-	cfg.ErrorTypeAttributes = nil
 
 	assert.EqualValues(t, config{
 		TracerProvider: otel.GetTracerProvider(),
@@ -135,18 +126,6 @@ func TestConfigSemConvStabilityOptIn(t *testing.T) {
 			case internalsemconv.OTelSemConvStabilityOptInStable:
 				assert.Equal(t, attrs, []attribute.KeyValue{
 					semconv.DBQueryTextKey.String(query),
-				})
-			}
-
-			errAttrs := cfg.ErrorTypeAttributes(driver.ErrBadConn)
-
-			// Verify format of returned error attributes based on opt-in type
-			switch tc.expectedOptIn {
-			case internalsemconv.OTelSemConvStabilityOptInNone:
-				assert.Nil(t, errAttrs)
-			case internalsemconv.OTelSemConvStabilityOptInDup, internalsemconv.OTelSemConvStabilityOptInStable:
-				assert.Equal(t, errAttrs, []attribute.KeyValue{
-					semconv.ErrorTypeKey.String("database/sql/driver.ErrBadConn"),
 				})
 			}
 		})

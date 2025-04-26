@@ -100,10 +100,6 @@ type config struct {
 	// DBQueryTextAttributes will be called to produce related attributes on `db.query.text`.
 	// It follows the value of environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`.
 	DBQueryTextAttributes func(query string) []attribute.KeyValue
-
-	// ErrorTypeAttributes will be called to produce an attribute on error type.
-	// It follows the value of environment variable `OTEL_SEMCONV_STABILITY_OPT_IN`.
-	ErrorTypeAttributes func(err error) []attribute.KeyValue
 }
 
 // SpanOptions holds configuration of tracing span to decide
@@ -165,7 +161,6 @@ func newConfig(options ...Option) config {
 		// Uses the stable behavior
 		SemConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
 		DBQueryTextAttributes: internalsemconv.NewDBQueryTextAttributes(internalsemconv.OTelSemConvStabilityOptInStable),
-		ErrorTypeAttributes:   internalsemconv.NewErrorTypeAttribute(internalsemconv.OTelSemConvStabilityOptInStable),
 	}
 	for _, opt := range options {
 		opt.Apply(&cfg)
@@ -192,8 +187,6 @@ func newConfig(options ...Option) config {
 
 	// Initialize DBQueryTextAttributes based on SemConvStabilityOptIn
 	cfg.DBQueryTextAttributes = internalsemconv.NewDBQueryTextAttributes(cfg.SemConvStabilityOptIn)
-	// Initialize ErrorTypeAttribute based on SemConvStabilityOptIn
-	cfg.ErrorTypeAttributes = internalsemconv.NewErrorTypeAttribute(cfg.SemConvStabilityOptIn)
 
 	return cfg
 }

@@ -27,7 +27,8 @@ func TestNewInstruments(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, instruments)
-	assert.NotNil(t, instruments.latency)
+	assert.NotNil(t, instruments.legacyLatency)
+	assert.NotNil(t, instruments.duration)
 }
 
 func TestNewDBStatsInstruments(t *testing.T) {

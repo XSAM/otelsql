@@ -59,24 +59,8 @@ func NewDBQueryTextAttributes(optInType OTelSemConvStabilityOptInType) func(quer
 	}
 }
 
-// NewErrorTypeAttribute returns a function that generates appropriate error type attributes
-// based on the provided OTelSemConvStabilityOptInType.
-//
-//   - OTelSemConvStabilityOptInNone: Return empty attribute
-//   - OTelSemConvStabilityOptInDup: Return stable error.type attribute
-//   - OTelSemConvStabilityOptInStable: Return stable error.type attribute.
-func NewErrorTypeAttribute(optInType OTelSemConvStabilityOptInType) func(err error) []attribute.KeyValue {
-	return func(err error) []attribute.KeyValue {
-		if optInType == OTelSemConvStabilityOptInNone {
-			return nil
-		}
-
-		return errorType(err)
-	}
-}
-
-// errorType converts an error to a slice of attribute.KeyValue.
-func errorType(err error) []attribute.KeyValue {
+// ErrorTypeAttributes converts an error to a slice of attribute.KeyValue.
+func ErrorTypeAttributes(err error) []attribute.KeyValue {
 	if err == nil {
 		return nil
 	}

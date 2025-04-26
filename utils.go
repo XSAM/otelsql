@@ -20,8 +20,11 @@ import (
 	"errors"
 	"time"
 
+	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -51,6 +54,55 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 	}
 }
 
+func recordLegacyLatency(
+	ctx context.Context,
+	instruments *instruments,
+	cfg config,
+	duration float64,
+	attributes []attribute.KeyValue,
+	method Method,
+	err error,
+) {
+	attributes = append(attributes, queryMethodKey.String(string(method)))
+
+	if err != nil {
+		if cfg.DisableSkipErrMeasurement && err == driver.ErrSkip {
+			attributes = append(attributes, queryStatusKey.String("ok"))
+		} else {
+			attributes = append(attributes, queryStatusKey.String("error"))
+		}
+	} else {
+		attributes = append(attributes, queryStatusKey.String("ok"))
+	}
+
+	instruments.legacyLatency.Record(
+		ctx,
+		duration*1e3,
+		metric.WithAttributes(attributes...),
+	)
+}
+
+func recordDuration(
+	ctx context.Context,
+	instruments *instruments,
+	cfg config,
+	duration float64,
+	attributes []attribute.KeyValue,
+	method Method,
+	err error,
+) {
+	attributes = append(attributes, semconv.DBOperationName(string(method)))
+	if err != nil && !(cfg.DisableSkipErrMeasurement && err == driver.ErrSkip) {
+		attributes = append(attributes, internalsemconv.ErrorTypeAttributes(err)...)
+	}
+
+	instruments.duration.Record(
+		ctx,
+		duration,
+		metric.WithAttributes(attributes...),
+	)
+}
+
 func recordMetric(
 	ctx context.Context,
 	instruments *instruments,
@@ -62,7 +114,8 @@ func recordMetric(
 	startTime := time.Now()
 
 	return func(err error) {
-		duration := float64(time.Since(startTime).Nanoseconds()) / 1e6
+		// Convert nanoseconds to seconds
+		duration := float64(time.Since(startTime).Nanoseconds()) / 1e9
 
 		attributes := cfg.Attributes
 		if cfg.InstrumentAttributesGetter != nil {
@@ -72,23 +125,17 @@ func recordMetric(
 			if cfg.InstrumentErrorAttributesGetter != nil {
 				attributes = append(attributes, cfg.InstrumentErrorAttributesGetter(err)...)
 			}
-
-			if cfg.DisableSkipErrMeasurement && err == driver.ErrSkip {
-				attributes = append(attributes, queryStatusKey.String("ok"))
-			} else {
-				attributes = append(attributes, queryStatusKey.String("error"))
-			}
-		} else {
-			attributes = append(attributes, queryStatusKey.String("ok"))
 		}
 
-		attributes = append(attributes, queryMethodKey.String(string(method)))
-
-		instruments.latency.Record(
-			ctx,
-			duration,
-			metric.WithAttributes(attributes...),
-		)
+		switch cfg.SemConvStabilityOptIn {
+		case internalsemconv.OTelSemConvStabilityOptInStable:
+			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
+		case internalsemconv.OTelSemConvStabilityOptInDup:
+			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, err)
+			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
+		case internalsemconv.OTelSemConvStabilityOptInNone:
+			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, err)
+		}
 	}
 }
 

@@ -87,61 +87,7 @@ func (e customError) Error() string {
 	return e.msg
 }
 
-func TestNewErrorTypeAttribute(t *testing.T) {
-	customErr := customError{msg: "test error"}
-	customErrorTypeValue := semconv.ErrorTypeKey.String("github.com/XSAM/otelsql/internal/semconv.customError")
-
-	tests := []struct {
-		name      string
-		optInType OTelSemConvStabilityOptInType
-		err       error
-		expected  []attribute.KeyValue
-	}{
-		{
-			name:      "none with error",
-			optInType: OTelSemConvStabilityOptInNone,
-			err:       assert.AnError,
-			expected:  nil,
-		},
-		{
-			name:      "dup with custom error",
-			optInType: OTelSemConvStabilityOptInDup,
-			err:       customErr,
-			expected:  []attribute.KeyValue{customErrorTypeValue},
-		},
-		{
-			name:      "dup with nil",
-			optInType: OTelSemConvStabilityOptInDup,
-			err:       nil,
-			expected:  nil,
-		},
-		{
-			name:      "stable with custom error",
-			optInType: OTelSemConvStabilityOptInStable,
-			err:       customErr,
-			expected:  []attribute.KeyValue{customErrorTypeValue},
-		},
-		{
-			name:      "stable with nil",
-			optInType: OTelSemConvStabilityOptInStable,
-			err:       nil,
-			expected:  nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := NewErrorTypeAttribute(tt.optInType)(tt.err)
-
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestErrorType(t *testing.T) {
-	customErr := customError{msg: "test error"}
-	customErrorTypeValue := semconv.ErrorTypeKey.String("github.com/XSAM/otelsql/internal/semconv.customError")
-
+func TestErrorTypeAttributes(t *testing.T) {
 	tests := []struct {
 		name     string
 		err      error
@@ -169,8 +115,8 @@ func TestErrorType(t *testing.T) {
 		},
 		{
 			name:     "custom error type",
-			err:      customErr,
-			expected: []attribute.KeyValue{customErrorTypeValue},
+			err:      customError{msg: "test error"},
+			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("github.com/XSAM/otelsql/internal/semconv.customError")},
 		},
 		{
 			name:     "built-in error",
@@ -181,7 +127,7 @@ func TestErrorType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := errorType(tt.err)
+			result := ErrorTypeAttributes(tt.err)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
