@@ -20,12 +20,13 @@ import (
 	"errors"
 	"time"
 
-	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
+
+	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 )
 
 var timeNow = time.Now
@@ -105,7 +106,7 @@ func recordDuration(
 	)
 }
 
-// TODO: remove instruments from arguments
+// TODO: remove instruments from arguments.
 func recordMetric(
 	ctx context.Context,
 	instruments *instruments,

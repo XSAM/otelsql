@@ -138,7 +138,7 @@ func createDummySpan(ctx context.Context, tracer trace.Tracer) (context.Context,
 	return ctx, span
 }
 
-// TODO: use newConfig instead
+// TODO: use newConfig instead.
 func newMockConfig(t *testing.T, tracer trace.Tracer, meter metric.Meter) config {
 	if meter == nil {
 		meter = noop.NewMeterProvider().Meter("test")
