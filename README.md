@@ -63,17 +63,41 @@ Use [`SpanOptions`](https://pkg.go.dev/github.com/XSAM/otelsql#SpanOptions) to a
 
 ## Metric Instruments
 
-| Name                                         | Description                                                      | Units | Instrument Type      | Value Type | Attribute Key(s) | Attribute Values                   |
-| -------------------------------------------- | ---------------------------------------------------------------- | ----- | -------------------- | ---------- | ---------------- | ---------------------------------- |
-| db.sql.latency                               | The latency of calls in milliseconds                             | ms    | Histogram            | float64    | status           | ok, error                          |
-|                                              |                                                                  |       |                      |            | method           | method name, like `sql.conn.query` |
-| db.sql.connection.max_open                   | Maximum number of open connections to the database               |       | Asynchronous Gauge   | int64      |                  |                                    |
-| db.sql.connection.open                       | The number of established connections both in use and idle       |       | Asynchronous Gauge   | int64      | status           | idle, inuse                        |
-| db.sql.connection.wait                 | The total number of connections waited for                       |       | Asynchronous Counter | int64      |                  |                                    |
-| db.sql.connection.wait_duration        | The total time blocked waiting for a new connection              | ms    | Asynchronous Counter | float64    |                  |                                    |
-| db.sql.connection.closed_max_idle      | The total number of connections closed due to SetMaxIdleConns    |       | Asynchronous Counter | int64      |                  |                                    |
-| db.sql.connection.closed_max_idle_time | The total number of connections closed due to SetConnMaxIdleTime |       | Asynchronous Counter | int64      |                  |                                    |
-| db.sql.connection.closed_max_lifetime  | The total number of connections closed due to SetConnMaxLifetime |       | Asynchronous Counter | int64      |                  |                                    |
+Two types of metrics are provided depending on the semantic convention stability setting:
+
+### Legacy Metrics (default)
+- **db.sql.latency**: The latency of calls in milliseconds
+  - Unit: milliseconds
+  - Attributes: `method` (method name), `status` (ok, error)
+
+### OpenTelemetry Semantic Convention Metrics
+- [**db.client.operation.duration**](https://github.com/open-telemetry/semantic-conventions/blob/v1.32.0/docs/database/database-metrics.md#metric-dbclientoperationduration): Duration of database client operations
+  - Unit: seconds
+  - Attributes: [`db.operation.name`](https://github.com/open-telemetry/semantic-conventions/blob/v1.32.0/docs/attributes-registry/db.md#db-operation-name) (method name), [`error.type`](https://github.com/open-telemetry/semantic-conventions/blob/v1.32.0/docs/attributes-registry/error.md#error-type) (if error occurs)
+
+### Connection Statistics Metrics
+- **db.sql.connection.max_open**: Maximum number of open connections to the database
+- **db.sql.connection.open**: The number of established connections
+  - Attributes: `status` (idle, inuse)
+- **db.sql.connection.wait**: The total number of connections waited for
+- **db.sql.connection.wait_duration**: The total time blocked waiting for a new connection (ms)
+- **db.sql.connection.closed_max_idle**: The total number of connections closed due to SetMaxIdleConns
+- **db.sql.connection.closed_max_idle_time**: The total number of connections closed due to SetConnMaxIdleTime
+- **db.sql.connection.closed_max_lifetime**: The total number of connections closed due to SetConnMaxLifetime
+
+### Metric Semantic Convention Stability
+
+The instrumentation supports different OpenTelemetry semantic convention stability levels, configured through the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable:
+
+| Setting | Metrics Emitted | Description |
+|---------|----------------|-------------|
+| empty (default) | `db.sql.latency` only | Only uses legacy metric|
+| `database/dup` | Both `db.sql.latency` and `db.client.operation.duration` | Emits both legacy and new OTel metric formats |
+| `database` | `db.client.operation.duration` only | Only uses the new OTel semantic convention metric |
+
+Connection statistics metrics (`db.sql.connection.*`) are always emitted regardless of the stability setting.
+
+This allows users to gradually migrate to the new OpenTelemetry semantic conventions while maintaining backward compatibility with existing dashboards and alerts.
 
 ## Compatibility
 
