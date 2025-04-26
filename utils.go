@@ -61,7 +61,7 @@ func recordLegacyLatency(
 	ctx context.Context,
 	instruments *instruments,
 	cfg config,
-	duration float64,
+	duration time.Duration,
 	attributes []attribute.KeyValue,
 	method Method,
 	err error,
@@ -80,7 +80,7 @@ func recordLegacyLatency(
 
 	instruments.legacyLatency.Record(
 		ctx,
-		duration*1e3,
+		float64(duration.Nanoseconds())/1e6,
 		metric.WithAttributes(attributes...),
 	)
 }
@@ -89,7 +89,7 @@ func recordDuration(
 	ctx context.Context,
 	instruments *instruments,
 	cfg config,
-	duration float64,
+	duration time.Duration,
 	attributes []attribute.KeyValue,
 	method Method,
 	err error,
@@ -101,7 +101,7 @@ func recordDuration(
 
 	instruments.duration.Record(
 		ctx,
-		duration,
+		duration.Seconds(),
 		metric.WithAttributes(attributes...),
 	)
 }
@@ -118,9 +118,7 @@ func recordMetric(
 	startTime := timeNow()
 
 	return func(err error) {
-		endTime := timeNow()
-		// Convert nanoseconds to seconds
-		duration := float64(endTime.Sub(startTime).Nanoseconds()) / 1e9
+		duration := timeNow().Sub(startTime)
 
 		attributes := cfg.Attributes
 		if cfg.InstrumentAttributesGetter != nil {
