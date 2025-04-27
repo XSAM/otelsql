@@ -8,6 +8,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+> [!WARNING]
+> The new introduced `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable will be supported for at least six months from this release. After this period, support for legacy metrics and Semantic Conventions `v1.24.0` may be removed in the next release.
+>
+> You can start the migration to the new Semantic Conventions `v1.30.0` by setting the `OTEL_SEMCONV_STABILITY_OPT_IN=database/dup` or `OTEL_SEMCONV_STABILITY_OPT_IN=database` environment variable in your application.
+>
+> See also the [Semantic conventions for database client metrics](https://opentelemetry.io/docs/specs/semconv/database/database-metrics/).
+
 ### Added
 
 - Support to emit query related attributes for the v1.24.0 and v1.30.0 semantic conventions based on the value of the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable. (#478)
@@ -22,6 +29,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   - `database/dup`: Emit both legacy latency and new duration `db.client.operation.duration` metrics.
   - `database`: Emit new duration `db.client.operation.duration` metric.
   - by default: Emit only the legacy latency metric.
+
+### Changed
+
+- Upgrade semantic conventions to `semconv/v1.30.0`. (#478)
 
 ## [0.38.0] - 2025-03-26
 
