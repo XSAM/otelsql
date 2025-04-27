@@ -20,10 +20,16 @@ import (
 	"errors"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
+
+	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 )
+
+var timeNow = time.Now
 
 func recordSpanErrorDeferred(span trace.Span, opts SpanOptions, err *error) {
 	recordSpanError(span, opts, *err)
@@ -51,6 +57,56 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 	}
 }
 
+func recordLegacyLatency(
+	ctx context.Context,
+	instruments *instruments,
+	cfg config,
+	duration time.Duration,
+	attributes []attribute.KeyValue,
+	method Method,
+	err error,
+) {
+	attributes = append(attributes, queryMethodKey.String(string(method)))
+
+	if err != nil {
+		if cfg.DisableSkipErrMeasurement && err == driver.ErrSkip {
+			attributes = append(attributes, queryStatusKey.String("ok"))
+		} else {
+			attributes = append(attributes, queryStatusKey.String("error"))
+		}
+	} else {
+		attributes = append(attributes, queryStatusKey.String("ok"))
+	}
+
+	instruments.legacyLatency.Record(
+		ctx,
+		float64(duration.Nanoseconds())/1e6,
+		metric.WithAttributes(attributes...),
+	)
+}
+
+func recordDuration(
+	ctx context.Context,
+	instruments *instruments,
+	cfg config,
+	duration time.Duration,
+	attributes []attribute.KeyValue,
+	method Method,
+	err error,
+) {
+	attributes = append(attributes, semconv.DBOperationName(string(method)))
+	if err != nil && !(cfg.DisableSkipErrMeasurement && err == driver.ErrSkip) {
+		attributes = append(attributes, internalsemconv.ErrorTypeAttributes(err)...)
+	}
+
+	instruments.duration.Record(
+		ctx,
+		duration.Seconds(),
+		metric.WithAttributes(attributes...),
+	)
+}
+
+// TODO: remove instruments from arguments.
 func recordMetric(
 	ctx context.Context,
 	instruments *instruments,
@@ -59,10 +115,10 @@ func recordMetric(
 	query string,
 	args []driver.NamedValue,
 ) func(error) {
-	startTime := time.Now()
+	startTime := timeNow()
 
 	return func(err error) {
-		duration := float64(time.Since(startTime).Nanoseconds()) / 1e6
+		duration := timeNow().Sub(startTime)
 
 		attributes := cfg.Attributes
 		if cfg.InstrumentAttributesGetter != nil {
@@ -72,23 +128,18 @@ func recordMetric(
 			if cfg.InstrumentErrorAttributesGetter != nil {
 				attributes = append(attributes, cfg.InstrumentErrorAttributesGetter(err)...)
 			}
-
-			if cfg.DisableSkipErrMeasurement && err == driver.ErrSkip {
-				attributes = append(attributes, queryStatusKey.String("ok"))
-			} else {
-				attributes = append(attributes, queryStatusKey.String("error"))
-			}
-		} else {
-			attributes = append(attributes, queryStatusKey.String("ok"))
 		}
 
-		attributes = append(attributes, queryMethodKey.String(string(method)))
-
-		instruments.latency.Record(
-			ctx,
-			duration,
-			metric.WithAttributes(attributes...),
-		)
+		switch cfg.SemConvStabilityOptIn {
+		case internalsemconv.OTelSemConvStabilityOptInStable:
+			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
+		case internalsemconv.OTelSemConvStabilityOptInDup:
+			// Intentionally emit both legacy and new metrics for backward compatibility.
+			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, err)
+			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
+		case internalsemconv.OTelSemConvStabilityOptInNone:
+			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, err)
+		}
 	}
 }
 

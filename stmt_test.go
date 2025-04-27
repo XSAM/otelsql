@@ -176,7 +176,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 							}
 
 							// New stmt
-							cfg := newMockConfig(t, tracer)
+							cfg := newMockConfig(t, tracer, nil)
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
@@ -288,7 +288,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 							}
 
 							// New stmt
-							cfg := newMockConfig(t, tracer)
+							cfg := newMockConfig(t, tracer, nil)
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
@@ -355,7 +355,7 @@ func TestOtStmt_CheckNamedValue(t *testing.T) {
 		{
 			name:   "stmt and conn do not implement NamedValueChecker",
 			stmt:   newMockLegacyStmt(false),
-			otConn: newConn(&mockConn{}, newMockConfig(t, nil)),
+			otConn: newConn(&mockConn{}, newMockConfig(t, nil, nil)),
 			err:    driver.ErrSkip,
 		},
 		{
@@ -379,7 +379,7 @@ func TestOtStmt_CheckNamedValue(t *testing.T) {
 			otConn: newConn(&struct {
 				driver.Conn
 				driver.NamedValueChecker
-			}{NamedValueChecker: &namedValueChecker{}}, newMockConfig(t, nil)),
+			}{NamedValueChecker: &namedValueChecker{}}, newMockConfig(t, nil, nil)),
 		},
 		{
 			name: "only conn implements NamedValueChecker, but has error",
@@ -387,14 +387,14 @@ func TestOtStmt_CheckNamedValue(t *testing.T) {
 			otConn: newConn(&struct {
 				driver.Conn
 				driver.NamedValueChecker
-			}{NamedValueChecker: &namedValueChecker{err: assert.AnError}}, newMockConfig(t, nil)),
+			}{NamedValueChecker: &namedValueChecker{err: assert.AnError}}, newMockConfig(t, nil, nil)),
 			err: assert.AnError,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			stmt := newStmt(tc.stmt, newMockConfig(t, nil), "", tc.otConn)
+			stmt := newStmt(tc.stmt, newMockConfig(t, nil, nil), "", tc.otConn)
 			err := stmt.CheckNamedValue(nil)
 			assert.Equal(t, tc.err, err)
 		})

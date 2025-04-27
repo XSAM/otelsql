@@ -15,6 +15,11 @@
 package semconv
 
 import (
+	"database/sql/driver"
+	"errors"
+	"fmt"
+	"reflect"
+
 	"go.opentelemetry.io/otel/attribute"
 	semconvlegacy "go.opentelemetry.io/otel/semconv/v1.24.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
@@ -52,4 +57,36 @@ func NewDBQueryTextAttributes(optInType OTelSemConvStabilityOptInType) func(quer
 			}
 		}
 	}
+}
+
+// ErrorTypeAttributes converts an error to a slice of attribute.KeyValue.
+func ErrorTypeAttributes(err error) []attribute.KeyValue {
+	if err == nil {
+		return nil
+	}
+
+	// Handle common driver errors with specific error types
+	switch {
+	case errors.Is(err, driver.ErrBadConn):
+		return []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrBadConn")}
+	case errors.Is(err, driver.ErrSkip):
+		return []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrSkip")}
+	case errors.Is(err, driver.ErrRemoveArgument):
+		return []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrRemoveArgument")}
+	}
+
+	t := reflect.TypeOf(err)
+	var value string
+	if t.PkgPath() == "" && t.Name() == "" {
+		// Likely a builtin type.
+		value = t.String()
+	} else {
+		value = fmt.Sprintf("%s.%s", t.PkgPath(), t.Name())
+	}
+
+	if value == "" {
+		return []attribute.KeyValue{semconv.ErrorTypeOther}
+	}
+
+	return []attribute.KeyValue{semconv.ErrorTypeKey.String(value)}
 }

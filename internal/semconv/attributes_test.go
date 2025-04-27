@@ -15,6 +15,8 @@
 package semconv
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -71,6 +73,61 @@ func TestNewDBQueryTextAttributes(t *testing.T) {
 			result := fn(query)
 
 			// Verify the result matches what we expect
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// customError is a test error type.
+type customError struct {
+	msg string
+}
+
+func (e customError) Error() string {
+	return e.msg
+}
+
+func TestErrorTypeAttributes(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected []attribute.KeyValue
+	}{
+		{
+			name:     "nil error",
+			err:      nil,
+			expected: nil,
+		},
+		{
+			name:     "driver.ErrBadConn",
+			err:      driver.ErrBadConn,
+			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrBadConn")},
+		},
+		{
+			name:     "driver.ErrSkip",
+			err:      driver.ErrSkip,
+			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrSkip")},
+		},
+		{
+			name:     "driver.ErrRemoveArgument",
+			err:      driver.ErrRemoveArgument,
+			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrRemoveArgument")},
+		},
+		{
+			name:     "custom error type",
+			err:      customError{msg: "test error"},
+			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("github.com/XSAM/otelsql/internal/semconv.customError")},
+		},
+		{
+			name:     "built-in error",
+			err:      fmt.Errorf("some error"),
+			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("*errors.errorString")},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ErrorTypeAttributes(tt.err)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

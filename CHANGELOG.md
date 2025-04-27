@@ -16,6 +16,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   - `database`: Emit `db.query.text` attribute.
   - by default: Emit `db.statement` attribute.
 
+- New `db.client.operation.duration` metric following OpenTelemetry semantic conventions. (#480)
+- Support for configuring metrics behavior based on `OTEL_SEMCONV_STABILITY_OPT_IN` setting. (#480)
+
+  - `database/dup`: Emit both legacy latency and new duration `db.client.operation.duration` metrics.
+  - `database`: Emit new duration `db.client.operation.duration` metric.
+  - by default: Emit only the legacy latency metric.
+
 ## [0.38.0] - 2025-03-26
 
 ### Added
