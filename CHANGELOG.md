@@ -11,7 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 > [!WARNING]
 > The new introduced `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable will be supported for at least six months from this release. After this period, support for legacy metrics and Semantic Conventions `v1.24.0` may be removed in the next release.
 >
-> You can start the migration to the new Semantic Conventions `v1.30.0` by setting the `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` or `OTEL_SEMCONV_STABILITY_OPT_IN=database` environment variable in your application.
+> You can start the migration to the new Semantic Conventions `v1.30.0` by setting the `OTEL_SEMCONV_STABILITY_OPT_IN=database/dup` or `OTEL_SEMCONV_STABILITY_OPT_IN=database` environment variable in your application.
 >
 > See also the [Semantic conventions for database client metrics](https://opentelemetry.io/docs/specs/semconv/database/database-metrics/).
 
