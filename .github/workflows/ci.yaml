@@ -19,7 +19,7 @@ jobs:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
           cache-dependency-path: "**/go.sum"
       - name: Tools cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         env:
           cache-name: go-tools-cache
         with:
@@ -41,7 +41,7 @@ jobs:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
           cache-dependency-path: "**/go.sum"
       - name: Tools cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         env:
           cache-name: go-tools-cache
         with:
@@ -59,7 +59,7 @@ jobs:
           go-version: ${{ env.DEFAULT_GO_VERSION }}
           cache-dependency-path: "**/go.sum"
       - name: Tools cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         env:
           cache-name: go-tools-cache
         with:
@@ -106,7 +106,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache-dependency-path: "**/go.sum"
       - name: Tools cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         env:
           cache-name: go-tools-cache
         with:
