@@ -16,7 +16,7 @@ package semconv
 
 import (
 	"database/sql/driver"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -114,13 +114,15 @@ func TestErrorTypeAttributes(t *testing.T) {
 			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrRemoveArgument")},
 		},
 		{
-			name:     "custom error type",
-			err:      customError{msg: "test error"},
-			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("github.com/XSAM/otelsql/internal/semconv.customError")},
+			name: "custom error type",
+			err:  customError{msg: "test error"},
+			expected: []attribute.KeyValue{
+				semconv.ErrorTypeKey.String("github.com/XSAM/otelsql/internal/semconv.customError"),
+			},
 		},
 		{
 			name:     "built-in error",
-			err:      fmt.Errorf("some error"),
+			err:      errors.New("some error"),
 			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("*errors.errorString")},
 		},
 	}

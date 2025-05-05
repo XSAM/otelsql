@@ -194,7 +194,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 							omit := !filterSpan(ctx, cfg.SpanOptions, MethodStmtExec, query, args)
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and a span created in tx
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,
@@ -306,7 +306,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 							omit := !filterSpan(ctx, cfg.SpanOptions, MethodStmtQuery, query, args)
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and a span created in tx
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,
@@ -399,5 +399,4 @@ func TestOtStmt_CheckNamedValue(t *testing.T) {
 			assert.Equal(t, tc.err, err)
 		})
 	}
-
 }

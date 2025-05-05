@@ -51,7 +51,7 @@ func Register(driverName string, options ...Option) (string, error) {
 	// configurations, but potentially the same underlying database driver, we
 	// cycle through to find available driver names.
 	driverName = driverName + "-otelsql-"
-	for i := 0; i < maxDriverSlot; i++ {
+	for i := range maxDriverSlot {
 		var (
 			found   = false
 			regName = driverName + strconv.FormatInt(int64(i), 10)

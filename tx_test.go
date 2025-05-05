@@ -112,7 +112,7 @@ func TestOtTx_Commit(t *testing.T) {
 					omit := !filterSpan(ctx, cfg.SpanOptions, MethodTxCommit, "", []driver.NamedValue{})
 					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 					// One dummy span and one span created in tx
-					require.Equal(t, expectedSpanCount, len(spanList))
+					require.Len(t, spanList, expectedSpanCount)
 
 					assertSpanList(t, spanList, spanAssertionParameter{
 						parentSpan:         dummySpan,
@@ -189,7 +189,7 @@ func TestOtTx_Rollback(t *testing.T) {
 					omit := !filterSpan(ctx, cfg.SpanOptions, MethodTxRollback, "", []driver.NamedValue{})
 					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 					// One dummy span and a span created in tx
-					require.Equal(t, expectedSpanCount, len(spanList))
+					require.Len(t, spanList, expectedSpanCount)
 
 					assertSpanList(t, spanList, spanAssertionParameter{
 						parentSpan:         dummySpan,

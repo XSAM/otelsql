@@ -125,11 +125,17 @@ func TestOtConnector_Connect(t *testing.T) {
 							spanList := sr.Ended()
 							omit := omitConnectorConnect
 							if !omit {
-								omit = !filterSpan(ctx, cfg.SpanOptions, MethodConnectorConnect, "", []driver.NamedValue{})
+								omit = !filterSpan(
+									ctx,
+									cfg.SpanOptions,
+									MethodConnectorConnect,
+									"",
+									[]driver.NamedValue{},
+								)
 							}
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in Connect
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,

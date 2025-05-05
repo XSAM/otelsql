@@ -160,7 +160,9 @@ func newConfig(options ...Option) config {
 		SpanNameFormatter: defaultSpanNameFormatter,
 		// Uses the stable behavior
 		SemConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
-		DBQueryTextAttributes: internalsemconv.NewDBQueryTextAttributes(internalsemconv.OTelSemConvStabilityOptInStable),
+		DBQueryTextAttributes: internalsemconv.NewDBQueryTextAttributes(
+			internalsemconv.OTelSemConvStabilityOptInStable,
+		),
 	}
 	for _, opt := range options {
 		opt.Apply(&cfg)

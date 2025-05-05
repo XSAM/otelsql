@@ -37,8 +37,10 @@ type MockConn interface {
 	BeginTxCount() int
 }
 
-var _ MockConn = (*mockConn)(nil)
-var _ driver.Conn = (*mockConn)(nil)
+var (
+	_ MockConn    = (*mockConn)(nil)
+	_ driver.Conn = (*mockConn)(nil)
+)
 
 type mockConn struct {
 	shouldError bool
@@ -238,7 +240,7 @@ func TestOtConn_Ping(t *testing.T) {
 						omit := !filterSpan(ctx, cfg.SpanOptions, MethodConnPing, "", []driver.NamedValue{})
 						expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 						// One dummy span and one span created in Ping
-						require.Equal(t, expectedSpanCount, len(spanList))
+						require.Len(t, spanList, expectedSpanCount)
 
 						if tc.pingOption {
 							assertSpanList(t, spanList, spanAssertionParameter{
@@ -256,7 +258,7 @@ func TestOtConn_Ping(t *testing.T) {
 						}
 					} else {
 						if !tc.noParentSpan {
-							require.Equal(t, 1, len(spanList))
+							require.Len(t, spanList, 1)
 						}
 					}
 				})
@@ -336,7 +338,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 					omit := !filterSpan(ctx, cfg.SpanOptions, MethodConnExec, query, args)
 					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 					// One dummy span and one span created in ExecContext
-					require.Equal(t, expectedSpanCount, len(spanList))
+					require.Len(t, spanList, expectedSpanCount)
 
 					assertSpanList(t, spanList, spanAssertionParameter{
 						parentSpan:         dummySpan,
@@ -443,7 +445,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in QueryContext
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,
@@ -465,7 +467,11 @@ func TestOtConn_QueryContext(t *testing.T) {
 								otelRows, ok := rows.(*otRows)
 								require.True(t, ok)
 								if dummySpan != nil && !omit {
-									assert.Equal(t, dummySpan.SpanContext().TraceID(), otelRows.span.SpanContext().TraceID())
+									assert.Equal(
+										t,
+										dummySpan.SpanContext().TraceID(),
+										otelRows.span.SpanContext().TraceID(),
+									)
 
 									// Get a span from started span list
 									startedSpanList := sr.Started()
@@ -577,11 +583,17 @@ func TestOtConn_PrepareContext(t *testing.T) {
 									spanList := sr.Ended()
 									omit := omitConnPrepare
 									if !omit {
-										omit = !filterSpan(ctx, cfg.SpanOptions, MethodConnPrepare, query, []driver.NamedValue{})
+										omit = !filterSpan(
+											ctx,
+											cfg.SpanOptions,
+											MethodConnPrepare,
+											query,
+											[]driver.NamedValue{},
+										)
 									}
 									expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 									// One dummy span and one span created in PrepareContext
-									require.Equal(t, expectedSpanCount, len(spanList))
+									require.Len(t, spanList, expectedSpanCount)
 
 									assertSpanList(t, spanList, spanAssertionParameter{
 										parentSpan:         dummySpan,
@@ -682,7 +694,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 							omit := !filterSpan(ctx, cfg.SpanOptions, MethodConnBeginTx, "", []driver.NamedValue{})
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in BeginTx
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,
@@ -714,7 +726,6 @@ func TestOtConn_BeginTx(t *testing.T) {
 }
 
 func TestOtConn_ResetSession(t *testing.T) {
-
 	testCases := []struct {
 		name             string
 		error            bool
@@ -776,11 +787,17 @@ func TestOtConn_ResetSession(t *testing.T) {
 							spanList := sr.Ended()
 							omit := omitResetSession
 							if !omit {
-								omit = !filterSpan(ctx, cfg.SpanOptions, MethodConnResetSession, "", []driver.NamedValue{})
+								omit = !filterSpan(
+									ctx,
+									cfg.SpanOptions,
+									MethodConnResetSession,
+									"",
+									[]driver.NamedValue{},
+								)
 							}
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in ResetSession
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,

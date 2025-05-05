@@ -103,7 +103,7 @@ func TestOtRows_Close(t *testing.T) {
 					expectedSpanCount := getExpectedSpanCount(false, omit)
 
 					// A span created in newRows()
-					require.Equal(t, expectedSpanCount, len(spanList))
+					require.Len(t, spanList, expectedSpanCount)
 
 					if !omit {
 						span := spanList[1]
@@ -173,7 +173,7 @@ func TestOtRows_Next(t *testing.T) {
 
 					spanList := sr.Started()
 					// A span created in newRows()
-					require.Equal(t, expectedSpanCount, len(spanList))
+					require.Len(t, spanList, expectedSpanCount)
 
 					if !omit {
 						span := spanList[1]
@@ -259,7 +259,7 @@ func TestNewRows(t *testing.T) {
 							}
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in newRows()
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							// Convert []sdktrace.ReadWriteSpan to []sdktrace.ReadOnlySpan explicitly due to the limitation of Go
 							var readOnlySpanList []sdktrace.ReadOnlySpan

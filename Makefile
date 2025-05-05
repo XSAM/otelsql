@@ -38,7 +38,7 @@ $(TOOLS)/%: | $(TOOLS)
 	$(GO) build -o $@ $(PACKAGE)
 
 GOLANGCI_LINT = $(TOOLS)/golangci-lint
-$(TOOLS)/golangci-lint: PACKAGE=github.com/golangci/golangci-lint/cmd/golangci-lint
+$(TOOLS)/golangci-lint: PACKAGE=github.com/golangci/golangci-lint/v2/cmd/golangci-lint
 
 .PHONY: tools
 tools: $(GOLANGCI_LINT)

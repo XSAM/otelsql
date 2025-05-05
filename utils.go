@@ -43,10 +43,10 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 		return
 	}
 
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		return
-	case driver.ErrSkip:
+	case errors.Is(err, driver.ErrSkip):
 		if !opts.DisableErrSkip {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, "")
@@ -69,7 +69,7 @@ func recordLegacyLatency(
 	attributes = append(attributes, queryMethodKey.String(string(method)))
 
 	if err != nil {
-		if cfg.DisableSkipErrMeasurement && err == driver.ErrSkip {
+		if cfg.DisableSkipErrMeasurement && errors.Is(err, driver.ErrSkip) {
 			attributes = append(attributes, queryStatusKey.String("ok"))
 		} else {
 			attributes = append(attributes, queryStatusKey.String("error"))
@@ -95,7 +95,7 @@ func recordDuration(
 	err error,
 ) {
 	attributes = append(attributes, semconv.DBOperationName(string(method)))
-	if err != nil && !(cfg.DisableSkipErrMeasurement && err == driver.ErrSkip) {
+	if err != nil && (!cfg.DisableSkipErrMeasurement || !errors.Is(err, driver.ErrSkip)) {
 		attributes = append(attributes, internalsemconv.ErrorTypeAttributes(err)...)
 	}
 
