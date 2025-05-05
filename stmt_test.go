@@ -156,11 +156,11 @@ func TestOtStmt_ExecContext(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 
 				t.Run(testname, func(t *testing.T) {
@@ -269,11 +269,11 @@ func TestOtStmt_QueryContext(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 
 				t.Run(testname, func(t *testing.T) {

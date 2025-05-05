@@ -74,11 +74,11 @@ func TestOtRows_Close(t *testing.T) {
 	}
 
 	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-		testname := "spanFilterOmit"
+		testname := testSpanFilterOmit
 		if spanFilterFn == nil {
-			testname = "spanFilterNil"
+			testname = testSpanFilterNil
 		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-			testname = "spanFilterKeep"
+			testname = testSpanFilterKeep
 		}
 
 		t.Run(testname, func(t *testing.T) {
@@ -145,11 +145,11 @@ func TestOtRows_Next(t *testing.T) {
 	}
 
 	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-		testname := "spanFilterOmit"
+		testname := testSpanFilterOmit
 		if spanFilterFn == nil {
-			testname = "spanFilterNil"
+			testname = testSpanFilterNil
 		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-			testname = "spanFilterKeep"
+			testname = testSpanFilterKeep
 		}
 
 		t.Run(testname, func(t *testing.T) {
@@ -229,11 +229,11 @@ func TestNewRows(t *testing.T) {
 			}
 
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 
 				t.Run(testname, func(t *testing.T) {

@@ -27,6 +27,14 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+const (
+	testSpanFilterOmit = "spanFilterOmit"
+	testSpanFilterNil  = "spanFilterNil"
+	testSpanFilterKeep = "spanFilterKeep"
+	testQueryString    = "query"
+	testLegacy         = "legacy"
+)
+
 type MockConn interface {
 	driver.Conn
 	PrepareContextCount() int
@@ -206,11 +214,11 @@ func TestOtConn_Ping(t *testing.T) {
 	}
 
 	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-		testname := "spanFilterOmit"
+		testname := testSpanFilterOmit
 		if spanFilterFn == nil {
-			testname = "spanFilterNil"
+			testname = testSpanFilterNil
 		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-			testname = "spanFilterKeep"
+			testname = testSpanFilterKeep
 		}
 
 		t.Run(testname, func(t *testing.T) {
@@ -268,7 +276,7 @@ func TestOtConn_Ping(t *testing.T) {
 }
 
 func TestOtConn_ExecContext(t *testing.T) {
-	query := "query"
+	query := testQueryString
 	args := []driver.NamedValue{{Value: "foo"}}
 	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 
@@ -305,11 +313,11 @@ func TestOtConn_ExecContext(t *testing.T) {
 		},
 	}
 	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-		testname := "spanFilterOmit"
+		testname := testSpanFilterOmit
 		if spanFilterFn == nil {
-			testname = "spanFilterNil"
+			testname = testSpanFilterNil
 		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-			testname = "spanFilterKeep"
+			testname = testSpanFilterKeep
 		}
 
 		t.Run(testname, func(t *testing.T) {
@@ -363,7 +371,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 
 //nolint:gocognit,cyclop
 func TestOtConn_QueryContext(t *testing.T) {
-	query := "query"
+	query := testQueryString
 	args := []driver.NamedValue{{Value: "foo"}}
 	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 
@@ -375,11 +383,11 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 
 				t.Run(testname, func(t *testing.T) {
@@ -495,13 +503,13 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 //nolint:gocognit,cyclop
 func TestOtConn_PrepareContext(t *testing.T) {
-	query := "query"
+	query := testQueryString
 	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 
 	for _, legacy := range []bool{true, false} {
 		var testname string
 		if legacy {
-			testname = "Legacy"
+			testname = testLegacy
 		}
 
 		t.Run(testname, func(t *testing.T) {
@@ -513,11 +521,11 @@ func TestOtConn_PrepareContext(t *testing.T) {
 
 				t.Run(testname, func(t *testing.T) {
 					for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-						testname := "spanFilterOmit"
+						testname := testSpanFilterOmit
 						if spanFilterFn == nil {
-							testname = "spanFilterNil"
+							testname = testSpanFilterNil
 						} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-							testname = "spanFilterKeep"
+							testname = testSpanFilterKeep
 						}
 
 						t.Run(testname, func(t *testing.T) {
@@ -655,16 +663,16 @@ func TestOtConn_BeginTx(t *testing.T) {
 	for _, legacy := range []bool{true, false} {
 		var testname string
 		if legacy {
-			testname = "Legacy"
+			testname = testLegacy
 		}
 
 		t.Run(testname, func(t *testing.T) {
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 
 				t.Run(testname, func(t *testing.T) {
@@ -760,11 +768,11 @@ func TestOtConn_ResetSession(t *testing.T) {
 		}
 		t.Run(testname, func(t *testing.T) {
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 				t.Run(testname, func(t *testing.T) {
 					for _, tc := range testCases {
