@@ -52,7 +52,11 @@ func ExampleOpenDB() {
 func ExampleWrapDriver() {
 	otDriver := otelsql.WrapDriver(dri)
 
-	connector, err := otDriver.(driver.DriverContext).OpenConnector(mysqlDSN)
+	driverContext, ok := otDriver.(driver.DriverContext)
+	if !ok {
+		panic("driver does not implement driver.DriverContext")
+	}
+	connector, err := driverContext.OpenConnector(mysqlDSN)
 	if err != nil {
 		panic(err)
 	}

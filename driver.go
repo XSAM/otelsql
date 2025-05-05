@@ -47,9 +47,10 @@ func (d *otDriver) Open(name string) (driver.Conn, error) {
 }
 
 func (d *otDriver) OpenConnector(name string) (driver.Connector, error) {
-	rawConnector, err := d.driver.(driver.DriverContext).OpenConnector(name)
+	// otDriver only implements driver.Driver when the underlying driver implements driver.DriverContext.
+	rawConnector, err := d.driver.(driver.DriverContext).OpenConnector(name) //nolint:forcetypeassert
 	if err != nil {
 		return nil, err
 	}
-	return newConnector(rawConnector, d), err
+	return newConnector(rawConnector, d), nil
 }
