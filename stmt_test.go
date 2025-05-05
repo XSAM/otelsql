@@ -110,6 +110,7 @@ var (
 	_ MockStmt                 = (*mockStmt)(nil)
 )
 
+//nolint:gocognit
 func TestOtStmt_ExecContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
@@ -222,6 +223,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 	}
 }
 
+//nolint:gocognit,cyclop
 func TestOtStmt_QueryContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}

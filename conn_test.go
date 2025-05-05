@@ -361,6 +361,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 	}
 }
 
+//nolint:gocognit,cyclop
 func TestOtConn_QueryContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
@@ -492,6 +493,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 	}
 }
 
+//nolint:gocognit,cyclop
 func TestOtConn_PrepareContext(t *testing.T) {
 	query := "query"
 	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
@@ -625,6 +627,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 	}
 }
 
+//nolint:gocognit,cyclop
 func TestOtConn_BeginTx(t *testing.T) {
 	testCases := []struct {
 		name             string
@@ -725,6 +728,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 	}
 }
 
+//nolint:gocognit
 func TestOtConn_ResetSession(t *testing.T) {
 	testCases := []struct {
 		name             string

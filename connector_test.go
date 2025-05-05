@@ -61,6 +61,7 @@ func TestNewConnector(t *testing.T) {
 	assert.Equal(t, otelDriver, connector.otDriver)
 }
 
+//nolint:gocognit
 func TestOtConnector_Connect(t *testing.T) {
 	for _, omitConnectorConnect := range []bool{true, false} {
 		var testname string
