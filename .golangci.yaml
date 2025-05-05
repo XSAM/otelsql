@@ -18,7 +18,6 @@ linters:
     - errchkjson
     - errname
     - errorlint
-    - exhaustive
     - exptostd
     - fatcontext
     - forbidigo
@@ -107,6 +106,7 @@ linters:
     - dupl
     - containedctx
     - wrapcheck
+    - exhaustive
 formatters:
   enable:
     - gofumpt
