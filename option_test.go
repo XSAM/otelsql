@@ -106,17 +106,26 @@ func TestOptions(t *testing.T) {
 
 			tc.option.Apply(&cfg)
 
-			if tc.expectedConfig.AttributesGetter != nil {
+			switch {
+			case tc.expectedConfig.AttributesGetter != nil:
 				assert.Equal(
 					t,
 					tc.expectedConfig.AttributesGetter(context.Background(), "", "", nil),
 					cfg.AttributesGetter(context.Background(), "", "", nil),
 				)
-			} else if tc.expectedConfig.InstrumentAttributesGetter != nil {
-				assert.Equal(t, tc.expectedConfig.InstrumentAttributesGetter(context.Background(), "", "", nil), cfg.InstrumentAttributesGetter(context.Background(), "", "", nil))
-			} else if tc.expectedConfig.InstrumentErrorAttributesGetter != nil {
-				assert.Equal(t, tc.expectedConfig.InstrumentErrorAttributesGetter(assert.AnError), cfg.InstrumentErrorAttributesGetter(assert.AnError))
-			} else {
+			case tc.expectedConfig.InstrumentAttributesGetter != nil:
+				assert.Equal(
+					t,
+					tc.expectedConfig.InstrumentAttributesGetter(context.Background(), "", "", nil),
+					cfg.InstrumentAttributesGetter(context.Background(), "", "", nil),
+				)
+			case tc.expectedConfig.InstrumentErrorAttributesGetter != nil:
+				assert.Equal(
+					t,
+					tc.expectedConfig.InstrumentErrorAttributesGetter(assert.AnError),
+					cfg.InstrumentErrorAttributesGetter(assert.AnError),
+				)
+			default:
 				assert.Equal(t, tc.expectedConfig, cfg)
 			}
 		})

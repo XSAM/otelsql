@@ -264,10 +264,8 @@ func TestOtConn_Ping(t *testing.T) {
 
 							assert.Equal(t, 1, mc.pingCount)
 						}
-					} else {
-						if !tc.noParentSpan {
-							require.Len(t, spanList, 1)
-						}
+					} else if !tc.noParentSpan {
+						require.Len(t, spanList, 1)
 					}
 				})
 			}

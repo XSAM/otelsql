@@ -50,7 +50,7 @@ func Register(driverName string, options ...Option) (string, error) {
 	// Since we might want to register multiple OTel drivers to have different
 	// configurations, but potentially the same underlying database driver, we
 	// cycle through to find available driver names.
-	driverName = driverName + "-otelsql-"
+	driverName += "-otelsql-"
 	for i := range maxDriverSlot {
 		var (
 			found   = false
