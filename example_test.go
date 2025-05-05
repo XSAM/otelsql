@@ -39,14 +39,14 @@ func ExampleOpen() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	// Output:
 }
 
 func ExampleOpenDB() {
 	// Connect to database
 	db := otelsql.OpenDB(connector)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 }
 
 func ExampleWrapDriver() {
@@ -59,7 +59,7 @@ func ExampleWrapDriver() {
 
 	// Connect to database
 	db := sql.OpenDB(connector)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	// Output:
 }
 
@@ -75,7 +75,7 @@ func ExampleRegister() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	// Output:
 }
 
@@ -89,7 +89,7 @@ func ExampleAttributesFromDSN() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Register DB stats to meter
 	err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(

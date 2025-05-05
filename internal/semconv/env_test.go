@@ -15,7 +15,6 @@
 package semconv
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -71,13 +70,7 @@ func TestParseOTelSemConvStabilityOptIn(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Clean up environment variable before each test
-			t.Cleanup(func() {
-				os.Unsetenv(OTelSemConvStabilityOptIn)
-			})
-
-			// Always set environment variable for the test
-			os.Setenv(OTelSemConvStabilityOptIn, tt.envValue)
+			t.Setenv(OTelSemConvStabilityOptIn, tt.envValue)
 
 			// Test the function
 			result := ParseOTelSemConvStabilityOptIn()

@@ -179,8 +179,8 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 		select {
 		default:
 		case <-ctx.Done():
-			stmt.Close()
-			return nil, ctx.Err()
+			err := stmt.Close()
+			return nil, errors.Join(ctx.Err(), err)
 		}
 	}
 
