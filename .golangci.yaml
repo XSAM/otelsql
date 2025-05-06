@@ -58,7 +58,6 @@ linters:
     - nilnil
     - noctx
     - nolintlint
-    - nonamedreturns
     - nosprintfhostport
     - perfsprint
     - prealloc
@@ -107,6 +106,7 @@ linters:
     - wrapcheck
     - exhaustive
     - spancheck
+    - nonamedreturns
 formatters:
   enable:
     - gofumpt
