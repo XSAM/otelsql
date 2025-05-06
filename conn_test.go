@@ -148,7 +148,7 @@ func (m *mockConn) ExecContext(
 	if m.shouldError {
 		return nil, errors.New("execContext")
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
 
 func (m *mockConn) Ping(ctx context.Context) error {

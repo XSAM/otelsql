@@ -101,7 +101,8 @@ func TestRecordSpanError(t *testing.T) {
 				// Create a span
 				sr, provider := newTracerProvider()
 				tracer := provider.Tracer("test")
-				tracer.Start(context.Background(), "test")
+				// Not using the spans from the SDK due to the limited data access.
+				_, _ = tracer.Start(context.Background(), "test")
 
 				// Get the span
 				spanList := sr.Started()
@@ -140,6 +141,8 @@ func createDummySpan(ctx context.Context, tracer trace.Tracer) (context.Context,
 
 // TODO: use newConfig instead.
 func newMockConfig(t *testing.T, tracer trace.Tracer, meter metric.Meter) config {
+	t.Helper()
+
 	if meter == nil {
 		meter = noop.NewMeterProvider().Meter("test")
 	}
@@ -178,6 +181,8 @@ type spanAssertionParameter struct {
 func assertSpanList(
 	t *testing.T, spanList []sdktrace.ReadOnlySpan, parameter spanAssertionParameter,
 ) {
+	t.Helper()
+
 	var span sdktrace.ReadOnlySpan
 	if !parameter.omitSpan {
 		if !parameter.noParentSpan {
@@ -187,37 +192,38 @@ func assertSpanList(
 		}
 	}
 
-	if span != nil {
-		if parameter.spanNotEnded {
-			assert.True(t, span.EndTime().IsZero())
-		} else {
-			assert.False(t, span.EndTime().IsZero())
-		}
-		assert.Equal(t, trace.SpanKindClient, span.SpanKind())
+	if span == nil {
+		return
+	}
+	if parameter.spanNotEnded {
+		assert.True(t, span.EndTime().IsZero())
+	} else {
+		assert.False(t, span.EndTime().IsZero())
+	}
+	assert.Equal(t, trace.SpanKindClient, span.SpanKind())
 
-		expectedAttributes := parameter.expectedAttributes
-		if parameter.attributesGetter != nil {
-			expectedAttributes = append(
-				expectedAttributes,
-				parameter.attributesGetter(context.Background(), parameter.method, parameter.query, parameter.args)...)
-		}
+	expectedAttributes := parameter.expectedAttributes
+	if parameter.attributesGetter != nil {
+		expectedAttributes = append(
+			expectedAttributes,
+			parameter.attributesGetter(context.Background(), parameter.method, parameter.query, parameter.args)...)
+	}
 
-		assert.Equal(t, expectedAttributes, span.Attributes())
-		assert.Equal(t, string(parameter.method), span.Name())
-		if parameter.parentSpan != nil {
-			assert.Equal(t, parameter.parentSpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-			assert.Equal(t, parameter.parentSpan.SpanContext().SpanID(), span.Parent().SpanID())
-		}
+	assert.Equal(t, expectedAttributes, span.Attributes())
+	assert.Equal(t, string(parameter.method), span.Name())
+	if parameter.parentSpan != nil {
+		assert.Equal(t, parameter.parentSpan.SpanContext().TraceID(), span.SpanContext().TraceID())
+		assert.Equal(t, parameter.parentSpan.SpanContext().SpanID(), span.Parent().SpanID())
+	}
 
-		if parameter.error {
-			assert.Equal(t, codes.Error, span.Status().Code)
-		} else {
-			assert.Equal(t, codes.Unset, span.Status().Code)
-		}
+	if parameter.error {
+		assert.Equal(t, codes.Error, span.Status().Code)
+	} else {
+		assert.Equal(t, codes.Unset, span.Status().Code)
+	}
 
-		if parameter.ctx != nil {
-			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(parameter.ctx))
-		}
+	if parameter.ctx != nil {
+		assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(parameter.ctx))
 	}
 }
 
@@ -283,6 +289,9 @@ var keep SpanFilter = func(_ context.Context, _ Method, _ string, _ []driver.Nam
 	return true
 }
 
+// TODO: apply maintidx linter
+//
+//nolint:maintidx
 func TestRecordMetric(t *testing.T) {
 	tests := []struct {
 		name                  string

@@ -76,7 +76,7 @@ func (m *mockLegacyStmt) Exec(args []driver.Value) (driver.Result, error) {
 	if m.shouldError {
 		return nil, errors.New("exec")
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
 
 func (m *mockLegacyStmt) Query(args []driver.Value) (driver.Rows, error) {
@@ -85,5 +85,5 @@ func (m *mockLegacyStmt) Query(args []driver.Value) (driver.Rows, error) {
 	if m.shouldError {
 		return nil, errors.New("query")
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }

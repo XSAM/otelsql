@@ -147,7 +147,7 @@ func TestRegisterDBStatsMetrics(t *testing.T) {
 	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(r))
 
 	err = RegisterDBStatsMetrics(db, WithMeterProvider(mp))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Should collect 7 metrics
 	got := &metricdata.ResourceMetrics{}

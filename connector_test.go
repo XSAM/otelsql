@@ -116,7 +116,7 @@ func TestOtConnector_Connect(t *testing.T) {
 							connector := newConnector(mConnector, &otDriver{cfg: cfg})
 							conn, err := connector.Connect(ctx)
 							if tc.error {
-								assert.Error(t, err)
+								require.Error(t, err)
 							} else {
 								otelConn, ok := conn.(*otConn)
 								require.True(t, ok)

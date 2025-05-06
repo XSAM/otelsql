@@ -23,7 +23,7 @@ import (
 // Option is the interface that applies a configuration option.
 type Option interface {
 	// Apply sets the Option value of a config.
-	Apply(*config)
+	Apply(cfg *config)
 }
 
 var _ Option = OptionFunc(nil)

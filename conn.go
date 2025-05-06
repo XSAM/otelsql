@@ -204,6 +204,7 @@ func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.
 		beginTxCtx = ctx
 	}
 
+	//nolint:nestif
 	if connBeginTx, ok := c.Conn.(driver.ConnBeginTx); ok {
 		if tx, err = connBeginTx.BeginTx(beginTxCtx, opts); err != nil {
 			return nil, err

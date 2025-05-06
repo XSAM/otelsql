@@ -70,7 +70,6 @@ linters:
     - revive
     - rowserrcheck
     - sloglint
-    - spancheck
     - sqlclosecheck
     - staticcheck
     - tagliatelle
@@ -107,6 +106,7 @@ linters:
     - containedctx
     - wrapcheck
     - exhaustive
+    - spancheck
 formatters:
   enable:
     - gofumpt

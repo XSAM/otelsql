@@ -28,9 +28,8 @@ func init() {
 }
 
 var (
-	connector = driver.Connector(nil)
-	dri       = otelsql.NewMockDriver()
-	mysqlDSN  = "root:otel_password@db"
+	dri      = otelsql.NewMockDriver()
+	mysqlDSN = "root:otel_password@db"
 )
 
 func ExampleOpen() {
@@ -44,9 +43,19 @@ func ExampleOpen() {
 }
 
 func ExampleOpenDB() {
+	driverContext, ok := dri.(driver.DriverContext)
+	if !ok {
+		panic("driver does not implement driver.DriverContext")
+	}
+	connector, err := driverContext.OpenConnector(mysqlDSN)
+	if err != nil {
+		panic(err)
+	}
+
 	// Connect to database
 	db := otelsql.OpenDB(connector)
 	defer func() { _ = db.Close() }()
+	// Output:
 }
 
 func ExampleWrapDriver() {

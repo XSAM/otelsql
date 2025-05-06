@@ -90,7 +90,7 @@ func (m *mockStmt) QueryContext(_ context.Context, args []driver.NamedValue) (dr
 	if m.shouldError {
 		return nil, errors.New("queryContext")
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
 
 func (m *mockStmt) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
@@ -99,7 +99,7 @@ func (m *mockStmt) ExecContext(_ context.Context, args []driver.NamedValue) (dri
 	if m.shouldError {
 		return nil, errors.New("execContext")
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
 
 var (
