@@ -26,8 +26,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -137,31 +135,6 @@ func createDummySpan(ctx context.Context, tracer trace.Tracer) (context.Context,
 	ctx, span := tracer.Start(ctx, "dummy")
 	defer span.End()
 	return ctx, span
-}
-
-// TODO: use newConfig instead.
-func newMockConfig(t *testing.T, tracer trace.Tracer, meter metric.Meter) config {
-	t.Helper()
-
-	if meter == nil {
-		meter = noop.NewMeterProvider().Meter("test")
-	}
-
-	instruments, err := newInstruments(meter)
-	require.NoError(t, err)
-
-	return config{
-		Tracer:                tracer,
-		Meter:                 meter,
-		Instruments:           instruments,
-		Attributes:            []attribute.KeyValue{defaultattribute},
-		SpanNameFormatter:     defaultSpanNameFormatter,
-		SQLCommenter:          newCommenter(false),
-		SemConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
-		DBQueryTextAttributes: internalsemconv.NewDBQueryTextAttributes(
-			internalsemconv.OTelSemConvStabilityOptInStable,
-		),
-	}
 }
 
 type spanAssertionParameter struct {
@@ -1230,8 +1203,9 @@ func TestCreateSpan(t *testing.T) {
 			sr, provider := newTracerProvider()
 			tracer := provider.Tracer("test")
 
-			// Use newMockConfig instead of manual config creation
-			cfg := newMockConfig(t, tracer, nil)
+			t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+			cfg := newConfig(WithAttributes(defaultattribute))
+			cfg.Tracer = tracer
 
 			// Customize config for test case
 			if tt.disableQuery {

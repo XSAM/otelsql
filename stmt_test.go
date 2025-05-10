@@ -177,7 +177,9 @@ func TestOtStmt_ExecContext(t *testing.T) {
 							}
 
 							// New stmt
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
@@ -290,7 +292,9 @@ func TestOtStmt_QueryContext(t *testing.T) {
 							}
 
 							// New stmt
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
@@ -346,6 +350,7 @@ func (nvc *namedValueChecker) CheckNamedValue(_ *driver.NamedValue) error {
 }
 
 func TestOtStmt_CheckNamedValue(t *testing.T) {
+	t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
 	// Generate a variable that implements the driver.NamedValueChecker
 
 	testCases := []struct {
@@ -357,7 +362,7 @@ func TestOtStmt_CheckNamedValue(t *testing.T) {
 		{
 			name:   "stmt and conn do not implement NamedValueChecker",
 			stmt:   newMockLegacyStmt(false),
-			otConn: newConn(&mockConn{}, newMockConfig(t, nil, nil)),
+			otConn: newConn(&mockConn{}, newConfig()),
 			err:    driver.ErrSkip,
 		},
 		{
@@ -381,7 +386,7 @@ func TestOtStmt_CheckNamedValue(t *testing.T) {
 			otConn: newConn(&struct {
 				driver.Conn
 				driver.NamedValueChecker
-			}{NamedValueChecker: &namedValueChecker{}}, newMockConfig(t, nil, nil)),
+			}{NamedValueChecker: &namedValueChecker{}}, newConfig()),
 		},
 		{
 			name: "only conn implements NamedValueChecker, but has error",
@@ -389,14 +394,14 @@ func TestOtStmt_CheckNamedValue(t *testing.T) {
 			otConn: newConn(&struct {
 				driver.Conn
 				driver.NamedValueChecker
-			}{NamedValueChecker: &namedValueChecker{err: assert.AnError}}, newMockConfig(t, nil, nil)),
+			}{NamedValueChecker: &namedValueChecker{err: assert.AnError}}, newConfig()),
 			err: assert.AnError,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			stmt := newStmt(tc.stmt, newMockConfig(t, nil, nil), "", tc.otConn)
+			stmt := newStmt(tc.stmt, newConfig(), "", tc.otConn)
 			err := stmt.CheckNamedValue(nil)
 			assert.Equal(t, tc.err, err)
 		})

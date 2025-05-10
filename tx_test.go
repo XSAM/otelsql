@@ -95,7 +95,9 @@ func TestOtTx_Commit(t *testing.T) {
 					mt := newMockTx(tc.error)
 
 					// New tx
-					cfg := newMockConfig(t, tracer, nil)
+					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+					cfg := newConfig()
+					cfg.Tracer = tracer
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 					cfg.AttributesGetter = tc.attributesGetter
 					cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
@@ -171,7 +173,9 @@ func TestOtTx_Rollback(t *testing.T) {
 					mt := newMockTx(tc.error)
 
 					// New tx
-					cfg := newMockConfig(t, tracer, nil)
+					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+					cfg := newConfig()
+					cfg.Tracer = tracer
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 					cfg.AttributesGetter = tc.attributesGetter
 					cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)

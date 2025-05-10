@@ -228,7 +228,8 @@ func TestOtConn_Ping(t *testing.T) {
 					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 					// New conn
-					cfg := newMockConfig(t, tracer, nil)
+					cfg := newConfig()
+					cfg.Tracer = tracer
 					cfg.SpanOptions.Ping = tc.pingOption
 					cfg.AttributesGetter = tc.attributesGetter
 					cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
@@ -325,7 +326,9 @@ func TestOtConn_ExecContext(t *testing.T) {
 					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 					// New conn
-					cfg := newMockConfig(t, tracer, nil)
+					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+					cfg := newConfig()
+					cfg.Tracer = tracer
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 					cfg.AttributesGetter = tc.attributesGetter
@@ -428,7 +431,9 @@ func TestOtConn_QueryContext(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
 							cfg.SpanOptions.OmitConnQuery = omitConnQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -566,7 +571,9 @@ func TestOtConn_PrepareContext(t *testing.T) {
 									ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 									// New conn
-									cfg := newMockConfig(t, tracer, nil)
+									t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+									cfg := newConfig()
+									cfg.Tracer = tracer
 									cfg.SpanOptions.DisableQuery = tc.disableQuery
 									cfg.SpanOptions.OmitConnPrepare = omitConnPrepare
 									cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -680,7 +687,9 @@ func TestOtConn_BeginTx(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
 
@@ -779,7 +788,9 @@ func TestOtConn_ResetSession(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.OmitConnResetSession = omitResetSession
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
