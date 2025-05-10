@@ -48,6 +48,8 @@ type InstrumentAttributesGetter func(ctx context.Context, method Method, query s
 // InstrumentErrorAttributesGetter provides additional error-related attributes while recording metrics to instruments.
 type InstrumentErrorAttributesGetter func(err error) []attribute.KeyValue
 
+// SpanFilter is a function that determines whether a span should be created for a given SQL operation.
+// It returns true if the span should be created, or false to skip span creation.
 type SpanFilter func(ctx context.Context, method Method, query string, args []driver.NamedValue) bool
 
 type config struct {

@@ -21,20 +21,33 @@ type Method string
 type Event string
 
 const (
+	// MethodConnectorConnect represents SQL connector connect operation.
 	MethodConnectorConnect Method = "sql.connector.connect"
-	MethodConnPing         Method = "sql.conn.ping"
-	MethodConnExec         Method = "sql.conn.exec"
-	MethodConnQuery        Method = "sql.conn.query"
-	MethodConnPrepare      Method = "sql.conn.prepare"
-	MethodConnBeginTx      Method = "sql.conn.begin_tx"
+	// MethodConnPing represents SQL connection ping operation.
+	MethodConnPing Method = "sql.conn.ping"
+	// MethodConnExec represents SQL connection exec operation.
+	MethodConnExec Method = "sql.conn.exec"
+	// MethodConnQuery represents SQL connection query operation.
+	MethodConnQuery Method = "sql.conn.query"
+	// MethodConnPrepare represents SQL connection prepare operation.
+	MethodConnPrepare Method = "sql.conn.prepare"
+	// MethodConnBeginTx represents SQL connection begin transaction operation.
+	MethodConnBeginTx Method = "sql.conn.begin_tx"
+	// MethodConnResetSession represents SQL connection reset session operation.
 	MethodConnResetSession Method = "sql.conn.reset_session"
-	MethodTxCommit         Method = "sql.tx.commit"
-	MethodTxRollback       Method = "sql.tx.rollback"
-	MethodStmtExec         Method = "sql.stmt.exec"
-	MethodStmtQuery        Method = "sql.stmt.query"
-	MethodRows             Method = "sql.rows"
+	// MethodTxCommit represents SQL transaction commit operation.
+	MethodTxCommit Method = "sql.tx.commit"
+	// MethodTxRollback represents SQL transaction rollback operation.
+	MethodTxRollback Method = "sql.tx.rollback"
+	// MethodStmtExec represents SQL statement exec operation.
+	MethodStmtExec Method = "sql.stmt.exec"
+	// MethodStmtQuery represents SQL statement query operation.
+	MethodStmtQuery Method = "sql.stmt.query"
+	// MethodRows represents SQL rows operation.
+	MethodRows Method = "sql.rows"
 )
 
 const (
+	// EventRowsNext represents the event when a SQL row is accessed via the Next method.
 	EventRowsNext Event = "sql.rows.next"
 )
