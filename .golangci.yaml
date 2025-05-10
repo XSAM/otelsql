@@ -107,6 +107,9 @@ linters:
     - exhaustive
     - spancheck
     - nonamedreturns
+  settings:
+    gomoddirectives:
+      replace-local: true
 formatters:
   enable:
     - gofumpt
