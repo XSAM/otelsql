@@ -21,33 +21,33 @@ type Method string
 type Event string
 
 const (
-	// MethodConnectorConnect represents SQL connector connect operation.
+	// MethodConnectorConnect is used when driver.Connector.Connect is called to establish a new connection.
 	MethodConnectorConnect Method = "sql.connector.connect"
-	// MethodConnPing represents SQL connection ping operation.
+	// MethodConnPing is used with driver.Pinger.Ping to verify database connection is alive.
 	MethodConnPing Method = "sql.conn.ping"
-	// MethodConnExec represents SQL connection exec operation.
+	// MethodConnExec is used with driver.ExecerContext.ExecContext for direct query execution through a connection.
 	MethodConnExec Method = "sql.conn.exec"
-	// MethodConnQuery represents SQL connection query operation.
+	// MethodConnQuery is used with driver.QueryerContext.QueryContext for executing queries directly through a connection.
 	MethodConnQuery Method = "sql.conn.query"
-	// MethodConnPrepare represents SQL connection prepare operation.
+	// MethodConnPrepare is used with driver.ConnPrepareContext.PrepareContext for creating prepared statements.
 	MethodConnPrepare Method = "sql.conn.prepare"
-	// MethodConnBeginTx represents SQL connection begin transaction operation.
+	// MethodConnBeginTx is used with driver.ConnBeginTx.BeginTx for starting a new transaction.
 	MethodConnBeginTx Method = "sql.conn.begin_tx"
-	// MethodConnResetSession represents SQL connection reset session operation.
+	// MethodConnResetSession is used with driver.SessionResetter.ResetSession to reset connection session state.
 	MethodConnResetSession Method = "sql.conn.reset_session"
-	// MethodTxCommit represents SQL transaction commit operation.
+	// MethodTxCommit is used with driver.Tx.Commit to commit a transaction.
 	MethodTxCommit Method = "sql.tx.commit"
-	// MethodTxRollback represents SQL transaction rollback operation.
+	// MethodTxRollback is used with driver.Tx.Rollback to rollback a transaction.
 	MethodTxRollback Method = "sql.tx.rollback"
-	// MethodStmtExec represents SQL statement exec operation.
+	// MethodStmtExec is used with driver.StmtExecContext.ExecContext to execute a prepared statement.
 	MethodStmtExec Method = "sql.stmt.exec"
-	// MethodStmtQuery represents SQL statement query operation.
+	// MethodStmtQuery is used with driver.StmtQueryContext.QueryContext to query using a prepared statement.
 	MethodStmtQuery Method = "sql.stmt.query"
-	// MethodRows represents SQL rows operation.
+	// MethodRows is used to track the lifecycle of driver.Rows returned by query operations.
 	MethodRows Method = "sql.rows"
 )
 
 const (
-	// EventRowsNext represents the event when a SQL row is accessed via the Next method.
+	// EventRowsNext is triggered during driver.Rows.Next iteration to track each row fetching operation.
 	EventRowsNext Event = "sql.rows.next"
 )
