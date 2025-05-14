@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package semconv contains semantic convention definitions and utilities for database attributes
+// used by the otelsql package.
 package semconv
 
 import (

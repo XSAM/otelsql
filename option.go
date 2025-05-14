@@ -23,7 +23,7 @@ import (
 // Option is the interface that applies a configuration option.
 type Option interface {
 	// Apply sets the Option value of a config.
-	Apply(*config)
+	Apply(cfg *config)
 }
 
 var _ Option = OptionFunc(nil)
@@ -31,6 +31,7 @@ var _ Option = OptionFunc(nil)
 // OptionFunc implements the Option interface.
 type OptionFunc func(*config)
 
+// Apply sets the Option value of a config by calling the wrapped function.
 func (f OptionFunc) Apply(c *config) {
 	f(c)
 }
@@ -109,8 +110,8 @@ func WithInstrumentAttributesGetter(instrumentAttributesGetter InstrumentAttribu
 	})
 }
 
-// WittDisableSkipErrMeasurement, if set to true, will suppress driver.ErrSkip as an error status in measurements.
-// The measurement will be recorded as status=ok.
+// WithDisableSkipErrMeasurement controls whether driver.ErrSkip is treated as an error in measurements.
+// When enabled, measurements with driver.ErrSkip will be recorded as status=ok instead of error.
 func WithDisableSkipErrMeasurement(disable bool) Option {
 	return OptionFunc(func(cfg *config) {
 		cfg.DisableSkipErrMeasurement = disable

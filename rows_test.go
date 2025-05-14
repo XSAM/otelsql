@@ -74,11 +74,11 @@ func TestOtRows_Close(t *testing.T) {
 	}
 
 	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-		testname := "spanFilterOmit"
+		testname := testSpanFilterOmit
 		if spanFilterFn == nil {
-			testname = "spanFilterNil"
+			testname = testSpanFilterNil
 		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-			testname = "spanFilterKeep"
+			testname = testSpanFilterKeep
 		}
 
 		t.Run(testname, func(t *testing.T) {
@@ -88,7 +88,9 @@ func TestOtRows_Close(t *testing.T) {
 					ctx, sr, tracer, _ := prepareTraces(false)
 
 					mr := newMockRows(tc.error)
-					cfg := newMockConfig(t, tracer, nil)
+					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+					cfg := newConfig()
+					cfg.Tracer = tracer
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 
 					// New rows
@@ -103,7 +105,7 @@ func TestOtRows_Close(t *testing.T) {
 					expectedSpanCount := getExpectedSpanCount(false, omit)
 
 					// A span created in newRows()
-					require.Equal(t, expectedSpanCount, len(spanList))
+					require.Len(t, spanList, expectedSpanCount)
 
 					if !omit {
 						span := spanList[1]
@@ -145,11 +147,11 @@ func TestOtRows_Next(t *testing.T) {
 	}
 
 	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-		testname := "spanFilterOmit"
+		testname := testSpanFilterOmit
 		if spanFilterFn == nil {
-			testname = "spanFilterNil"
+			testname = testSpanFilterNil
 		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-			testname = "spanFilterKeep"
+			testname = testSpanFilterKeep
 		}
 
 		t.Run(testname, func(t *testing.T) {
@@ -159,7 +161,9 @@ func TestOtRows_Next(t *testing.T) {
 					ctx, sr, tracer, _ := prepareTraces(false)
 
 					mr := newMockRows(tc.error)
-					cfg := newMockConfig(t, tracer, nil)
+					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+					cfg := newConfig()
+					cfg.Tracer = tracer
 					cfg.SpanOptions.RowsNext = tc.rowsNextOption
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 
@@ -173,7 +177,7 @@ func TestOtRows_Next(t *testing.T) {
 
 					spanList := sr.Started()
 					// A span created in newRows()
-					require.Equal(t, expectedSpanCount, len(spanList))
+					require.Len(t, spanList, expectedSpanCount)
 
 					if !omit {
 						span := spanList[1]
@@ -229,11 +233,11 @@ func TestNewRows(t *testing.T) {
 			}
 
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 
 				t.Run(testname, func(t *testing.T) {
@@ -243,7 +247,9 @@ func TestNewRows(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							mr := newMockRows(false)
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.OmitRows = omitRows
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
@@ -259,7 +265,7 @@ func TestNewRows(t *testing.T) {
 							}
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in newRows()
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							// Convert []sdktrace.ReadWriteSpan to []sdktrace.ReadOnlySpan explicitly due to the limitation of Go
 							var readOnlySpanList []sdktrace.ReadOnlySpan

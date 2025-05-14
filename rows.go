@@ -17,6 +17,7 @@ package otelsql
 import (
 	"context"
 	"database/sql/driver"
+	"errors"
 	"io"
 
 	"go.opentelemetry.io/otel/trace"
@@ -58,7 +59,7 @@ func newRows(ctx context.Context, rows driver.Rows, cfg config) *otRows {
 }
 
 // HasNextResultSet calls the implements the driver.RowsNextResultSet for otRows.
-// It returns the the underlying result of HasNextResultSet from the otRows.parent
+// It returns the underlying result of HasNextResultSet from the otRows.parent
 // if the parent implements driver.RowsNextResultSet.
 func (r otRows) HasNextResultSet() bool {
 	if v, ok := r.Rows.(driver.RowsNextResultSet); ok {
@@ -69,7 +70,7 @@ func (r otRows) HasNextResultSet() bool {
 }
 
 // NextResultSet calls the implements the driver.RowsNextResultSet for otRows.
-// It returns the the underlying result of NextResultSet from the otRows.parent
+// It returns the underlying result of NextResultSet from the otRows.parent
 // if the parent implements driver.RowsNextResultSet.
 func (r otRows) NextResultSet() error {
 	if v, ok := r.Rows.(driver.RowsNextResultSet); ok {
@@ -80,7 +81,7 @@ func (r otRows) NextResultSet() error {
 }
 
 // ColumnTypeDatabaseTypeName calls the implements the driver.RowsColumnTypeDatabaseTypeName for otRows.
-// It returns the the underlying result of ColumnTypeDatabaseTypeName from the otRows.Rows
+// It returns the underlying result of ColumnTypeDatabaseTypeName from the otRows.Rows
 // if the Rows implements driver.RowsColumnTypeDatabaseTypeName.
 func (r otRows) ColumnTypeDatabaseTypeName(index int) string {
 	if v, ok := r.Rows.(driver.RowsColumnTypeDatabaseTypeName); ok {
@@ -91,7 +92,7 @@ func (r otRows) ColumnTypeDatabaseTypeName(index int) string {
 }
 
 // ColumnTypeLength calls the implements the driver.RowsColumnTypeLength for otRows.
-// It returns the the underlying result of ColumnTypeLength from the otRows.Rows
+// It returns the underlying result of ColumnTypeLength from the otRows.Rows
 // if the Rows implements driver.RowsColumnTypeLength.
 func (r otRows) ColumnTypeLength(index int) (length int64, ok bool) {
 	if v, ok := r.Rows.(driver.RowsColumnTypeLength); ok {
@@ -102,7 +103,7 @@ func (r otRows) ColumnTypeLength(index int) (length int64, ok bool) {
 }
 
 // ColumnTypeNullable calls the implements the driver.RowsColumnTypeNullable for otRows.
-// It returns the the underlying result of ColumnTypeNullable from the otRows.Rows
+// It returns the underlying result of ColumnTypeNullable from the otRows.Rows
 // if the Rows implements driver.RowsColumnTypeNullable.
 func (r otRows) ColumnTypeNullable(index int) (nullable, ok bool) {
 	if v, ok := r.Rows.(driver.RowsColumnTypeNullable); ok {
@@ -113,7 +114,7 @@ func (r otRows) ColumnTypeNullable(index int) (nullable, ok bool) {
 }
 
 // ColumnTypePrecisionScale calls the implements the driver.RowsColumnTypePrecisionScale for otRows.
-// It returns the the underlying result of ColumnTypePrecisionScale from the otRows.Rows
+// It returns the underlying result of ColumnTypePrecisionScale from the otRows.Rows
 // if the Rows implements driver.RowsColumnTypePrecisionScale.
 func (r otRows) ColumnTypePrecisionScale(index int) (precision, scale int64, ok bool) {
 	if v, ok := r.Rows.(driver.RowsColumnTypePrecisionScale); ok {
@@ -145,7 +146,7 @@ func (r otRows) Next(dest []driver.Value) (err error) {
 
 	err = r.Rows.Next(dest)
 	// io.EOF is not an error. It is expected to happen during iteration.
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		recordSpanError(r.span, r.cfg.SpanOptions, err)
 	}
 	return

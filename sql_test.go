@@ -18,7 +18,6 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -48,7 +47,7 @@ func init() {
 		panic(err)
 	}
 	if driverName != "test-driver-otelsql-0" {
-		panic(fmt.Sprintf("expect driver name: test-driver-otelsql-0, got %s", driverName))
+		panic("expect driver name: test-driver-otelsql-0, got " + driverName)
 	}
 }
 
@@ -148,7 +147,7 @@ func TestRegisterDBStatsMetrics(t *testing.T) {
 	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(r))
 
 	err = RegisterDBStatsMetrics(db, WithMeterProvider(mp))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Should collect 7 metrics
 	got := &metricdata.ResourceMetrics{}

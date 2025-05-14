@@ -39,6 +39,9 @@ const (
 	OTelSemConvStabilityOptInStable
 )
 
+// ParseOTelSemConvStabilityOptIn reads the OTEL_SEMCONV_STABILITY_OPT_IN environment variable
+// and returns the corresponding OTelSemConvStabilityOptInType value based on its content.
+// It prioritizes checking for "database/dup" before "database" to determine the opt-in type.
 func ParseOTelSemConvStabilityOptIn() OTelSemConvStabilityOptInType {
 	if v := os.Getenv(OTelSemConvStabilityOptIn); v != "" {
 		// Check for database/dup first as it has higher precedence

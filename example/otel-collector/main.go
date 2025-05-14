@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main implements an example application that demonstrates how to use otelsql
+// with OpenTelemetry Collector for tracing and metrics collection.
 package main
 
 import (
@@ -19,6 +21,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"time"
@@ -56,7 +59,7 @@ func initConn() (*grpc.ClientConn, error) {
 		return nil, fmt.Errorf("failed to create gRPC connection to collector: %w", err)
 	}
 
-	return conn, err
+	return conn, nil
 }
 
 // Initializes an OTLP exporter, and configures the corresponding trace providers.
@@ -121,44 +124,52 @@ func initMeterProvider(ctx context.Context, conn *grpc.ClientConn) (func(context
 	return meterProvider.Shutdown, nil
 }
 
-func main() {
+func run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
 	conn, err := initConn()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	shutdownTracerProvider, err := initTracerProvider(ctx, conn)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer func() {
 		if err := shutdownTracerProvider(ctx); err != nil {
-			log.Fatalf("failed to shutdown TracerProvider: %s", err)
+			slog.Error("failed to shutdown TracerProvider", "error", err)
 		}
 	}()
 
 	shutdownMeterProvider, err := initMeterProvider(ctx, conn)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer func() {
 		if err := shutdownMeterProvider(ctx); err != nil {
-			log.Fatalf("failed to shutdown MeterProvider: %s", err)
+			slog.Error("failed to shutdown MeterProvider", "error", err)
 		}
 	}()
 
 	db := connectDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	err = runSQLQuery(ctx, db)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	fmt.Println("Example finished")
+	slog.Info("Example finished")
+
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func connectDB() *sql.DB {
@@ -202,7 +213,7 @@ func query(ctx context.Context, db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var currentTime time.Time
 	for rows.Next() {
@@ -211,6 +222,10 @@ func query(ctx context.Context, db *sql.DB) error {
 			return err
 		}
 	}
-	fmt.Println(currentTime)
+	// Check for errors from iterating over rows
+	if err = rows.Err(); err != nil {
+		return err
+	}
+	slog.Info("Current time", "time", currentTime)
 	return nil
 }

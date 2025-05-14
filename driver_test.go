@@ -127,7 +127,8 @@ func TestOtDriver_OpenConnector(t *testing.T) {
 			md := newMockDriver(tc.error)
 			d := newDriver(md, config{})
 
-			otelDriver := d.(*otDriver)
+			otelDriver, ok := d.(*otDriver)
+			require.True(t, ok)
 			connector, err := otelDriver.OpenConnector("test")
 
 			assert.Equal(t, "test", md.openConnectorName)

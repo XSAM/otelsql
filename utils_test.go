@@ -26,8 +26,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -101,7 +99,8 @@ func TestRecordSpanError(t *testing.T) {
 				// Create a span
 				sr, provider := newTracerProvider()
 				tracer := provider.Tracer("test")
-				tracer.Start(context.Background(), "test")
+				// Not using the spans from the SDK due to the limited data access.
+				_, _ = tracer.Start(context.Background(), "test")
 
 				// Get the span
 				spanList := sr.Started()
@@ -138,27 +137,6 @@ func createDummySpan(ctx context.Context, tracer trace.Tracer) (context.Context,
 	return ctx, span
 }
 
-// TODO: use newConfig instead.
-func newMockConfig(t *testing.T, tracer trace.Tracer, meter metric.Meter) config {
-	if meter == nil {
-		meter = noop.NewMeterProvider().Meter("test")
-	}
-
-	instruments, err := newInstruments(meter)
-	require.NoError(t, err)
-
-	return config{
-		Tracer:                tracer,
-		Meter:                 meter,
-		Instruments:           instruments,
-		Attributes:            []attribute.KeyValue{defaultattribute},
-		SpanNameFormatter:     defaultSpanNameFormatter,
-		SQLCommenter:          newCommenter(false),
-		SemConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
-		DBQueryTextAttributes: internalsemconv.NewDBQueryTextAttributes(internalsemconv.OTelSemConvStabilityOptInStable),
-	}
-}
-
 type spanAssertionParameter struct {
 	parentSpan         trace.Span
 	error              bool
@@ -176,6 +154,8 @@ type spanAssertionParameter struct {
 func assertSpanList(
 	t *testing.T, spanList []sdktrace.ReadOnlySpan, parameter spanAssertionParameter,
 ) {
+	t.Helper()
+
 	var span sdktrace.ReadOnlySpan
 	if !parameter.omitSpan {
 		if !parameter.noParentSpan {
@@ -185,35 +165,38 @@ func assertSpanList(
 		}
 	}
 
-	if span != nil {
-		if parameter.spanNotEnded {
-			assert.True(t, span.EndTime().IsZero())
-		} else {
-			assert.False(t, span.EndTime().IsZero())
-		}
-		assert.Equal(t, trace.SpanKindClient, span.SpanKind())
+	if span == nil {
+		return
+	}
+	if parameter.spanNotEnded {
+		assert.True(t, span.EndTime().IsZero())
+	} else {
+		assert.False(t, span.EndTime().IsZero())
+	}
+	assert.Equal(t, trace.SpanKindClient, span.SpanKind())
 
-		expectedAttributes := parameter.expectedAttributes
-		if parameter.attributesGetter != nil {
-			expectedAttributes = append(expectedAttributes, parameter.attributesGetter(context.Background(), parameter.method, parameter.query, parameter.args)...)
-		}
+	expectedAttributes := parameter.expectedAttributes
+	if parameter.attributesGetter != nil {
+		expectedAttributes = append(
+			expectedAttributes,
+			parameter.attributesGetter(context.Background(), parameter.method, parameter.query, parameter.args)...)
+	}
 
-		assert.Equal(t, expectedAttributes, span.Attributes())
-		assert.Equal(t, string(parameter.method), span.Name())
-		if parameter.parentSpan != nil {
-			assert.Equal(t, parameter.parentSpan.SpanContext().TraceID(), span.SpanContext().TraceID())
-			assert.Equal(t, parameter.parentSpan.SpanContext().SpanID(), span.Parent().SpanID())
-		}
+	assert.Equal(t, expectedAttributes, span.Attributes())
+	assert.Equal(t, string(parameter.method), span.Name())
+	if parameter.parentSpan != nil {
+		assert.Equal(t, parameter.parentSpan.SpanContext().TraceID(), span.SpanContext().TraceID())
+		assert.Equal(t, parameter.parentSpan.SpanContext().SpanID(), span.Parent().SpanID())
+	}
 
-		if parameter.error {
-			assert.Equal(t, codes.Error, span.Status().Code)
-		} else {
-			assert.Equal(t, codes.Unset, span.Status().Code)
-		}
+	if parameter.error {
+		assert.Equal(t, codes.Error, span.Status().Code)
+	} else {
+		assert.Equal(t, codes.Unset, span.Status().Code)
+	}
 
-		if parameter.ctx != nil {
-			assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(parameter.ctx))
-		}
+	if parameter.ctx != nil {
+		assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(parameter.ctx))
 	}
 }
 
@@ -279,6 +262,9 @@ var keep SpanFilter = func(_ context.Context, _ Method, _ string, _ []driver.Nam
 	return true
 }
 
+// TODO: apply maintidx linter
+//
+//nolint:maintidx
 func TestRecordMetric(t *testing.T) {
 	tests := []struct {
 		name                  string
@@ -312,9 +298,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2,
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2,
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
@@ -353,9 +355,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2,
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2,
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
@@ -395,9 +413,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2,
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2,
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
@@ -438,9 +472,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2,
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2,
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
@@ -459,9 +509,13 @@ func TestRecordMetric(t *testing.T) {
 		{
 			name:                  "metric with instrumentAttributesGetter",
 			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
-			cfgOptions: []Option{WithInstrumentAttributesGetter(func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
-				return []attribute.KeyValue{attribute.String("dummyKey", "dummyVal")}
-			})},
+			cfgOptions: []Option{
+				WithInstrumentAttributesGetter(
+					func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
+						return []attribute.KeyValue{attribute.String("dummyKey", "dummyVal")}
+					},
+				),
+			},
 			method: MethodConnQuery,
 			query:  "example query",
 			wantMetricData: metricdata.ResourceMetrics{
@@ -481,9 +535,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2,
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2,
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
@@ -526,9 +596,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2,
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2,
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
@@ -571,9 +657,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2,
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2,
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
@@ -612,9 +714,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2000, // 2s converted to ms (2 * 1000)
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2000, // 2s converted to ms (2 * 1000)
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2000),
 											Max:          metricdata.NewExtrema[float64](2000),
@@ -635,9 +753,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2,
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2,
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
@@ -676,9 +810,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2000, // 2s converted to ms (2 * 1000)
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2000, // 2s converted to ms (2 * 1000)
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2000),
 											Max:          metricdata.NewExtrema[float64](2000),
@@ -719,9 +869,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2000, // 2s converted to ms (2 * 1000)
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2000, // 2s converted to ms (2 * 1000)
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2000),
 											Max:          metricdata.NewExtrema[float64](2000),
@@ -742,9 +908,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2,
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2,
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
@@ -785,9 +967,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2000, // 2s converted to ms (2 * 1000)
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2000, // 2s converted to ms (2 * 1000)
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2000),
 											Max:          metricdata.NewExtrema[float64](2000),
@@ -829,9 +1027,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2000,
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2000,
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2000),
 											Max:          metricdata.NewExtrema[float64](2000),
@@ -852,9 +1066,25 @@ func TestRecordMetric(t *testing.T) {
 									Temporality: metricdata.CumulativeTemporality,
 									DataPoints: []metricdata.HistogramDataPoint[float64]{
 										{
-											Count:        1,
-											Sum:          2,
-											Bounds:       []float64{0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000},
+											Count: 1,
+											Sum:   2,
+											Bounds: []float64{
+												0,
+												5,
+												10,
+												25,
+												50,
+												75,
+												100,
+												250,
+												500,
+												750,
+												1000,
+												2500,
+												5000,
+												7500,
+												10000,
+											},
 											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
@@ -973,8 +1203,9 @@ func TestCreateSpan(t *testing.T) {
 			sr, provider := newTracerProvider()
 			tracer := provider.Tracer("test")
 
-			// Use newMockConfig instead of manual config creation
-			cfg := newMockConfig(t, tracer, nil)
+			t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+			cfg := newConfig(WithAttributes(defaultattribute))
+			cfg.Tracer = tracer
 
 			// Customize config for test case
 			if tt.disableQuery {

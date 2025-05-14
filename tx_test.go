@@ -95,7 +95,9 @@ func TestOtTx_Commit(t *testing.T) {
 					mt := newMockTx(tc.error)
 
 					// New tx
-					cfg := newMockConfig(t, tracer, nil)
+					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+					cfg := newConfig()
+					cfg.Tracer = tracer
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 					cfg.AttributesGetter = tc.attributesGetter
 					cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
@@ -112,7 +114,7 @@ func TestOtTx_Commit(t *testing.T) {
 					omit := !filterSpan(ctx, cfg.SpanOptions, MethodTxCommit, "", []driver.NamedValue{})
 					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 					// One dummy span and one span created in tx
-					require.Equal(t, expectedSpanCount, len(spanList))
+					require.Len(t, spanList, expectedSpanCount)
 
 					assertSpanList(t, spanList, spanAssertionParameter{
 						parentSpan:         dummySpan,
@@ -171,7 +173,9 @@ func TestOtTx_Rollback(t *testing.T) {
 					mt := newMockTx(tc.error)
 
 					// New tx
-					cfg := newMockConfig(t, tracer, nil)
+					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+					cfg := newConfig()
+					cfg.Tracer = tracer
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 					cfg.AttributesGetter = tc.attributesGetter
 					cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
@@ -189,7 +193,7 @@ func TestOtTx_Rollback(t *testing.T) {
 					omit := !filterSpan(ctx, cfg.SpanOptions, MethodTxRollback, "", []driver.NamedValue{})
 					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 					// One dummy span and a span created in tx
-					require.Equal(t, expectedSpanCount, len(spanList))
+					require.Len(t, spanList, expectedSpanCount)
 
 					assertSpanList(t, spanList, spanAssertionParameter{
 						parentSpan:         dummySpan,

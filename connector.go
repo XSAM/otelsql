@@ -22,8 +22,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-var _ driver.Connector = (*otConnector)(nil)
-var _ io.Closer = (*otConnector)(nil)
+var (
+	_ driver.Connector = (*otConnector)(nil)
+	_ io.Closer        = (*otConnector)(nil)
+)
 
 type otConnector struct {
 	driver.Connector

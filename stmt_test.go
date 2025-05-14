@@ -90,7 +90,7 @@ func (m *mockStmt) QueryContext(_ context.Context, args []driver.NamedValue) (dr
 	if m.shouldError {
 		return nil, errors.New("queryContext")
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
 
 func (m *mockStmt) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
@@ -99,7 +99,7 @@ func (m *mockStmt) ExecContext(_ context.Context, args []driver.NamedValue) (dri
 	if m.shouldError {
 		return nil, errors.New("execContext")
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
 
 var (
@@ -110,6 +110,7 @@ var (
 	_ MockStmt                 = (*mockStmt)(nil)
 )
 
+//nolint:gocognit
 func TestOtStmt_ExecContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
@@ -155,11 +156,11 @@ func TestOtStmt_ExecContext(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 
 				t.Run(testname, func(t *testing.T) {
@@ -176,7 +177,9 @@ func TestOtStmt_ExecContext(t *testing.T) {
 							}
 
 							// New stmt
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
@@ -194,7 +197,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 							omit := !filterSpan(ctx, cfg.SpanOptions, MethodStmtExec, query, args)
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and a span created in tx
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,
@@ -222,6 +225,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 	}
 }
 
+//nolint:gocognit,cyclop
 func TestOtStmt_QueryContext(t *testing.T) {
 	query := "query"
 	args := []driver.NamedValue{{Value: "foo"}}
@@ -267,11 +271,11 @@ func TestOtStmt_QueryContext(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 
 				t.Run(testname, func(t *testing.T) {
@@ -288,7 +292,9 @@ func TestOtStmt_QueryContext(t *testing.T) {
 							}
 
 							// New stmt
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
@@ -306,7 +312,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 							omit := !filterSpan(ctx, cfg.SpanOptions, MethodStmtQuery, query, args)
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and a span created in tx
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,
@@ -344,6 +350,7 @@ func (nvc *namedValueChecker) CheckNamedValue(_ *driver.NamedValue) error {
 }
 
 func TestOtStmt_CheckNamedValue(t *testing.T) {
+	t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
 	// Generate a variable that implements the driver.NamedValueChecker
 
 	testCases := []struct {
@@ -355,7 +362,7 @@ func TestOtStmt_CheckNamedValue(t *testing.T) {
 		{
 			name:   "stmt and conn do not implement NamedValueChecker",
 			stmt:   newMockLegacyStmt(false),
-			otConn: newConn(&mockConn{}, newMockConfig(t, nil, nil)),
+			otConn: newConn(&mockConn{}, newConfig()),
 			err:    driver.ErrSkip,
 		},
 		{
@@ -379,7 +386,7 @@ func TestOtStmt_CheckNamedValue(t *testing.T) {
 			otConn: newConn(&struct {
 				driver.Conn
 				driver.NamedValueChecker
-			}{NamedValueChecker: &namedValueChecker{}}, newMockConfig(t, nil, nil)),
+			}{NamedValueChecker: &namedValueChecker{}}, newConfig()),
 		},
 		{
 			name: "only conn implements NamedValueChecker, but has error",
@@ -387,17 +394,16 @@ func TestOtStmt_CheckNamedValue(t *testing.T) {
 			otConn: newConn(&struct {
 				driver.Conn
 				driver.NamedValueChecker
-			}{NamedValueChecker: &namedValueChecker{err: assert.AnError}}, newMockConfig(t, nil, nil)),
+			}{NamedValueChecker: &namedValueChecker{err: assert.AnError}}, newConfig()),
 			err: assert.AnError,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			stmt := newStmt(tc.stmt, newMockConfig(t, nil, nil), "", tc.otConn)
+			stmt := newStmt(tc.stmt, newConfig(), "", tc.otConn)
 			err := stmt.CheckNamedValue(nil)
 			assert.Equal(t, tc.err, err)
 		})
 	}
-
 }

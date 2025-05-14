@@ -61,6 +61,7 @@ func TestNewConnector(t *testing.T) {
 	assert.Equal(t, otelDriver, connector.otDriver)
 }
 
+//nolint:gocognit
 func TestOtConnector_Connect(t *testing.T) {
 	for _, omitConnectorConnect := range []bool{true, false} {
 		var testname string
@@ -93,11 +94,11 @@ func TestOtConnector_Connect(t *testing.T) {
 			}
 
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 
 				t.Run(testname, func(t *testing.T) {
@@ -106,7 +107,9 @@ func TestOtConnector_Connect(t *testing.T) {
 							// Prepare traces
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.OmitConnectorConnect = omitConnectorConnect
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
@@ -115,7 +118,7 @@ func TestOtConnector_Connect(t *testing.T) {
 							connector := newConnector(mConnector, &otDriver{cfg: cfg})
 							conn, err := connector.Connect(ctx)
 							if tc.error {
-								assert.Error(t, err)
+								require.Error(t, err)
 							} else {
 								otelConn, ok := conn.(*otConn)
 								require.True(t, ok)
@@ -125,11 +128,17 @@ func TestOtConnector_Connect(t *testing.T) {
 							spanList := sr.Ended()
 							omit := omitConnectorConnect
 							if !omit {
-								omit = !filterSpan(ctx, cfg.SpanOptions, MethodConnectorConnect, "", []driver.NamedValue{})
+								omit = !filterSpan(
+									ctx,
+									cfg.SpanOptions,
+									MethodConnectorConnect,
+									"",
+									[]driver.NamedValue{},
+								)
 							}
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in Connect
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,

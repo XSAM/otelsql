@@ -27,6 +27,14 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+const (
+	testSpanFilterOmit = "spanFilterOmit"
+	testSpanFilterNil  = "spanFilterNil"
+	testSpanFilterKeep = "spanFilterKeep"
+	testQueryString    = "query"
+	testLegacy         = "legacy"
+)
+
 type MockConn interface {
 	driver.Conn
 	PrepareContextCount() int
@@ -37,8 +45,10 @@ type MockConn interface {
 	BeginTxCount() int
 }
 
-var _ MockConn = (*mockConn)(nil)
-var _ driver.Conn = (*mockConn)(nil)
+var (
+	_ MockConn    = (*mockConn)(nil)
+	_ driver.Conn = (*mockConn)(nil)
+)
 
 type mockConn struct {
 	shouldError bool
@@ -138,7 +148,7 @@ func (m *mockConn) ExecContext(
 	if m.shouldError {
 		return nil, errors.New("execContext")
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
 
 func (m *mockConn) Ping(ctx context.Context) error {
@@ -204,11 +214,11 @@ func TestOtConn_Ping(t *testing.T) {
 	}
 
 	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-		testname := "spanFilterOmit"
+		testname := testSpanFilterOmit
 		if spanFilterFn == nil {
-			testname = "spanFilterNil"
+			testname = testSpanFilterNil
 		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-			testname = "spanFilterKeep"
+			testname = testSpanFilterKeep
 		}
 
 		t.Run(testname, func(t *testing.T) {
@@ -218,7 +228,8 @@ func TestOtConn_Ping(t *testing.T) {
 					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 					// New conn
-					cfg := newMockConfig(t, tracer, nil)
+					cfg := newConfig()
+					cfg.Tracer = tracer
 					cfg.SpanOptions.Ping = tc.pingOption
 					cfg.AttributesGetter = tc.attributesGetter
 					cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
@@ -238,7 +249,7 @@ func TestOtConn_Ping(t *testing.T) {
 						omit := !filterSpan(ctx, cfg.SpanOptions, MethodConnPing, "", []driver.NamedValue{})
 						expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 						// One dummy span and one span created in Ping
-						require.Equal(t, expectedSpanCount, len(spanList))
+						require.Len(t, spanList, expectedSpanCount)
 
 						if tc.pingOption {
 							assertSpanList(t, spanList, spanAssertionParameter{
@@ -254,10 +265,8 @@ func TestOtConn_Ping(t *testing.T) {
 
 							assert.Equal(t, 1, mc.pingCount)
 						}
-					} else {
-						if !tc.noParentSpan {
-							require.Equal(t, 1, len(spanList))
-						}
+					} else if !tc.noParentSpan {
+						require.Len(t, spanList, 1)
 					}
 				})
 			}
@@ -266,7 +275,7 @@ func TestOtConn_Ping(t *testing.T) {
 }
 
 func TestOtConn_ExecContext(t *testing.T) {
-	query := "query"
+	query := testQueryString
 	args := []driver.NamedValue{{Value: "foo"}}
 	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 
@@ -303,11 +312,11 @@ func TestOtConn_ExecContext(t *testing.T) {
 		},
 	}
 	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-		testname := "spanFilterOmit"
+		testname := testSpanFilterOmit
 		if spanFilterFn == nil {
-			testname = "spanFilterNil"
+			testname = testSpanFilterNil
 		} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-			testname = "spanFilterKeep"
+			testname = testSpanFilterKeep
 		}
 
 		t.Run(testname, func(t *testing.T) {
@@ -317,7 +326,9 @@ func TestOtConn_ExecContext(t *testing.T) {
 					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 					// New conn
-					cfg := newMockConfig(t, tracer, nil)
+					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+					cfg := newConfig()
+					cfg.Tracer = tracer
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
 					cfg.SpanOptions.SpanFilter = spanFilterFn
 					cfg.AttributesGetter = tc.attributesGetter
@@ -336,7 +347,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 					omit := !filterSpan(ctx, cfg.SpanOptions, MethodConnExec, query, args)
 					expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 					// One dummy span and one span created in ExecContext
-					require.Equal(t, expectedSpanCount, len(spanList))
+					require.Len(t, spanList, expectedSpanCount)
 
 					assertSpanList(t, spanList, spanAssertionParameter{
 						parentSpan:         dummySpan,
@@ -359,8 +370,9 @@ func TestOtConn_ExecContext(t *testing.T) {
 	}
 }
 
+//nolint:gocognit,cyclop
 func TestOtConn_QueryContext(t *testing.T) {
-	query := "query"
+	query := testQueryString
 	args := []driver.NamedValue{{Value: "foo"}}
 	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 
@@ -372,11 +384,11 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 
 				t.Run(testname, func(t *testing.T) {
@@ -419,7 +431,9 @@ func TestOtConn_QueryContext(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
 							cfg.SpanOptions.OmitConnQuery = omitConnQuery
 							cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -443,7 +457,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in QueryContext
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,
@@ -465,7 +479,11 @@ func TestOtConn_QueryContext(t *testing.T) {
 								otelRows, ok := rows.(*otRows)
 								require.True(t, ok)
 								if dummySpan != nil && !omit {
-									assert.Equal(t, dummySpan.SpanContext().TraceID(), otelRows.span.SpanContext().TraceID())
+									assert.Equal(
+										t,
+										dummySpan.SpanContext().TraceID(),
+										otelRows.span.SpanContext().TraceID(),
+									)
 
 									// Get a span from started span list
 									startedSpanList := sr.Started()
@@ -486,14 +504,15 @@ func TestOtConn_QueryContext(t *testing.T) {
 	}
 }
 
+//nolint:gocognit,cyclop
 func TestOtConn_PrepareContext(t *testing.T) {
-	query := "query"
+	query := testQueryString
 	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 
 	for _, legacy := range []bool{true, false} {
 		var testname string
 		if legacy {
-			testname = "Legacy"
+			testname = testLegacy
 		}
 
 		t.Run(testname, func(t *testing.T) {
@@ -505,11 +524,11 @@ func TestOtConn_PrepareContext(t *testing.T) {
 
 				t.Run(testname, func(t *testing.T) {
 					for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-						testname := "spanFilterOmit"
+						testname := testSpanFilterOmit
 						if spanFilterFn == nil {
-							testname = "spanFilterNil"
+							testname = testSpanFilterNil
 						} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-							testname = "spanFilterKeep"
+							testname = testSpanFilterKeep
 						}
 
 						t.Run(testname, func(t *testing.T) {
@@ -552,7 +571,9 @@ func TestOtConn_PrepareContext(t *testing.T) {
 									ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 									// New conn
-									cfg := newMockConfig(t, tracer, nil)
+									t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+									cfg := newConfig()
+									cfg.Tracer = tracer
 									cfg.SpanOptions.DisableQuery = tc.disableQuery
 									cfg.SpanOptions.OmitConnPrepare = omitConnPrepare
 									cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -577,11 +598,17 @@ func TestOtConn_PrepareContext(t *testing.T) {
 									spanList := sr.Ended()
 									omit := omitConnPrepare
 									if !omit {
-										omit = !filterSpan(ctx, cfg.SpanOptions, MethodConnPrepare, query, []driver.NamedValue{})
+										omit = !filterSpan(
+											ctx,
+											cfg.SpanOptions,
+											MethodConnPrepare,
+											query,
+											[]driver.NamedValue{},
+										)
 									}
 									expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 									// One dummy span and one span created in PrepareContext
-									require.Equal(t, expectedSpanCount, len(spanList))
+									require.Len(t, spanList, expectedSpanCount)
 
 									assertSpanList(t, spanList, spanAssertionParameter{
 										parentSpan:         dummySpan,
@@ -613,6 +640,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 	}
 }
 
+//nolint:gocognit,cyclop
 func TestOtConn_BeginTx(t *testing.T) {
 	testCases := []struct {
 		name             string
@@ -640,16 +668,16 @@ func TestOtConn_BeginTx(t *testing.T) {
 	for _, legacy := range []bool{true, false} {
 		var testname string
 		if legacy {
-			testname = "Legacy"
+			testname = testLegacy
 		}
 
 		t.Run(testname, func(t *testing.T) {
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 
 				t.Run(testname, func(t *testing.T) {
@@ -659,7 +687,9 @@ func TestOtConn_BeginTx(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
 
@@ -682,7 +712,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 							omit := !filterSpan(ctx, cfg.SpanOptions, MethodConnBeginTx, "", []driver.NamedValue{})
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in BeginTx
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,
@@ -713,8 +743,8 @@ func TestOtConn_BeginTx(t *testing.T) {
 	}
 }
 
+//nolint:gocognit
 func TestOtConn_ResetSession(t *testing.T) {
-
 	testCases := []struct {
 		name             string
 		error            bool
@@ -745,11 +775,11 @@ func TestOtConn_ResetSession(t *testing.T) {
 		}
 		t.Run(testname, func(t *testing.T) {
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := "spanFilterOmit"
+				testname := testSpanFilterOmit
 				if spanFilterFn == nil {
-					testname = "spanFilterNil"
+					testname = testSpanFilterNil
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = "spanFilterKeep"
+					testname = testSpanFilterKeep
 				}
 				t.Run(testname, func(t *testing.T) {
 					for _, tc := range testCases {
@@ -758,7 +788,9 @@ func TestOtConn_ResetSession(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							cfg := newMockConfig(t, tracer, nil)
+							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+							cfg := newConfig()
+							cfg.Tracer = tracer
 							cfg.SpanOptions.OmitConnResetSession = omitResetSession
 							cfg.SpanOptions.SpanFilter = spanFilterFn
 							cfg.AttributesGetter = tc.attributesGetter
@@ -776,11 +808,17 @@ func TestOtConn_ResetSession(t *testing.T) {
 							spanList := sr.Ended()
 							omit := omitResetSession
 							if !omit {
-								omit = !filterSpan(ctx, cfg.SpanOptions, MethodConnResetSession, "", []driver.NamedValue{})
+								omit = !filterSpan(
+									ctx,
+									cfg.SpanOptions,
+									MethodConnResetSession,
+									"",
+									[]driver.NamedValue{},
+								)
 							}
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in ResetSession
-							require.Equal(t, expectedSpanCount, len(spanList))
+							require.Len(t, spanList, expectedSpanCount)
 
 							assertSpanList(t, spanList, spanAssertionParameter{
 								parentSpan:         dummySpan,

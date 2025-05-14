@@ -54,8 +54,10 @@ func (m *mockLegacyConn) PrepareContextQuery() string {
 	return m.prepareQuery
 }
 
-var _ MockConn = (*mockLegacyConn)(nil)
-var _ driver.Conn = (*mockLegacyConn)(nil)
+var (
+	_ MockConn    = (*mockLegacyConn)(nil)
+	_ driver.Conn = (*mockLegacyConn)(nil)
+)
 
 func (m *mockLegacyConn) Prepare(query string) (driver.Stmt, error) {
 	m.prepareCount++
@@ -87,11 +89,11 @@ func newMockLegacyConn(shouldError bool) *mockLegacyConn {
 func TestOtConn_PingWithLegacyConn(t *testing.T) {
 	otelConn := newConn(newMockLegacyConn(false), config{})
 	err := otelConn.Ping(context.Background())
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestOtConn_ResetSessionWithLegacyConn(t *testing.T) {
 	otelConn := newConn(newMockLegacyConn(false), config{})
 	err := otelConn.ResetSession(context.Background())
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }

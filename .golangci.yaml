@@ -1,40 +1,122 @@
-# See https://golangci-lint.run/usage/configuration
+version: "2"
 linters:
-  # Disable everything by default so upgrades to not include new "default
-  # enabled" linters.
-  disable-all: true
-  # Specifically enable linters we want to use.
+  default: none
   enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - contextcheck
+    - copyloopvar
+    - cyclop
+    - decorder
+    - dogsled
+    - dupword
+    - durationcheck
     - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exptostd
+    - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - funcorder
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
     - godot
-    - gofmt
-    - goimports
-    - gosimple
+    - goheader
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosmopolitan
     - govet
+    - grouper
+    - iface
+    - importas
+    - inamedparam
     - ineffassign
+    - interfacebloat
+    - intrange
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
     - misspell
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - noctx
+    - nolintlint
+    - nosprintfhostport
+    - perfsprint
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - recvcheck
     - revive
+    - rowserrcheck
+    - sloglint
+    - sqlclosecheck
     - staticcheck
-    - typecheck
+    - tagliatelle
+    - testableexamples
+    - testifylint
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
     - unused
-
-issues:
-  exclude-rules:
-    # helpers in tests often (rightfully) pass a *testing.T as their first argument
-    - path: _test\.go
-      text: "context.Context should be the first parameter of a function"
-      linters:
-        - golint
-    # Yes, they are, but it's okay in a test
-    - path: _test\.go
-      text: "exported func.*returns unexported type.*which can be annoying to use"
-      linters:
-        - golint
-
-linters-settings:
-  misspell:
-    locale: US
-    ignore-words:
-      - cancelled
-  goimports:
-    local-prefixes: github.com/XSAM/otelsql
+    - usestdlibvars
+    - usetesting
+    - wastedassign
+    - whitespace
+    - zerologlint
+    - tagalign
+  disable:
+    - varnamelen
+    - depguard
+    - funlen
+    - gochecknoglobals
+    - godox
+    - wsl
+    - exhaustruct
+    - err113
+    - lll
+    - gochecknoinits
+    - nlreturn
+    - paralleltest
+    - mnd
+    - testpackage
+    - ireturn
+    - dupl
+    - containedctx
+    - wrapcheck
+    - exhaustive
+    - spancheck
+    - nonamedreturns
+  settings:
+    gomoddirectives:
+      replace-local: true
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+    - golines
+  settings:
+    golines:
+      max-len: 120
+      # Conflict with tagalign
+      reformat-tags: false 

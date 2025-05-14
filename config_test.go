@@ -36,7 +36,11 @@ func TestNewConfig(t *testing.T) {
 	cfg := newConfig(WithSpanOptions(SpanOptions{Ping: true}), WithAttributes(semconv.DBSystemNameMySQL))
 
 	// Compare function result
-	assert.Equal(t, defaultSpanNameFormatter(context.Background(), "foo", "bar"), cfg.SpanNameFormatter(context.Background(), "foo", "bar"))
+	assert.Equal(
+		t,
+		defaultSpanNameFormatter(context.Background(), "foo", "bar"),
+		cfg.SpanNameFormatter(context.Background(), "foo", "bar"),
+	)
 
 	// Verify DBQueryTextAttributes exists and returns expected format
 	assert.NotNil(t, cfg.DBQueryTextAttributes)
@@ -48,7 +52,7 @@ func TestNewConfig(t *testing.T) {
 	cfg.SpanNameFormatter = nil
 	cfg.DBQueryTextAttributes = nil
 
-	assert.EqualValues(t, config{
+	assert.Equal(t, config{
 		TracerProvider: otel.GetTracerProvider(),
 		Tracer: otel.GetTracerProvider().Tracer(
 			instrumentationName,
@@ -115,18 +119,18 @@ func TestConfigSemConvStabilityOptIn(t *testing.T) {
 			// Verify format of returned attributes based on opt-in type
 			switch tc.expectedOptIn {
 			case internalsemconv.OTelSemConvStabilityOptInNone:
-				assert.Equal(t, attrs, []attribute.KeyValue{
+				assert.Equal(t, []attribute.KeyValue{
 					semconvlegacy.DBStatementKey.String(query),
-				})
+				}, attrs)
 			case internalsemconv.OTelSemConvStabilityOptInDup:
-				assert.Equal(t, attrs, []attribute.KeyValue{
+				assert.Equal(t, []attribute.KeyValue{
 					semconvlegacy.DBStatementKey.String(query),
 					semconv.DBQueryTextKey.String(query),
-				})
+				}, attrs)
 			case internalsemconv.OTelSemConvStabilityOptInStable:
-				assert.Equal(t, attrs, []attribute.KeyValue{
+				assert.Equal(t, []attribute.KeyValue{
 					semconv.DBQueryTextKey.String(query),
-				})
+				}, attrs)
 			}
 		})
 	}

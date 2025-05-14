@@ -25,9 +25,9 @@ import (
 
 var (
 	_ driver.Pinger             = (*otConn)(nil)
-	_ driver.Execer             = (*otConn)(nil) // nolint
+	_ driver.Execer             = (*otConn)(nil) //nolint
 	_ driver.ExecerContext      = (*otConn)(nil)
-	_ driver.Queryer            = (*otConn)(nil) // nolint
+	_ driver.Queryer            = (*otConn)(nil) //nolint
 	_ driver.QueryerContext     = (*otConn)(nil)
 	_ driver.Conn               = (*otConn)(nil)
 	_ driver.ConnPrepareContext = (*otConn)(nil)
@@ -79,7 +79,7 @@ func (c *otConn) Ping(ctx context.Context) (err error) {
 }
 
 func (c *otConn) Exec(query string, args []driver.Value) (driver.Result, error) {
-	execer, ok := c.Conn.(driver.Execer) // nolint
+	execer, ok := c.Conn.(driver.Execer) //nolint
 	if !ok {
 		return nil, driver.ErrSkip
 	}
@@ -115,7 +115,7 @@ func (c *otConn) ExecContext(
 }
 
 func (c *otConn) Query(query string, args []driver.Value) (driver.Rows, error) {
-	queryer, ok := c.Conn.(driver.Queryer) // nolint
+	queryer, ok := c.Conn.(driver.Queryer) //nolint
 	if !ok {
 		return nil, driver.ErrSkip
 	}
@@ -172,15 +172,15 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 			return nil, err
 		}
 	} else {
-		if stmt, err = c.Conn.Prepare(commentedQuery); err != nil {
+		if stmt, err = c.Prepare(commentedQuery); err != nil {
 			return nil, err
 		}
 
 		select {
 		default:
 		case <-ctx.Done():
-			stmt.Close()
-			return nil, ctx.Err()
+			err := stmt.Close()
+			return nil, errors.Join(ctx.Err(), err)
 		}
 	}
 
@@ -204,6 +204,7 @@ func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.
 		beginTxCtx = ctx
 	}
 
+	//nolint:nestif
 	if connBeginTx, ok := c.Conn.(driver.ConnBeginTx); ok {
 		if tx, err = connBeginTx.BeginTx(beginTxCtx, opts); err != nil {
 			return nil, err

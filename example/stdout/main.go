@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main implements an example application that demonstrates how to use otelsql
+// with stdout exporter for tracing and Prometheus HTTP server for metrics collection.
 package main
 
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -77,9 +79,13 @@ func initMeter() {
 
 	http.Handle("/metrics", promhttp.Handler())
 	go func() {
-		_ = http.ListenAndServe(":2222", nil)
+		server := http.Server{
+			Addr:              ":2222",
+			ReadHeaderTimeout: 3 * time.Second,
+		}
+		_ = server.ListenAndServe()
 	}()
-	fmt.Println("Prometheus server running on :2222")
+	slog.Info("Prometheus server running on :2222")
 }
 
 func main() {
@@ -95,7 +101,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
 		attrs...,
@@ -109,7 +115,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Example finished updating, please visit localhost:2222/metrics")
+	slog.Info("Example finished updating, please visit localhost:2222/metrics")
 
 	select {}
 }
@@ -134,7 +140,7 @@ func query(ctx context.Context, db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var currentTime time.Time
 	for rows.Next() {
@@ -143,6 +149,10 @@ func query(ctx context.Context, db *sql.DB) error {
 			return err
 		}
 	}
-	fmt.Println(currentTime)
+	// Check for errors from iterating over rows
+	if err = rows.Err(); err != nil {
+		return err
+	}
+	slog.Info("Current time", "time", currentTime)
 	return nil
 }
