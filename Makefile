@@ -71,7 +71,8 @@ build: generate
 TEST_TARGETS := test-default test-bench test-short test-verbose test-race
 .PHONY: $(TEST_TARGETS) test
 test-default: ARGS=-v -race
-test-bench:   ARGS=-run=xxxxxMatchNothingxxxxx -test.benchtime=1ms -bench=.
+# Check functionality of the code, not the performance
+test-bench:   ARGS=-run=xxxxxMatchNothingxxxxx -test.benchtime=1ms -bench=. -race
 test-short:   ARGS=-short
 test-verbose: ARGS=-v
 test-race:    ARGS=-race

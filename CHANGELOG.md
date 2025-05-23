@@ -33,6 +33,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - Upgrade semantic conventions to `semconv/v1.30.0`. (#478)
+- Improve memory usage when recording metrics or creating spans. (#497)
+
+### Fixed
+
+- Data race issues when recording metrics or creating spans. (#497)
 
 ## [0.38.0] - 2025-03-26
 

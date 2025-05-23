@@ -29,6 +29,13 @@ import (
 	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 )
 
+// estimatedAttributesOfGettersCount is the estimated number of attributes from getter methods.
+// This value 5 is borrowed from slog which
+// performed a quantitative survey of log library use and found this value to
+// cover 95% of all use-cases (https://go.dev/blog/slog#performance).
+// This may not be accurate for metrics or traces, but it's a good starting point.
+const estimatedAttributesOfGettersCount = 5
+
 var timeNow = time.Now
 
 func recordSpanErrorDeferred(span trace.Span, opts SpanOptions, err *error) {
@@ -120,7 +127,15 @@ func recordMetric(
 	return func(err error) {
 		duration := timeNow().Sub(startTime)
 
-		attributes := cfg.Attributes
+		// number of attributes + estimated 5 from InstrumentAttributesGetter and
+		// InstrumentErrorAttributesGetter + estimated 2 from recordDuration.
+		attributes := make(
+			[]attribute.KeyValue,
+			len(cfg.Attributes),
+			len(cfg.Attributes)+estimatedAttributesOfGettersCount+2,
+		)
+		copy(attributes, cfg.Attributes)
+
 		if cfg.InstrumentAttributesGetter != nil {
 			attributes = append(attributes, cfg.InstrumentAttributesGetter(ctx, method, query, args)...)
 		}
@@ -151,17 +166,24 @@ func createSpan(
 	query string,
 	args []driver.NamedValue,
 ) (context.Context, trace.Span) {
-	attrs := cfg.Attributes
+	// number of attributes + estimated 5 from AttributesGetter + estimated 2 from DBQueryTextAttributes.
+	attributes := make(
+		[]attribute.KeyValue,
+		len(cfg.Attributes),
+		len(cfg.Attributes)+estimatedAttributesOfGettersCount+2,
+	)
+	copy(attributes, cfg.Attributes)
+
 	if enableDBStatement && !cfg.SpanOptions.DisableQuery {
-		attrs = append(attrs, cfg.DBQueryTextAttributes(query)...)
+		attributes = append(attributes, cfg.DBQueryTextAttributes(query)...)
 	}
 	if cfg.AttributesGetter != nil {
-		attrs = append(attrs, cfg.AttributesGetter(ctx, method, query, args)...)
+		attributes = append(attributes, cfg.AttributesGetter(ctx, method, query, args)...)
 	}
 
 	return cfg.Tracer.Start(ctx, cfg.SpanNameFormatter(ctx, method, query),
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(attrs...),
+		trace.WithAttributes(attributes...),
 	)
 }
 

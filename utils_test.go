@@ -321,6 +321,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("db.operation.name", string(MethodConnQuery)),
 											),
 										},
@@ -378,6 +379,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("db.operation.name", string(MethodConnQuery)),
 												attribute.String("error.type", "*errors.errorString"),
 											),
@@ -436,6 +438,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("db.operation.name", string(MethodConnQuery)),
 												attribute.String("error.type", "database/sql/driver.ErrSkip"),
 											),
@@ -495,6 +498,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("db.operation.name", string(MethodConnQuery)),
 											),
 										},
@@ -558,6 +562,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("dummyKey", "dummyVal"),
 												attribute.String("db.operation.name", string(MethodConnQuery)),
 											),
@@ -619,6 +624,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("errorKey", "errorVal"),
 												attribute.String("db.operation.name", string(MethodConnQuery)),
 												attribute.String("error.type", "*errors.errorString"),
@@ -680,6 +686,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("db.operation.name", string(MethodConnQuery)),
 											),
 										},
@@ -737,6 +744,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2000),
 											Max:          metricdata.NewExtrema[float64](2000),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("method", string(MethodConnQuery)),
 												attribute.String("status", "ok"),
 											),
@@ -776,6 +784,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("db.operation.name", string(MethodConnQuery)),
 											),
 										},
@@ -833,6 +842,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2000),
 											Max:          metricdata.NewExtrema[float64](2000),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("method", string(MethodConnQuery)),
 												attribute.String("status", "ok"),
 											),
@@ -892,6 +902,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2000),
 											Max:          metricdata.NewExtrema[float64](2000),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("method", string(MethodConnQuery)),
 												attribute.String("status", "error"),
 											),
@@ -931,6 +942,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("db.operation.name", string(MethodConnQuery)),
 												attribute.String("error.type", "*errors.errorString"),
 											),
@@ -990,6 +1002,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2000),
 											Max:          metricdata.NewExtrema[float64](2000),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("method", string(MethodConnQuery)),
 												attribute.String("status", "error"),
 											),
@@ -1050,6 +1063,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2000),
 											Max:          metricdata.NewExtrema[float64](2000),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("method", string(MethodConnQuery)),
 												attribute.String("status", "ok"),
 											),
@@ -1089,6 +1103,7 @@ func TestRecordMetric(t *testing.T) {
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
+												defaultattribute,
 												attribute.String("db.operation.name", string(MethodConnQuery)),
 											),
 										},
@@ -1105,7 +1120,8 @@ func TestRecordMetric(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			metricReader, meterProvider := prepareMetrics()
-			cfg := newConfig(append(tt.cfgOptions, WithMeterProvider(meterProvider))...)
+			cfg := newConfig(
+				append(tt.cfgOptions, WithMeterProvider(meterProvider), WithAttributes(defaultattribute))...)
 			cfg.SemConvStabilityOptIn = tt.semConvStabilityOptIn
 
 			timeNow = func() time.Time {
