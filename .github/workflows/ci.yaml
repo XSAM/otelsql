@@ -50,6 +50,8 @@ jobs:
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./internal/tools/**') }}
       - name: Run tests with race detector
         run: make test-race
+      - name: Run benchmarks with race detector
+        run: make test-bench
 
   test-coverage:
     runs-on: ubuntu-latest
