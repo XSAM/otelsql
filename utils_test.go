@@ -1120,7 +1120,8 @@ func TestRecordMetric(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			metricReader, meterProvider := prepareMetrics()
-			cfg := newConfig(append(tt.cfgOptions, WithMeterProvider(meterProvider), WithAttributes(defaultattribute))...)
+			cfg := newConfig(
+				append(tt.cfgOptions, WithMeterProvider(meterProvider), WithAttributes(defaultattribute))...)
 			cfg.SemConvStabilityOptIn = tt.semConvStabilityOptIn
 
 			timeNow = func() time.Time {

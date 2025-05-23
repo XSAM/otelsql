@@ -129,7 +129,11 @@ func recordMetric(
 
 		// number of attributes + estimated 5 from InstrumentAttributesGetter and
 		// InstrumentErrorAttributesGetter + estimated 2 from recordDuration.
-		attributes := make([]attribute.KeyValue, len(cfg.Attributes), len(cfg.Attributes)+estimatedAttributesOfGettersCount+2)
+		attributes := make(
+			[]attribute.KeyValue,
+			len(cfg.Attributes),
+			len(cfg.Attributes)+estimatedAttributesOfGettersCount+2,
+		)
 		copy(attributes, cfg.Attributes)
 
 		if cfg.InstrumentAttributesGetter != nil {
@@ -163,7 +167,11 @@ func createSpan(
 	args []driver.NamedValue,
 ) (context.Context, trace.Span) {
 	// number of attributes + estimated 5 from AttributesGetter + estimated 2 from DBQueryTextAttributes.
-	attributes := make([]attribute.KeyValue, len(cfg.Attributes), len(cfg.Attributes)+estimatedAttributesOfGettersCount+2)
+	attributes := make(
+		[]attribute.KeyValue,
+		len(cfg.Attributes),
+		len(cfg.Attributes)+estimatedAttributesOfGettersCount+2,
+	)
 	copy(attributes, cfg.Attributes)
 
 	if enableDBStatement && !cfg.SpanOptions.DisableQuery {

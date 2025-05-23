@@ -17,7 +17,6 @@ package otelsql
 import (
 	"context"
 	"database/sql/driver"
-
 	"testing"
 
 	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
@@ -49,7 +48,7 @@ func BenchmarkRecordMetric(b *testing.B) {
 	b.Run("InstrumentAttributesGetter", func(b *testing.B) {
 		b.Run("5", func(b *testing.B) {
 			cfg := cfg
-			cfg.InstrumentAttributesGetter = func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+			cfg.InstrumentAttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 				return attrs5
 			}
 
@@ -57,7 +56,14 @@ func BenchmarkRecordMetric(b *testing.B) {
 			b.ResetTimer()
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					recordFunc := recordMetric(context.Background(), cfg.Instruments, cfg, MethodStmtQuery, "SELECT 1", nil)
+					recordFunc := recordMetric(
+						context.Background(),
+						cfg.Instruments,
+						cfg,
+						MethodStmtQuery,
+						"SELECT 1",
+						nil,
+					)
 					recordFunc(nil)
 				}
 			})
@@ -65,7 +71,7 @@ func BenchmarkRecordMetric(b *testing.B) {
 
 		b.Run("10", func(b *testing.B) {
 			cfg := cfg
-			cfg.InstrumentAttributesGetter = func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+			cfg.InstrumentAttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 				return attrs10
 			}
 
@@ -73,7 +79,14 @@ func BenchmarkRecordMetric(b *testing.B) {
 			b.ResetTimer()
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					recordFunc := recordMetric(context.Background(), cfg.Instruments, cfg, MethodStmtQuery, "SELECT 1", nil)
+					recordFunc := recordMetric(
+						context.Background(),
+						cfg.Instruments,
+						cfg,
+						MethodStmtQuery,
+						"SELECT 1",
+						nil,
+					)
 					recordFunc(nil)
 				}
 			})
@@ -92,7 +105,7 @@ func BenchmarkCreateSpan(b *testing.B) {
 	b.Run("AttributesGetter", func(b *testing.B) {
 		b.Run("5", func(b *testing.B) {
 			cfg := cfg
-			cfg.AttributesGetter = func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+			cfg.AttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 				return attrs5
 			}
 
@@ -107,7 +120,7 @@ func BenchmarkCreateSpan(b *testing.B) {
 
 		b.Run("10", func(b *testing.B) {
 			cfg := cfg
-			cfg.AttributesGetter = func(ctx context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+			cfg.AttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 				return attrs10
 			}
 
