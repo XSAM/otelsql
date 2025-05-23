@@ -150,6 +150,7 @@ func recordDBStatsMetrics(
 		metric.WithAttributes(cfg.Attributes...),
 	)
 
+	// TODO: optimize slice allocation.
 	observer.ObserveInt64(instruments.connectionOpen,
 		int64(dbStats.InUse),
 		metric.WithAttributes(append(cfg.Attributes, connectionStatusKey.String("inuse"))...),
