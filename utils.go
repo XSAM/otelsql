@@ -33,7 +33,7 @@ import (
 // This value 5 is borrowed from slog which
 // performed a quantitative survey of log library use and found this value to
 // cover 95% of all use-cases (https://go.dev/blog/slog#performance).
-// This may not be accurate for metrics or spans, but it's a good starting point.
+// This may not be accurate for metrics or traces, but it's a good starting point.
 const estimatedAttributesOfGettersCount = 5
 
 var timeNow = time.Now
