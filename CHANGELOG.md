@@ -34,6 +34,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Upgrade semantic conventions to `semconv/v1.30.0`. (#478)
 - Improve memory usage when recording metrics or creating spans. (#497)
+- Upgrade OTel to `v1.36.0/v0.58.0`. (#495)
 
 ### Fixed
 
