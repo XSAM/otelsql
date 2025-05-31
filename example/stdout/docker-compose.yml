@@ -13,7 +13,7 @@
 # limitations under the License.
 services:
   mysql:
-    image: mysql:8.4@sha256:0f775a92980b41c87c58f934a204de80431dd4d854057160ec1cb936663eabe9
+    image: mysql:8.4@sha256:8d643340d4e6a15f7aa51d46b6406f51a2a286c222f871f4d5ec116587c586da
     ports:
       - 3306:3306
     environment:
