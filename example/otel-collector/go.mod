@@ -5,7 +5,7 @@ go 1.23.0
 replace github.com/XSAM/otelsql => ../../
 
 require (
-	github.com/XSAM/otelsql v0.38.0
+	github.com/XSAM/otelsql v0.39.0
 	github.com/go-sql-driver/mysql v1.9.1
 	go.opentelemetry.io/otel v1.36.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.36.0
