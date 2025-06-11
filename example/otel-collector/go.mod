@@ -12,7 +12,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.36.0
 	go.opentelemetry.io/otel/sdk v1.36.0
 	go.opentelemetry.io/otel/sdk/metric v1.36.0
-	google.golang.org/grpc v1.72.1
+	google.golang.org/grpc v1.73.0
 )
 
 require (
