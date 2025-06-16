@@ -19,7 +19,9 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"log"
 
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -165,6 +167,7 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 		defer recordSpanErrorDeferred(span, c.cfg.SpanOptions, &err)
 	}
 
+	c.putContextInfo(ctx)
 	commentedQuery := c.cfg.SQLCommenter.withComment(ctx, query)
 
 	if preparer, ok := c.Conn.(driver.ConnPrepareContext); ok {
@@ -279,4 +282,37 @@ func (c *otConn) CheckNamedValue(namedValue *driver.NamedValue) error {
 // Issue: https://github.com/XSAM/otelsql/issues/98
 func (c *otConn) Raw() driver.Conn {
 	return c.Conn
+}
+
+// A minimal implementation of trace context propagation
+// for SQL Server via SET CONTEXT_INFO command.
+// This only works with github.com/microsoft/go-mssqldb.
+// Demonstration only. DO NOT USE IN PRODUCTION CODE.
+func (c *otConn) putContextInfo(ctx context.Context) {
+	// Prevent recursive calls
+	if value, ok := ctx.Value("instrumented").(bool); ok && value {
+		return
+	}
+	ctx = context.WithValue(ctx, "instrumented", true)
+
+	// Get traceparent from the context
+	carrier := make(map[string]string)
+	propagation.TraceContext{}.Inject(ctx, propagation.MapCarrier(carrier))
+	binaryContextInfo := []byte(carrier["traceparent"])
+
+	// Execute the SET CONTEXT_INFO statement
+	stmt, err := c.PrepareContext(ctx, "SET CONTEXT_INFO @traceparent")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if sec, ok := stmt.(driver.StmtExecContext); ok {
+		_, err := sec.ExecContext(ctx, []driver.NamedValue{{Name: "traceparent", Ordinal: 1, Value: binaryContextInfo}})
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		log.Fatal("driver does not support StmtExecContext")
+	}
+
+	log.Println("CONTEXT_INFO set successfully")
 }
