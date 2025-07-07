@@ -75,7 +75,7 @@ func TestOptions(t *testing.T) {
 		},
 		{
 			name:           "WithSQLCommenter",
-			option:         WithSQLCommenter(true),
+			option:         WithSQLCommenter(true, nil),
 			expectedConfig: config{SQLCommenterEnabled: true},
 		},
 		{

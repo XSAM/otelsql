@@ -69,7 +69,7 @@ func TestNewConfig(t *testing.T) {
 		Attributes: []attribute.KeyValue{
 			semconv.DBSystemNameMySQL,
 		},
-		SQLCommenter:          newCommenter(false),
+		SQLCommenter:          newCommenter(false, nil),
 		SemConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInNone,
 	}, cfg)
 	assert.NotNil(t, cfg.Instruments)

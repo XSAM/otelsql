@@ -1,0 +1,32 @@
+receivers:
+  # Make sure to add the otlp receiver.
+  # This will open up the receiver on port 4317
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+processors:
+  batch:
+  # https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/memorylimiterprocessor
+  memory_limiter:
+    # 75% of total memory
+    limit_percentage: 75
+    check_interval: 1s
+extensions:
+  health_check: {}
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug]

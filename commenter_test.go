@@ -75,7 +75,7 @@ func TestCommenter_WithComment(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c := newCommenter(tc.enabled)
+			c := newCommenter(tc.enabled, nil)
 			c.propagator = propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
 
 			result := c.withComment(tc.ctx, query)
