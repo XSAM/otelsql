@@ -136,7 +136,7 @@ func connectDB() *sql.DB {
 	// Connect to database
 	db, err := otelsql.Open("sqlserver", DSN, otelsql.WithSQLCommenter(true,
 		propagation.NewCompositeTextMapPropagator(
-			otelsql.ServiceNamePropagator{ServiceName: "otelsql-example"},
+			otelsql.TextAttributesPropagator{Attributes: map[string]string{string(semconv.ServiceNameKey): "otelsql-example"}},
 			propagation.TraceContext{}, // Optional, if you want to propagate trace context
 		),
 	))
