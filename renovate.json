@@ -5,35 +5,57 @@
     "helpers:pinGitHubActionDigestsToSemver"
   ],
   "ignorePaths": [],
-  "postUpdateOptions" : [
+  "postUpdateOptions": [
     "gomodTidy"
   ],
   "packageRules": [
     {
       "description": "Disable all dependency updates for examples except OpenTelemetry",
-      "matchFileNames": ["example/**"],
-      "matchManagers": ["gomod"],
+      "matchFileNames": [
+        "example/**"
+      ],
+      "matchManagers": [
+        "gomod"
+      ],
       "enabled": false,
-      "excludePackageNames": ["go.opentelemetry.io/**"]
+      "matchPackageNames": [
+        "!go.opentelemetry.io/**"
+      ]
     },
     {
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["indirect"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
       "enabled": true
     },
     {
-      "matchFileNames": ["internal/tools/**"],
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["indirect"],
+      "matchFileNames": [
+        "internal/tools/**"
+      ],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
       "enabled": false
     },
     {
-      "matchPackageNames": ["google.golang.org/genproto/googleapis/**"],
+      "matchPackageNames": [
+        "google.golang.org/genproto/googleapis/**"
+      ],
       "groupName": "googleapis",
-      "schedule": ["* * 1 * *"]
+      "schedule": [
+        "* * 1 * *"
+      ]
     },
     {
-      "matchPackageNames": ["golang.org/x/**"],
+      "matchPackageNames": [
+        "golang.org/x/**"
+      ],
       "groupName": "golang.org/x"
     }
   ]
