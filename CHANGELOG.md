@@ -8,6 +8,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+This release is the last to support [Go 1.23].
+The next release will require at least [Go 1.24].
+
+### Added
+
+- Support testing of [Go 1.25]. (#TBD)
+
 ### Changed
 
 - Upgrade OTel to `v1.38.0/v0.60.0`. (#510)
@@ -461,6 +468,10 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 - CI files.
 - Example code for a basic usage.
 - Apache-2.0 license.
+
+[Go 1.25]: https://go.dev/doc/go1.25
+[Go 1.24]: https://go.dev/doc/go1.24
+[Go 1.23]: https://go.dev/doc/go1.23
 
 [Unreleased]: https://github.com/XSAM/otelsql/compare/v0.39.0...HEAD
 [0.39.0]: https://github.com/XSAM/otelsql/releases/tag/v0.39.0
