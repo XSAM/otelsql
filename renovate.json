@@ -10,11 +10,11 @@
   ],
   "packageRules": [
     {
-      "description": "Disable non-OpenTelemetry dependency updates for examples",
+      "description": "Disable all dependency updates for examples except OpenTelemetry",
       "matchFileNames": ["example/**"],
-      "matchPackagePatterns": ["^(?!go\\.opentelemetry\\.io/)(?!github\\.com/open-telemetry/).*"],
       "matchManagers": ["gomod"],
-      "enabled": false
+      "enabled": false,
+      "excludePackageNames": ["go.opentelemetry.io/**"]
     },
     {
       "matchManagers": ["gomod"],
