@@ -10,11 +10,11 @@
   ],
   "packageRules": [
     {
-      "description": "Group dependencies for examples in one PR",
+      "description": "Disable non-OpenTelemetry dependency updates for examples",
       "matchFileNames": ["example/**"],
+      "matchPackagePatterns": ["^(?!go\\.opentelemetry\\.io/)(?!github\\.com/open-telemetry/).*"],
       "matchManagers": ["gomod"],
-      "matchDepTypes": ["indirect"],
-      "groupName": "examples"
+      "enabled": false
     },
     {
       "matchManagers": ["gomod"],
