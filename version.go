@@ -16,5 +16,5 @@ package otelsql
 
 // Version is the current release version of otelsql in use.
 func Version() string {
-	return "0.39.0"
+	return "0.40.0"
 }
