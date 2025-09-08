@@ -138,19 +138,14 @@ This project is tested on the following systems.
 | ------- | ---------- | ------------ |
 | Ubuntu  | 1.25       | amd64        |
 | Ubuntu  | 1.24       | amd64        |
-| Ubuntu  | 1.23       | amd64        |
 | Ubuntu  | 1.25       | 386          |
 | Ubuntu  | 1.24       | 386          |
-| Ubuntu  | 1.23       | 386          |
 | MacOS   | 1.25       | amd64        |
 | MacOS   | 1.24       | amd64        |
-| MacOS   | 1.23       | amd64        |
 | Windows | 1.25       | amd64        |
 | Windows | 1.24       | amd64        |
-| Windows | 1.23       | amd64        |
 | Windows | 1.25       | 386          |
 | Windows | 1.24       | 386          |
-| Windows | 1.23       | 386          |
 
 While this project should work for other systems, no compatibility guarantees
 are made for those systems currently.
