@@ -45,10 +45,14 @@ type commenter struct {
 	propagator propagation.TextMapPropagator
 }
 
-func newCommenter(enabled bool) *commenter {
+func newCommenter(enabled bool, propagator propagation.TextMapPropagator) *commenter {
+	if propagator == nil {
+		propagator = otel.GetTextMapPropagator()
+	}
+
 	return &commenter{
 		enabled:    enabled,
-		propagator: otel.GetTextMapPropagator(),
+		propagator: propagator,
 	}
 }
 
