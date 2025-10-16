@@ -158,6 +158,8 @@ func recordMetric(
 	}
 }
 
+var spanKindClientOption = trace.WithSpanKind(trace.SpanKindClient)
+
 func createSpan(
 	ctx context.Context,
 	cfg config,
@@ -166,7 +168,7 @@ func createSpan(
 	query string,
 	args []driver.NamedValue,
 ) (context.Context, trace.Span) {
-	ctx, span := cfg.Tracer.Start(ctx, cfg.SpanNameFormatter(ctx, method, query), trace.WithSpanKind(trace.SpanKindClient))
+	ctx, span := cfg.Tracer.Start(ctx, cfg.SpanNameFormatter(ctx, method, query), spanKindClientOption)
 	if span.IsRecording() {
 		var dbStatementAttributes []attribute.KeyValue
 		if enableDBStatement && !cfg.SpanOptions.DisableQuery {
