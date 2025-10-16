@@ -168,7 +168,7 @@ func createSpan(
 	query string,
 	args []driver.NamedValue,
 ) (context.Context, trace.Span) {
-	ctx, span := cfg.Tracer.Start(ctx, cfg.SpanNameFormatter(ctx, method, query), spanKindClientOption)
+	spanCtx, span := cfg.Tracer.Start(ctx, cfg.SpanNameFormatter(ctx, method, query), spanKindClientOption)
 	if span.IsRecording() {
 		var dbStatementAttributes []attribute.KeyValue
 		if enableDBStatement && !cfg.SpanOptions.DisableQuery {
@@ -192,7 +192,7 @@ func createSpan(
 
 		span.SetAttributes(attributes...)
 	}
-	return ctx, span
+	return spanCtx, span
 }
 
 func filterSpan(
