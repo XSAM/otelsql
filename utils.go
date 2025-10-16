@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
+	"slices"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -88,7 +89,7 @@ func recordLegacyLatency(
 	instruments.legacyLatency.Record(
 		ctx,
 		float64(duration.Nanoseconds())/1e6,
-		metric.WithAttributes(attributes...),
+		metric.WithAttributeSet(attribute.NewSet(attributes...)),
 	)
 }
 
@@ -109,7 +110,7 @@ func recordDuration(
 	instruments.duration.Record(
 		ctx,
 		duration.Seconds(),
-		metric.WithAttributes(attributes...),
+		metric.WithAttributeSet(attribute.NewSet(attributes...)),
 	)
 }
 
@@ -154,7 +155,7 @@ func recordMetric(
 			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
 		case internalsemconv.OTelSemConvStabilityOptInDup:
 			// Intentionally emit both legacy and new metrics for backward compatibility.
-			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, err)
+			recordLegacyLatency(ctx, instruments, cfg, duration, slices.Clone(attributes), method, err)
 			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
 		case internalsemconv.OTelSemConvStabilityOptInNone:
 			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, err)
