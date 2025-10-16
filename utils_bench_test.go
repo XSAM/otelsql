@@ -140,7 +140,8 @@ func BenchmarkCreateSpan(b *testing.B) {
 	b.Run("Never Sampling", func(b *testing.B) {
 		ctx := b.Context()
 		cfg := cfg
-		cfg.Tracer = sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.NeverSample())).Tracer("BenchmarkCreateSpan")
+		cfg.Tracer = sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.NeverSample())).
+			Tracer("BenchmarkCreateSpan")
 
 		b.ReportAllocs()
 		b.ResetTimer()
