@@ -127,23 +127,27 @@ func recordMetric(
 	return func(err error) {
 		duration := timeNow().Sub(startTime)
 
-		// number of attributes + estimated 5 from InstrumentAttributesGetter and
-		// InstrumentErrorAttributesGetter + estimated 2 from recordDuration.
+		var getterAttributes []attribute.KeyValue
+		if cfg.InstrumentAttributesGetter != nil {
+			getterAttributes = cfg.InstrumentAttributesGetter(ctx, method, query, args)
+		}
+
+		var errAttributes []attribute.KeyValue
+		if err != nil {
+			if cfg.InstrumentErrorAttributesGetter != nil {
+				errAttributes = cfg.InstrumentErrorAttributesGetter(err)
+			}
+		}
+
+		// number of attributes + InstrumentAttributesGetter + InstrumentErrorAttributesGetter + estimated 2 from recordDuration.
 		attributes := make(
 			[]attribute.KeyValue,
 			len(cfg.Attributes),
-			len(cfg.Attributes)+estimatedAttributesOfGettersCount+2,
+			len(cfg.Attributes)+len(getterAttributes)+len(errAttributes)+2,
 		)
 		copy(attributes, cfg.Attributes)
-
-		if cfg.InstrumentAttributesGetter != nil {
-			attributes = append(attributes, cfg.InstrumentAttributesGetter(ctx, method, query, args)...)
-		}
-		if err != nil {
-			if cfg.InstrumentErrorAttributesGetter != nil {
-				attributes = append(attributes, cfg.InstrumentErrorAttributesGetter(err)...)
-			}
-		}
+		attributes = append(attributes, getterAttributes...)
+		attributes = append(attributes, errAttributes...)
 
 		switch cfg.SemConvStabilityOptIn {
 		case internalsemconv.OTelSemConvStabilityOptInStable:
