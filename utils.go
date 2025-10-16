@@ -168,20 +168,25 @@ func createSpan(
 ) (context.Context, trace.Span) {
 	ctx, span := cfg.Tracer.Start(ctx, cfg.SpanNameFormatter(ctx, method, query), trace.WithSpanKind(trace.SpanKindClient))
 	if span.IsRecording() {
+		var dbStatementAttributes []attribute.KeyValue
+		if enableDBStatement && !cfg.SpanOptions.DisableQuery {
+			dbStatementAttributes = cfg.DBQueryTextAttributes(query)
+		}
+
+		var getterAttributes []attribute.KeyValue
+		if cfg.AttributesGetter != nil {
+			getterAttributes = cfg.AttributesGetter(ctx, method, query, args)
+		}
+
 		// number of attributes + estimated 5 from AttributesGetter + estimated 2 from DBQueryTextAttributes.
 		attributes := make(
 			[]attribute.KeyValue,
 			len(cfg.Attributes),
-			len(cfg.Attributes)+estimatedAttributesOfGettersCount+2,
+			len(cfg.Attributes)+len(getterAttributes)+len(dbStatementAttributes),
 		)
 		copy(attributes, cfg.Attributes)
-
-		if enableDBStatement && !cfg.SpanOptions.DisableQuery {
-			attributes = append(attributes, cfg.DBQueryTextAttributes(query)...)
-		}
-		if cfg.AttributesGetter != nil {
-			attributes = append(attributes, cfg.AttributesGetter(ctx, method, query, args)...)
-		}
+		attributes = append(attributes, dbStatementAttributes...)
+		attributes = append(attributes, getterAttributes...)
 
 		span.SetAttributes(attributes...)
 	}
