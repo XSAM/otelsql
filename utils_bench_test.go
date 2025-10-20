@@ -19,8 +19,10 @@ import (
 	"database/sql/driver"
 	"testing"
 
-	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 	"go.opentelemetry.io/otel/attribute"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+
+	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 )
 
 var (
@@ -96,14 +98,14 @@ func BenchmarkRecordMetric(b *testing.B) {
 
 func BenchmarkCreateSpan(b *testing.B) {
 	cfg := newConfig()
+	cfg.Tracer = sdktrace.NewTracerProvider().Tracer("BenchmarkCreateSpan")
 	cfg.SemConvStabilityOptIn = internalsemconv.OTelSemConvStabilityOptInStable
 	// Prevent reallocation of Attributes slice, which increase the chance to detect data races.
 	cfg.Attributes = make([]attribute.KeyValue, 0, 10)
 
-	ctx := context.Background()
-
 	b.Run("AttributesGetter", func(b *testing.B) {
 		b.Run("5", func(b *testing.B) {
+			ctx := b.Context()
 			cfg := cfg
 			cfg.AttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 				return attrs5
@@ -119,6 +121,7 @@ func BenchmarkCreateSpan(b *testing.B) {
 		})
 
 		b.Run("10", func(b *testing.B) {
+			ctx := b.Context()
 			cfg := cfg
 			cfg.AttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 				return attrs10
@@ -131,6 +134,21 @@ func BenchmarkCreateSpan(b *testing.B) {
 					_, _ = createSpan(ctx, cfg, MethodStmtQuery, true, "SELECT 1", nil)
 				}
 			})
+		})
+	})
+
+	b.Run("Never Sampling", func(b *testing.B) {
+		ctx := b.Context()
+		cfg := cfg
+		cfg.Tracer = sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.NeverSample())).
+			Tracer("BenchmarkCreateSpan")
+
+		b.ReportAllocs()
+		b.ResetTimer()
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				_, _ = createSpan(ctx, cfg, MethodStmtQuery, true, "SELECT 1", nil)
+			}
 		})
 	})
 }

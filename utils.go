@@ -158,6 +158,8 @@ func recordMetric(
 	}
 }
 
+var spanKindClientOption = trace.WithSpanKind(trace.SpanKindClient)
+
 func createSpan(
 	ctx context.Context,
 	cfg config,
@@ -166,25 +168,31 @@ func createSpan(
 	query string,
 	args []driver.NamedValue,
 ) (context.Context, trace.Span) {
-	// number of attributes + estimated 5 from AttributesGetter + estimated 2 from DBQueryTextAttributes.
-	attributes := make(
-		[]attribute.KeyValue,
-		len(cfg.Attributes),
-		len(cfg.Attributes)+estimatedAttributesOfGettersCount+2,
-	)
-	copy(attributes, cfg.Attributes)
+	spanCtx, span := cfg.Tracer.Start(ctx, cfg.SpanNameFormatter(ctx, method, query), spanKindClientOption)
+	if span.IsRecording() {
+		var dbStatementAttributes []attribute.KeyValue
+		if enableDBStatement && !cfg.SpanOptions.DisableQuery {
+			dbStatementAttributes = cfg.DBQueryTextAttributes(query)
+		}
 
-	if enableDBStatement && !cfg.SpanOptions.DisableQuery {
-		attributes = append(attributes, cfg.DBQueryTextAttributes(query)...)
-	}
-	if cfg.AttributesGetter != nil {
-		attributes = append(attributes, cfg.AttributesGetter(ctx, method, query, args)...)
-	}
+		var getterAttributes []attribute.KeyValue
+		if cfg.AttributesGetter != nil {
+			getterAttributes = cfg.AttributesGetter(ctx, method, query, args)
+		}
 
-	return cfg.Tracer.Start(ctx, cfg.SpanNameFormatter(ctx, method, query),
-		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(attributes...),
-	)
+		// Allocate attributes slice (Attributes + AttributesGetter + DBQueryTextAttributes).
+		attributes := make(
+			[]attribute.KeyValue,
+			len(cfg.Attributes),
+			len(cfg.Attributes)+len(getterAttributes)+len(dbStatementAttributes),
+		)
+		copy(attributes, cfg.Attributes)
+		attributes = append(attributes, dbStatementAttributes...)
+		attributes = append(attributes, getterAttributes...)
+
+		span.SetAttributes(attributes...)
+	}
+	return spanCtx, span
 }
 
 func filterSpan(

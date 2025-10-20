@@ -12,6 +12,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Drop support for [Go 1.23]. (#533)
 
+### Changed
+
+- Reduce allocations and improve performance when creating spans. (#549)
+
 ## [0.40.0] - 2025-09-08
 
 This release is the last to support [Go 1.23].
