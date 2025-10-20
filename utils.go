@@ -180,7 +180,7 @@ func createSpan(
 			getterAttributes = cfg.AttributesGetter(ctx, method, query, args)
 		}
 
-		// number of attributes + estimated 5 from AttributesGetter + estimated 2 from DBQueryTextAttributes.
+		// Allocate attributes slice (Attributes + AttributesGetter + DBQueryTextAttributes).
 		attributes := make(
 			[]attribute.KeyValue,
 			len(cfg.Attributes),
