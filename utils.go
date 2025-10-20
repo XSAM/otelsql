@@ -30,13 +30,6 @@ import (
 	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 )
 
-// estimatedAttributesOfGettersCount is the estimated number of attributes from getter methods.
-// This value 5 is borrowed from slog which
-// performed a quantitative survey of log library use and found this value to
-// cover 95% of all use-cases (https://go.dev/blog/slog#performance).
-// This may not be accurate for metrics or traces, but it's a good starting point.
-const estimatedAttributesOfGettersCount = 5
-
 var timeNow = time.Now
 
 func recordSpanErrorDeferred(span trace.Span, opts SpanOptions, err *error) {
