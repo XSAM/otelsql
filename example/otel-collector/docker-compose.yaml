@@ -13,7 +13,7 @@
 # limitations under the License.
 services:
   mysql:
-    image: mysql:8.4@sha256:0f775a92980b41c87c58f934a204de80431dd4d854057160ec1cb936663eabe9
+    image: mysql:8.4@sha256:b306273d4d36bc1a7f265130c3dd93c0462253af7634203e569add0403a7b273
     environment:
       - MYSQL_ROOT_PASSWORD=otel_password
       - MYSQL_DATABASE=db
