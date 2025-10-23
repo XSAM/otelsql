@@ -15,6 +15,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - Reduce allocations and improve performance when creating spans. (#549)
+- Reduce allocations when recording metrics. (#550)
 
 ## [0.40.0] - 2025-09-08
 

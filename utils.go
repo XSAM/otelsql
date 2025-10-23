@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
+	"slices"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -28,13 +29,6 @@ import (
 
 	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 )
-
-// estimatedAttributesOfGettersCount is the estimated number of attributes from getter methods.
-// This value 5 is borrowed from slog which
-// performed a quantitative survey of log library use and found this value to
-// cover 95% of all use-cases (https://go.dev/blog/slog#performance).
-// This may not be accurate for metrics or traces, but it's a good starting point.
-const estimatedAttributesOfGettersCount = 5
 
 var timeNow = time.Now
 
@@ -88,7 +82,7 @@ func recordLegacyLatency(
 	instruments.legacyLatency.Record(
 		ctx,
 		float64(duration.Nanoseconds())/1e6,
-		metric.WithAttributes(attributes...),
+		metric.WithAttributeSet(attribute.NewSet(attributes...)),
 	)
 }
 
@@ -109,7 +103,7 @@ func recordDuration(
 	instruments.duration.Record(
 		ctx,
 		duration.Seconds(),
-		metric.WithAttributes(attributes...),
+		metric.WithAttributeSet(attribute.NewSet(attributes...)),
 	)
 }
 
@@ -127,30 +121,34 @@ func recordMetric(
 	return func(err error) {
 		duration := timeNow().Sub(startTime)
 
-		// number of attributes + estimated 5 from InstrumentAttributesGetter and
-		// InstrumentErrorAttributesGetter + estimated 2 from recordDuration.
+		var getterAttributes []attribute.KeyValue
+		if cfg.InstrumentAttributesGetter != nil {
+			getterAttributes = cfg.InstrumentAttributesGetter(ctx, method, query, args)
+		}
+
+		var errAttributes []attribute.KeyValue
+		if err != nil {
+			if cfg.InstrumentErrorAttributesGetter != nil {
+				errAttributes = cfg.InstrumentErrorAttributesGetter(err)
+			}
+		}
+
+		// number of attributes + InstrumentAttributesGetter + InstrumentErrorAttributesGetter + estimated 2 from recordDuration.
 		attributes := make(
 			[]attribute.KeyValue,
 			len(cfg.Attributes),
-			len(cfg.Attributes)+estimatedAttributesOfGettersCount+2,
+			len(cfg.Attributes)+len(getterAttributes)+len(errAttributes)+2,
 		)
 		copy(attributes, cfg.Attributes)
-
-		if cfg.InstrumentAttributesGetter != nil {
-			attributes = append(attributes, cfg.InstrumentAttributesGetter(ctx, method, query, args)...)
-		}
-		if err != nil {
-			if cfg.InstrumentErrorAttributesGetter != nil {
-				attributes = append(attributes, cfg.InstrumentErrorAttributesGetter(err)...)
-			}
-		}
+		attributes = append(attributes, getterAttributes...)
+		attributes = append(attributes, errAttributes...)
 
 		switch cfg.SemConvStabilityOptIn {
 		case internalsemconv.OTelSemConvStabilityOptInStable:
 			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
 		case internalsemconv.OTelSemConvStabilityOptInDup:
 			// Intentionally emit both legacy and new metrics for backward compatibility.
-			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, err)
+			recordLegacyLatency(ctx, instruments, cfg, duration, slices.Clone(attributes), method, err)
 			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
 		case internalsemconv.OTelSemConvStabilityOptInNone:
 			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, err)
