@@ -78,7 +78,9 @@ func ErrorTypeAttributes(err error) []attribute.KeyValue {
 	}
 
 	t := reflect.TypeOf(err)
+
 	var value string
+
 	if t.PkgPath() == "" && t.Name() == "" {
 		// Likely a builtin type.
 		value = t.String()

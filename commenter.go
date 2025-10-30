@@ -58,10 +58,12 @@ func (c *commenter) withComment(ctx context.Context, query string) string {
 	}
 
 	var cc commentCarrier
+
 	c.propagator.Inject(ctx, &cc)
 
 	if len(cc) == 0 {
 		return query
 	}
+
 	return fmt.Sprintf("%s /*%s*/", query, cc.Marshal())
 }

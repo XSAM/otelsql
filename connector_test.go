@@ -39,9 +39,11 @@ func newMockConnector(driver driver.Driver, shouldError bool) *mockConnector {
 func (m *mockConnector) Connect(ctx context.Context) (driver.Conn, error) {
 	m.connectContext = ctx
 	m.connectCount++
+
 	if m.shouldError {
 		return nil, errors.New("connect")
 	}
+
 	return newMockConn(false), nil
 }
 
@@ -108,6 +110,7 @@ func TestOtConnector_Connect(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.OmitConnectorConnect = omitConnectorConnect
@@ -116,6 +119,7 @@ func TestOtConnector_Connect(t *testing.T) {
 							cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
 							mConnector := newMockConnector(nil, tc.error)
 							connector := newConnector(mConnector, &otDriver{cfg: cfg})
+
 							conn, err := connector.Connect(ctx)
 							if tc.error {
 								require.Error(t, err)
@@ -126,6 +130,7 @@ func TestOtConnector_Connect(t *testing.T) {
 							}
 
 							spanList := sr.Ended()
+
 							omit := omitConnectorConnect
 							if !omit {
 								omit = !filterSpan(
@@ -136,6 +141,7 @@ func TestOtConnector_Connect(t *testing.T) {
 									[]driver.NamedValue{},
 								)
 							}
+
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in Connect
 							require.Len(t, spanList, expectedSpanCount)

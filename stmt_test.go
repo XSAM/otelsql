@@ -81,24 +81,29 @@ func (m *mockStmt) CheckNamedValue(_ *driver.NamedValue) error {
 	if m.shouldError {
 		return errors.New("checkNamedValue")
 	}
+
 	return nil
 }
 
 func (m *mockStmt) QueryContext(_ context.Context, args []driver.NamedValue) (driver.Rows, error) {
 	m.queryContextArgs = args
 	m.queryCount++
+
 	if m.shouldError {
 		return nil, errors.New("queryContext")
 	}
+
 	return nil, nil //nolint:nilnil
 }
 
 func (m *mockStmt) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
 	m.execContextArgs = args
 	m.execCount++
+
 	if m.shouldError {
 		return nil, errors.New("execContext")
 	}
+
 	return nil, nil //nolint:nilnil
 }
 
@@ -178,6 +183,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 
 							// New stmt
 							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
@@ -212,6 +218,7 @@ func TestOtStmt_ExecContext(t *testing.T) {
 							})
 
 							assert.Equal(t, 1, ms.ExecContextCount())
+
 							if ms.ExecContextArgs() != nil {
 								assert.Equal(t, []driver.NamedValue{{Value: "foo"}}, ms.ExecContextArgs())
 							} else {
@@ -293,6 +300,7 @@ func TestOtStmt_QueryContext(t *testing.T) {
 
 							// New stmt
 							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
@@ -327,11 +335,13 @@ func TestOtStmt_QueryContext(t *testing.T) {
 							})
 
 							assert.Equal(t, 1, ms.QueryContextCount())
+
 							if ms.QueryContextArgs() != nil {
 								assert.Equal(t, []driver.NamedValue{{Value: "foo"}}, ms.QueryContextArgs())
 							} else {
 								assert.Equal(t, []driver.Value{"foo"}, ms.QueryArgs())
 							}
+
 							if !tc.error {
 								assert.IsType(t, &otRows{}, rows)
 							}

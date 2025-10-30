@@ -38,6 +38,7 @@ func ExampleOpen() {
 	if err != nil {
 		panic(err)
 	}
+
 	defer func() { _ = db.Close() }()
 	// Output:
 }
@@ -47,6 +48,7 @@ func ExampleOpenDB() {
 	if !ok {
 		panic("driver does not implement driver.DriverContext")
 	}
+
 	connector, err := driverContext.OpenConnector(mysqlDSN)
 	if err != nil {
 		panic(err)
@@ -54,6 +56,7 @@ func ExampleOpenDB() {
 
 	// Connect to database
 	db := otelsql.OpenDB(connector)
+
 	defer func() { _ = db.Close() }()
 	// Output:
 }
@@ -65,6 +68,7 @@ func ExampleWrapDriver() {
 	if !ok {
 		panic("driver does not implement driver.DriverContext")
 	}
+
 	connector, err := driverContext.OpenConnector(mysqlDSN)
 	if err != nil {
 		panic(err)
@@ -72,6 +76,7 @@ func ExampleWrapDriver() {
 
 	// Connect to database
 	db := sql.OpenDB(connector)
+
 	defer func() { _ = db.Close() }()
 	// Output:
 }
@@ -88,6 +93,7 @@ func ExampleRegister() {
 	if err != nil {
 		panic(err)
 	}
+
 	defer func() { _ = db.Close() }()
 	// Output:
 }
@@ -102,6 +108,7 @@ func ExampleAttributesFromDSN() {
 	if err != nil {
 		panic(err)
 	}
+
 	defer func() { _ = db.Close() }()
 
 	// Register DB stats to meter

@@ -43,6 +43,7 @@ func (d *otDriver) Open(name string) (driver.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return newConn(rawConn, d.cfg), nil
 }
 
@@ -52,5 +53,6 @@ func (d *otDriver) OpenConnector(name string) (driver.Connector, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return newConnector(rawConnector, d), nil
 }

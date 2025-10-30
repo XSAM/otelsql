@@ -73,17 +73,21 @@ func (m *mockLegacyStmt) NumInput() int {
 func (m *mockLegacyStmt) Exec(args []driver.Value) (driver.Result, error) {
 	m.execArgs = args
 	m.execCount++
+
 	if m.shouldError {
 		return nil, errors.New("exec")
 	}
+
 	return nil, nil //nolint:nilnil
 }
 
 func (m *mockLegacyStmt) Query(args []driver.Value) (driver.Rows, error) {
 	m.queryArgs = args
 	m.queryCount++
+
 	if m.shouldError {
 		return nil, errors.New("query")
 	}
+
 	return nil, nil //nolint:nilnil
 }

@@ -40,6 +40,7 @@ func (m *mockTx) Commit() error {
 	if m.shouldError {
 		return errors.New("commit")
 	}
+
 	return nil
 }
 
@@ -48,6 +49,7 @@ func (m *mockTx) Rollback() error {
 	if m.shouldError {
 		return errors.New("rollback")
 	}
+
 	return nil
 }
 
@@ -96,6 +98,7 @@ func TestOtTx_Commit(t *testing.T) {
 
 					// New tx
 					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 					cfg := newConfig()
 					cfg.Tracer = tracer
 					cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -174,6 +177,7 @@ func TestOtTx_Rollback(t *testing.T) {
 
 					// New tx
 					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 					cfg := newConfig()
 					cfg.Tracer = tracer
 					cfg.SpanOptions.SpanFilter = spanFilterFn

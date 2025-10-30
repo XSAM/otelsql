@@ -39,7 +39,9 @@ func Register(driverName string, options ...Option) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	dri := db.Driver()
+
 	if err = db.Close(); err != nil {
 		return "", err
 	}
@@ -51,21 +53,25 @@ func Register(driverName string, options ...Option) (string, error) {
 	// configurations, but potentially the same underlying database driver, we
 	// cycle through to find available driver names.
 	driverName += "-otelsql-"
+
 	for i := range maxDriverSlot {
 		var (
 			found   = false
 			regName = driverName + strconv.FormatInt(int64(i), 10)
 		)
+
 		for _, name := range sql.Drivers() {
 			if name == regName {
 				found = true
 			}
 		}
+
 		if !found {
 			sql.Register(regName, newDriver(dri, newConfig(options...)))
 			return regName, nil
 		}
 	}
+
 	return "", errors.New("unable to register driver, all slots have been taken")
 }
 
@@ -88,7 +94,9 @@ func Open(driverName, dataSourceName string, options ...Option) (*sql.DB, error)
 	if err != nil {
 		return nil, err
 	}
+
 	d := db.Driver()
+
 	if err = db.Close(); err != nil {
 		return nil, err
 	}
@@ -100,6 +108,7 @@ func Open(driverName, dataSourceName string, options ...Option) (*sql.DB, error)
 		if err != nil {
 			return nil, err
 		}
+
 		return sql.OpenDB(connector), nil
 	}
 
@@ -128,6 +137,7 @@ func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) error {
 		dbStats := db.Stats()
 
 		recordDBStatsMetrics(dbStats, instruments, cfg, observer)
+
 		return nil
 	}, instruments.connectionMaxOpen,
 		instruments.connectionOpen,
@@ -139,6 +149,7 @@ func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 

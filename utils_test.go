@@ -125,15 +125,18 @@ func TestRecordSpanError(t *testing.T) {
 
 func newTracerProvider() (*tracetest.SpanRecorder, trace.TracerProvider) {
 	var sr tracetest.SpanRecorder
+
 	provider := sdktrace.NewTracerProvider(
 		sdktrace.WithSpanProcessor(&sr),
 	)
+
 	return &sr, provider
 }
 
 func createDummySpan(ctx context.Context, tracer trace.Tracer) (context.Context, trace.Span) {
 	ctx, span := tracer.Start(ctx, "dummy")
 	defer span.End()
+
 	return ctx, span
 }
 
@@ -157,6 +160,7 @@ func assertSpanList(
 	t.Helper()
 
 	var span sdktrace.ReadOnlySpan
+
 	if !parameter.omitSpan {
 		if !parameter.noParentSpan {
 			span = spanList[1]
@@ -168,11 +172,13 @@ func assertSpanList(
 	if span == nil {
 		return
 	}
+
 	if parameter.spanNotEnded {
 		assert.True(t, span.EndTime().IsZero())
 	} else {
 		assert.False(t, span.EndTime().IsZero())
 	}
+
 	assert.Equal(t, trace.SpanKindClient, span.SpanKind())
 
 	expectedAttributes := parameter.expectedAttributes
@@ -184,6 +190,7 @@ func assertSpanList(
 
 	assert.Equal(t, expectedAttributes, span.Attributes())
 	assert.Equal(t, string(parameter.method), span.Name())
+
 	if parameter.parentSpan != nil {
 		assert.Equal(t, parameter.parentSpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 		assert.Equal(t, parameter.parentSpan.SpanContext().SpanID(), span.Parent().SpanID())
@@ -205,11 +212,14 @@ func getExpectedSpanCount(noParentSpan bool, omitSpan bool) int {
 		if !omitSpan {
 			return 2
 		}
+
 		return 1
 	}
+
 	if !omitSpan {
 		return 1
 	}
+
 	return 0
 }
 
@@ -220,10 +230,12 @@ func prepareTraces(
 	tracer := provider.Tracer("test")
 
 	var dummySpan trace.Span
+
 	ctx := context.Background()
 	if !noParentSpan {
 		ctx, dummySpan = createDummySpan(context.Background(), tracer)
 	}
+
 	return ctx, sr, tracer, dummySpan
 }
 
@@ -232,6 +244,7 @@ func prepareMetrics() (sdkmetric.Reader, *sdkmetric.MeterProvider) {
 	meterProvider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(metricReader),
 	)
+
 	return metricReader, meterProvider
 }
 
@@ -1127,6 +1140,7 @@ func TestRecordMetric(t *testing.T) {
 			timeNow = func() time.Time {
 				return time.Unix(1, 0)
 			}
+
 			t.Cleanup(func() {
 				timeNow = time.Now
 			})
@@ -1136,9 +1150,11 @@ func TestRecordMetric(t *testing.T) {
 			timeNow = func() time.Time {
 				return time.Unix(3, 0)
 			}
+
 			recordFunc(tt.err)
 
 			var metricsData metricdata.ResourceMetrics
+
 			err := metricReader.Collect(context.Background(), &metricsData)
 			require.NoError(t, err)
 
@@ -1220,6 +1236,7 @@ func TestCreateSpan(t *testing.T) {
 			tracer := provider.Tracer("test")
 
 			t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 			cfg := newConfig(WithAttributes(defaultattribute))
 			cfg.Tracer = tracer
 
@@ -1227,9 +1244,11 @@ func TestCreateSpan(t *testing.T) {
 			if tt.disableQuery {
 				cfg.SpanOptions.DisableQuery = true
 			}
+
 			if tt.customAttributesGetter != nil {
 				cfg.AttributesGetter = tt.customAttributesGetter
 			}
+
 			if tt.customSpanNameFormatter != nil {
 				cfg.SpanNameFormatter = tt.customSpanNameFormatter
 			}

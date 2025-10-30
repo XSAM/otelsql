@@ -41,15 +41,18 @@ func (m *mockRows) Close() error {
 	if m.shouldError {
 		return errors.New("close")
 	}
+
 	return nil
 }
 
 func (m *mockRows) Next(dest []driver.Value) error {
 	m.nextDest = dest
 	m.nextCount++
+
 	if m.shouldError {
 		return errors.New("next")
 	}
+
 	return nil
 }
 
@@ -88,7 +91,9 @@ func TestOtRows_Close(t *testing.T) {
 					ctx, sr, tracer, _ := prepareTraces(false)
 
 					mr := newMockRows(tc.error)
+
 					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 					cfg := newConfig()
 					cfg.Tracer = tracer
 					cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -112,6 +117,7 @@ func TestOtRows_Close(t *testing.T) {
 						assert.False(t, span.EndTime().IsZero())
 
 						assert.Equal(t, 1, mr.closeCount)
+
 						if tc.error {
 							require.Error(t, err)
 							assert.Equal(t, codes.Error, span.Status().Code)
@@ -161,7 +167,9 @@ func TestOtRows_Next(t *testing.T) {
 					ctx, sr, tracer, _ := prepareTraces(false)
 
 					mr := newMockRows(tc.error)
+
 					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 					cfg := newConfig()
 					cfg.Tracer = tracer
 					cfg.SpanOptions.RowsNext = tc.rowsNextOption
@@ -185,10 +193,13 @@ func TestOtRows_Next(t *testing.T) {
 
 						assert.Equal(t, 1, mr.nextCount)
 						assert.Equal(t, []driver.Value{"test"}, mr.nextDest)
+
 						var expectedEventCount int
+
 						if tc.error {
 							require.Error(t, err)
 							assert.Equal(t, codes.Error, span.Status().Code)
+
 							expectedEventCount++
 						} else {
 							require.NoError(t, err)
@@ -198,6 +209,7 @@ func TestOtRows_Next(t *testing.T) {
 						if tc.rowsNextOption {
 							expectedEventCount++
 						}
+
 						assert.Len(t, span.Events(), expectedEventCount)
 					}
 				})
@@ -247,7 +259,9 @@ func TestNewRows(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							mr := newMockRows(false)
+
 							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.OmitRows = omitRows
@@ -259,10 +273,12 @@ func TestNewRows(t *testing.T) {
 							rows := newRows(ctx, mr, cfg)
 
 							spanList := sr.Started()
+
 							omit := omitRows
 							if !omit {
 								omit = !filterSpan(ctx, cfg.SpanOptions, MethodRows, "", []driver.NamedValue{})
 							}
+
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in newRows()
 							require.Len(t, spanList, expectedSpanCount)
