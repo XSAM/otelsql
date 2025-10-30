@@ -61,10 +61,12 @@ var (
 
 func (m *mockLegacyConn) Prepare(query string) (driver.Stmt, error) {
 	m.prepareCount++
+
 	m.prepareQuery = query
 	if m.shouldError {
 		return nil, errors.New("prepare")
 	}
+
 	return newMockStmt(false), nil
 }
 
@@ -77,6 +79,7 @@ func (m *mockLegacyConn) Begin() (driver.Tx, error) {
 	if m.shouldError {
 		return nil, errors.New("begin")
 	}
+
 	return newMockTx(false), nil
 }
 

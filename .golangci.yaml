@@ -85,13 +85,13 @@ linters:
     - whitespace
     - zerologlint
     - tagalign
+    - wsl_v5
   disable:
     - varnamelen
     - depguard
     - funlen
     - gochecknoglobals
     - godox
-    - wsl
     - exhaustruct
     - err113
     - lll

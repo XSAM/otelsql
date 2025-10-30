@@ -129,6 +129,7 @@ func (r otRows) Close() (err error) {
 		if r.span != nil {
 			r.span.End()
 		}
+
 		r.onClose(err)
 	}()
 
@@ -136,6 +137,7 @@ func (r otRows) Close() (err error) {
 	if err != nil {
 		recordSpanError(r.span, r.cfg.SpanOptions, err)
 	}
+
 	return
 }
 
@@ -149,5 +151,6 @@ func (r otRows) Next(dest []driver.Value) (err error) {
 	if err != nil && !errors.Is(err, io.EOF) {
 		recordSpanError(r.span, r.cfg.SpanOptions, err)
 	}
+
 	return
 }

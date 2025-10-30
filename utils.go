@@ -40,6 +40,7 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 	if span == nil {
 		return
 	}
+
 	if opts.RecordError != nil && !opts.RecordError(err) {
 		return
 	}
@@ -127,6 +128,7 @@ func recordMetric(
 		}
 
 		var errAttributes []attribute.KeyValue
+
 		if err != nil {
 			if cfg.InstrumentErrorAttributesGetter != nil {
 				errAttributes = cfg.InstrumentErrorAttributesGetter(err)
@@ -190,6 +192,7 @@ func createSpan(
 
 		span.SetAttributes(attributes...)
 	}
+
 	return spanCtx, span
 }
 
@@ -206,11 +209,14 @@ func filterSpan(
 // Copied from stdlib database/sql package: src/database/sql/ctxutil.go.
 func namedValueToValue(named []driver.NamedValue) ([]driver.Value, error) {
 	dargs := make([]driver.Value, len(named))
+
 	for n, param := range named {
 		if len(param.Name) > 0 {
 			return nil, errors.New("sql: driver does not support the use of Named Parameters")
 		}
+
 		dargs[n] = param.Value
 	}
+
 	return dargs, nil
 }

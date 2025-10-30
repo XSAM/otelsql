@@ -45,8 +45,8 @@ type instruments struct {
 
 func newInstruments(meter metric.Meter) (*instruments, error) {
 	var instruments instruments
-	var err error
 
+	var err error
 	if instruments.legacyLatency, err = meter.Float64Histogram(
 		strings.Join([]string{namespace, "latency"}, "."),
 		metric.WithDescription("The latency of calls in milliseconds"),
@@ -68,7 +68,9 @@ func newInstruments(meter metric.Meter) (*instruments, error) {
 
 func newDBStatsInstruments(meter metric.Meter) (*dbStatsInstruments, error) {
 	var instruments dbStatsInstruments
+
 	var err error
+
 	subsystem := "connection"
 
 	if instruments.connectionMaxOpen, err = meter.Int64ObservableGauge(

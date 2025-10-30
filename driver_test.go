@@ -44,18 +44,22 @@ func newMockDriver(shouldError bool) *mockDriver {
 func (m *mockDriver) OpenConnector(name string) (driver.Connector, error) {
 	m.openConnectorName = name
 	m.openConnectorCount++
+
 	if m.shouldError {
 		return nil, errors.New("openConnector")
 	}
+
 	return newMockConnector(m, false), nil
 }
 
 func (m *mockDriver) Open(name string) (driver.Conn, error) {
 	m.openName = name
 	m.openCount++
+
 	if m.shouldError {
 		return nil, errors.New("open")
 	}
+
 	return newMockConn(false), nil
 }
 
@@ -129,6 +133,7 @@ func TestOtDriver_OpenConnector(t *testing.T) {
 
 			otelDriver, ok := d.(*otDriver)
 			require.True(t, ok)
+
 			connector, err := otelDriver.OpenConnector("test")
 
 			assert.Equal(t, "test", md.openConnectorName)

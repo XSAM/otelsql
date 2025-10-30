@@ -34,6 +34,7 @@ func TestCommenter_WithComment(t *testing.T) {
 	require.NoError(t, err)
 	traceState, err := trace.ParseTraceState("rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
 	require.NoError(t, err)
+
 	ctx := trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(trace.SpanContextConfig{
 		TraceID:    traceID,
 		SpanID:     spanID,
@@ -45,6 +46,7 @@ func TestCommenter_WithComment(t *testing.T) {
 	require.NoError(t, err)
 	b, err := baggage.New(m1)
 	require.NoError(t, err)
+
 	ctx = baggage.ContextWithBaggage(ctx, b)
 
 	testCases := []struct {
