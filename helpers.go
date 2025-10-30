@@ -62,6 +62,7 @@ func AttributesFromDSN(dsn string) []attribute.KeyValue {
 	if len(dsn) == 0 {
 		return nil
 	}
+
 	host, portStr, err := net.SplitHostPort(dsn)
 	if err != nil {
 		host = dsn

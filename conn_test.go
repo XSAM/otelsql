@@ -102,18 +102,22 @@ func newMockConn(shouldError bool) *mockConn {
 func (m *mockConn) ResetSession(ctx context.Context) error {
 	m.resetSessionCtx = ctx
 	m.resetSessionCount++
+
 	if m.shouldError {
 		return errors.New("resetSession")
 	}
+
 	return nil
 }
 
 func (m *mockConn) BeginTx(ctx context.Context, _ driver.TxOptions) (driver.Tx, error) {
 	m.beginTxCount++
+
 	m.beginTxCtx = ctx
 	if m.shouldError {
 		return nil, errors.New("beginTx")
 	}
+
 	return newMockTx(false), nil
 }
 
@@ -121,9 +125,11 @@ func (m *mockConn) PrepareContext(ctx context.Context, query string) (driver.Stm
 	m.prepareContextCount++
 	m.prepareContextCtx = ctx
 	m.prepareContextQuery = query
+
 	if m.shouldError {
 		return nil, errors.New("prepareContext")
 	}
+
 	return newMockStmt(false), nil
 }
 
@@ -133,9 +139,11 @@ func (m *mockConn) QueryContext(
 	m.queryContextCount++
 	m.queryContextCtx = ctx
 	m.queryContextQuery = query
+
 	if m.shouldError {
 		return nil, errors.New("queryContext")
 	}
+
 	return newMockRows(false), nil
 }
 
@@ -145,18 +153,22 @@ func (m *mockConn) ExecContext(
 	m.execContextCount++
 	m.execContextCtx = ctx
 	m.execContextQuery = query
+
 	if m.shouldError {
 		return nil, errors.New("execContext")
 	}
+
 	return nil, nil //nolint:nilnil
 }
 
 func (m *mockConn) Ping(ctx context.Context) error {
 	m.pingCount++
+
 	m.pingCtx = ctx
 	if m.shouldError {
 		return errors.New("execContext")
 	}
+
 	return nil
 }
 
@@ -245,6 +257,7 @@ func TestOtConn_Ping(t *testing.T) {
 					}
 
 					spanList := sr.Ended()
+
 					if tc.pingOption {
 						omit := !filterSpan(ctx, cfg.SpanOptions, MethodConnPing, "", []driver.NamedValue{})
 						expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
@@ -311,6 +324,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 			attrs:            expectedAttrs,
 		},
 	}
+
 	for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
 		testname := testSpanFilterOmit
 		if spanFilterFn == nil {
@@ -327,6 +341,7 @@ func TestOtConn_ExecContext(t *testing.T) {
 
 					// New conn
 					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 					cfg := newConfig()
 					cfg.Tracer = tracer
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
@@ -432,6 +447,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 
 							// New conn
 							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
@@ -450,6 +466,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 							}
 
 							spanList := sr.Ended()
+
 							omit := omitConnQuery
 							if !omit {
 								omit = !filterSpan(ctx, cfg.SpanOptions, MethodConnQuery, query, args)
@@ -478,6 +495,7 @@ func TestOtConn_QueryContext(t *testing.T) {
 							if !tc.error {
 								otelRows, ok := rows.(*otRows)
 								require.True(t, ok)
+
 								if dummySpan != nil && !omit {
 									assert.Equal(
 										t,
@@ -572,6 +590,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 
 									// New conn
 									t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 									cfg := newConfig()
 									cfg.Tracer = tracer
 									cfg.SpanOptions.DisableQuery = tc.disableQuery
@@ -586,6 +605,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 									} else {
 										mc = newMockConn(tc.error)
 									}
+
 									otelConn := newConn(mc, cfg)
 
 									stmt, err := otelConn.PrepareContext(ctx, query)
@@ -596,6 +616,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 									}
 
 									spanList := sr.Ended()
+
 									omit := omitConnPrepare
 									if !omit {
 										omit = !filterSpan(
@@ -606,6 +627,7 @@ func TestOtConn_PrepareContext(t *testing.T) {
 											[]driver.NamedValue{},
 										)
 									}
+
 									expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 									// One dummy span and one span created in PrepareContext
 									require.Len(t, spanList, expectedSpanCount)
@@ -688,6 +710,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 
 							// New conn
 							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -699,6 +722,7 @@ func TestOtConn_BeginTx(t *testing.T) {
 							} else {
 								mc = newMockConn(tc.error)
 							}
+
 							otelConn := newConn(mc, cfg)
 
 							tx, err := otelConn.BeginTx(ctx, driver.TxOptions{})
@@ -773,6 +797,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 		if omitResetSession {
 			testname = "OmitConnResetSession"
 		}
+
 		t.Run(testname, func(t *testing.T) {
 			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
 				testname := testSpanFilterOmit
@@ -781,6 +806,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
 					testname = testSpanFilterKeep
 				}
+
 				t.Run(testname, func(t *testing.T) {
 					for _, tc := range testCases {
 						t.Run(tc.name, func(t *testing.T) {
@@ -789,6 +815,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 
 							// New conn
 							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
+
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.OmitConnResetSession = omitResetSession
@@ -806,6 +833,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 							}
 
 							spanList := sr.Ended()
+
 							omit := omitResetSession
 							if !omit {
 								omit = !filterSpan(
@@ -816,6 +844,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 									[]driver.NamedValue{},
 								)
 							}
+
 							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
 							// One dummy span and one span created in ResetSession
 							require.Len(t, spanList, expectedSpanCount)

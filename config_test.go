@@ -114,6 +114,7 @@ func TestConfigSemConvStabilityOptIn(t *testing.T) {
 
 			// Test with a sample query to verify it returns the expected attributes format
 			const query = "SELECT * FROM test"
+
 			attrs := cfg.DBQueryTextAttributes(query)
 
 			// Verify format of returned attributes based on opt-in type
