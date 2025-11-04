@@ -40,6 +40,7 @@ func newTx(ctx context.Context, tx driver.Tx, cfg config) *otTx {
 func (t *otTx) Commit() (err error) {
 	method := MethodTxCommit
 	onDefer := recordMetric(t.ctx, t.cfg.Instruments, t.cfg, method, "", nil)
+
 	defer func() {
 		onDefer(err)
 	}()
@@ -55,12 +56,14 @@ func (t *otTx) Commit() (err error) {
 		recordSpanError(span, t.cfg.SpanOptions, err)
 		return err
 	}
+
 	return nil
 }
 
 func (t *otTx) Rollback() (err error) {
 	method := MethodTxRollback
 	onDefer := recordMetric(t.ctx, t.cfg.Instruments, t.cfg, method, "", nil)
+
 	defer func() {
 		onDefer(err)
 	}()
@@ -76,5 +79,6 @@ func (t *otTx) Rollback() (err error) {
 		recordSpanError(span, t.cfg.SpanOptions, err)
 		return err
 	}
+
 	return nil
 }

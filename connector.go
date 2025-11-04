@@ -44,6 +44,7 @@ func newConnector(connector driver.Connector, otDriver *otDriver) *otConnector {
 func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err error) {
 	method := MethodConnectorConnect
 	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, "", nil)
+
 	defer func() {
 		onDefer(err)
 	}()
@@ -59,6 +60,7 @@ func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err 
 		recordSpanError(span, c.cfg.SpanOptions, err)
 		return nil, err
 	}
+
 	return newConn(connection, c.cfg), nil
 }
 
@@ -72,6 +74,7 @@ func (c *otConnector) Close() error {
 	if closer, ok := c.Connector.(io.Closer); ok {
 		return closer.Close()
 	}
+
 	return nil
 }
 

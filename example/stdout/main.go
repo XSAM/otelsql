@@ -48,6 +48,7 @@ func initTracer() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithSyncer(exporter),
@@ -68,6 +69,7 @@ func initMeter() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	meterProvider := metric.NewMeterProvider(
 		metric.WithReader(metricExporter),
 		metric.WithResource(resource.NewWithAttributes(
@@ -78,6 +80,7 @@ func initMeter() {
 	otel.SetMeterProvider(meterProvider)
 
 	http.Handle("/metrics", promhttp.Handler())
+
 	go func() {
 		server := http.Server{
 			Addr:              ":2222",
@@ -85,6 +88,7 @@ func initMeter() {
 		}
 		_ = server.ListenAndServe()
 	}()
+
 	slog.Info("Prometheus server running on :2222")
 }
 
@@ -101,6 +105,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	defer func() { _ = db.Close() }()
 
 	err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
@@ -123,6 +128,7 @@ func main() {
 func run(db *sql.DB) error {
 	// Create a parent span (Optional)
 	tracer := otel.GetTracerProvider()
+
 	ctx, span := tracer.Tracer(instrumentationName).Start(context.Background(), "example")
 	defer span.End()
 
@@ -131,6 +137,7 @@ func run(db *sql.DB) error {
 		span.RecordError(err)
 		return err
 	}
+
 	return nil
 }
 
@@ -140,6 +147,7 @@ func query(ctx context.Context, db *sql.DB) error {
 	if err != nil {
 		return err
 	}
+
 	defer func() { _ = rows.Close() }()
 
 	var currentTime time.Time
@@ -153,6 +161,8 @@ func query(ctx context.Context, db *sql.DB) error {
 	if err = rows.Err(); err != nil {
 		return err
 	}
+
 	slog.Info("Current time", "time", currentTime)
+
 	return nil
 }

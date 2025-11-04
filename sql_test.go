@@ -37,15 +37,18 @@ const (
 func init() {
 	sql.Register(testDriverName, newMockDriver(false))
 	sql.Register(testDriverWithoutContextName, struct{ driver.Driver }{newMockDriver(false)})
+
 	maxDriverSlot = 1
 
 	var err error
+
 	driverName, err = Register(testDriverName,
 		WithAttributes(attribute.String("foo", "bar")),
 	)
 	if err != nil {
 		panic(err)
 	}
+
 	if driverName != "test-driver-otelsql-0" {
 		panic("expect driver name: test-driver-otelsql-0, got " + driverName)
 	}
@@ -55,6 +58,7 @@ func TestRegister(t *testing.T) {
 	// Expected driver
 	db, err := sql.Open(driverName, "")
 	require.NoError(t, err)
+
 	otelDriver, ok := db.Driver().(*otDriver)
 	require.True(t, ok)
 	assert.Equal(t, &mockDriver{openConnectorCount: 2}, otelDriver.driver)
@@ -101,6 +105,7 @@ func TestOpen(t *testing.T) {
 			db, err := Open(tc.driverName, "",
 				WithAttributes(attribute.String("foo", "bar")),
 			)
+
 			t.Cleanup(func() {
 				assert.NoError(t, db.Close())
 			})

@@ -53,6 +53,7 @@ func ParseOTelSemConvStabilityOptIn() OTelSemConvStabilityOptInType {
 			return OTelSemConvStabilityOptInStable
 		}
 	}
+
 	return OTelSemConvStabilityOptInNone
 }
 
@@ -64,5 +65,6 @@ func containsValue(list, value string) bool {
 			return true
 		}
 	}
+
 	return false
 }
