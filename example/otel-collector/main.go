@@ -137,6 +137,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+
 	defer func() {
 		if err := shutdownTracerProvider(ctx); err != nil {
 			slog.Error("failed to shutdown TracerProvider", "error", err)
@@ -147,6 +148,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+
 	defer func() {
 		if err := shutdownMeterProvider(ctx); err != nil {
 			slog.Error("failed to shutdown MeterProvider", "error", err)
@@ -154,6 +156,7 @@ func run() error {
 	}()
 
 	db := connectDB()
+
 	defer func() { _ = db.Close() }()
 
 	err = runSQLQuery(ctx, db)
@@ -190,12 +193,14 @@ func connectDB() *sql.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	return db
 }
 
 func runSQLQuery(ctx context.Context, db *sql.DB) error {
 	// Create a parent span (Optional)
 	tracer := otel.GetTracerProvider()
+
 	ctx, span := tracer.Tracer(instrumentationName).Start(ctx, "example")
 	defer span.End()
 
@@ -204,6 +209,7 @@ func runSQLQuery(ctx context.Context, db *sql.DB) error {
 		span.RecordError(err)
 		return err
 	}
+
 	return nil
 }
 
@@ -213,6 +219,7 @@ func query(ctx context.Context, db *sql.DB) error {
 	if err != nil {
 		return err
 	}
+
 	defer func() { _ = rows.Close() }()
 
 	var currentTime time.Time
@@ -226,6 +233,8 @@ func query(ctx context.Context, db *sql.DB) error {
 	if err = rows.Err(); err != nil {
 		return err
 	}
+
 	slog.Info("Current time", "time", currentTime)
+
 	return nil
 }
