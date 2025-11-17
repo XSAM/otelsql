@@ -48,37 +48,48 @@ func TestCommenter_WithComment(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx = baggage.ContextWithBaggage(ctx, b)
+	stdPropagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
 
 	testCases := []struct {
-		name     string
-		enabled  bool
-		ctx      context.Context
-		expected string
+		name       string
+		enabled    bool
+		ctx        context.Context
+		propagator propagation.TextMapPropagator
+		expected   string
 	}{
 		{
-			name:     "empty context",
-			enabled:  true,
-			ctx:      context.Background(),
-			expected: query,
+			name:       "empty context",
+			enabled:    true,
+			ctx:        context.Background(),
+			propagator: stdPropagator,
+			expected:   query,
 		},
 		{
-			name:     "context with disable",
-			enabled:  false,
-			ctx:      ctx,
-			expected: query,
+			name:       "context with disable",
+			enabled:    false,
+			ctx:        ctx,
+			propagator: stdPropagator,
+			expected:   query,
 		},
 		{
-			name:     "context",
-			enabled:  true,
-			ctx:      ctx,
-			expected: query + " /*tracestate='rojo%3D00f067aa0ba902b7%2Ccongo%3Dt61rcWkgMzE',traceparent='00-a3d3b88cf7994e554c1afbdceec1620b-683ec6a9a3a265fb-01',baggage='foo%3Dbar'*/",
+			name:       "nil propagator",
+			enabled:    true,
+			ctx:        ctx,
+			propagator: nil,
+			expected:   query,
+		},
+		{
+			name:       "context and propagator",
+			enabled:    true,
+			ctx:        ctx,
+			propagator: stdPropagator,
+			expected:   query + " /*tracestate='rojo%3D00f067aa0ba902b7%2Ccongo%3Dt61rcWkgMzE',traceparent='00-a3d3b88cf7994e554c1afbdceec1620b-683ec6a9a3a265fb-01',baggage='foo%3Dbar'*/",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c := newCommenter(tc.enabled)
-			c.propagator = propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
+			c := newCommenter(tc.enabled, tc.propagator)
 
 			result := c.withComment(tc.ctx, query)
 			assert.Equal(t, tc.expected, result)
