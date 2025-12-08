@@ -47,7 +47,7 @@ func WithTracerProvider(provider trace.TracerProvider) Option {
 // WithAttributes specifies attributes that will be set to each span and measurement.
 func WithAttributes(attributes ...attribute.KeyValue) Option {
 	return OptionFunc(func(cfg *config) {
-		cfg.Attributes = attributes
+		cfg.Attributes = append(cfg.Attributes, attributes...)
 	})
 }
 

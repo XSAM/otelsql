@@ -39,20 +39,22 @@ func TestOptions(t *testing.T) {
 
 	testCases := []struct {
 		name           string
-		option         Option
+		options        []Option
 		expectedConfig config
 	}{
 		{
 			name:           "WithTracerProvider",
-			option:         WithTracerProvider(tracerProvider),
+			options:        []Option{WithTracerProvider(tracerProvider)},
 			expectedConfig: config{TracerProvider: tracerProvider},
 		},
 		{
 			name: "WithAttributes",
-			option: WithAttributes(
-				attribute.String("foo", "bar"),
-				attribute.String("foo2", "bar2"),
-			),
+			options: []Option{
+				WithAttributes(
+					attribute.String("foo", "bar"),
+					attribute.String("foo2", "bar2"),
+				),
+			},
 			expectedConfig: config{Attributes: []attribute.KeyValue{
 				attribute.String("foo", "bar"),
 				attribute.String("foo2", "bar2"),
@@ -60,43 +62,112 @@ func TestOptions(t *testing.T) {
 		},
 		{
 			name:           "WithSpanNameFormatter",
-			option:         WithSpanNameFormatter(nil),
+			options:        []Option{WithSpanNameFormatter(nil)},
 			expectedConfig: config{SpanNameFormatter: nil},
 		},
 		{
 			name:           "WithSpanOptions",
-			option:         WithSpanOptions(SpanOptions{Ping: true}),
+			options:        []Option{WithSpanOptions(SpanOptions{Ping: true})},
 			expectedConfig: config{SpanOptions: SpanOptions{Ping: true}},
 		},
 		{
 			name:           "WithMeterProvider",
-			option:         WithMeterProvider(meterProvider),
+			options:        []Option{WithMeterProvider(meterProvider)},
 			expectedConfig: config{MeterProvider: meterProvider},
 		},
 		{
 			name:           "WithSQLCommenter",
-			option:         WithSQLCommenter(true),
+			options:        []Option{WithSQLCommenter(true)},
 			expectedConfig: config{SQLCommenterEnabled: true},
 		},
 		{
 			name:           "WithAttributesGetter",
-			option:         WithAttributesGetter(dummyAttributesGetter),
+			options:        []Option{WithAttributesGetter(dummyAttributesGetter)},
 			expectedConfig: config{AttributesGetter: dummyAttributesGetter},
 		},
 		{
 			name:           "WithInstrumentAttributesGetter",
-			option:         WithInstrumentAttributesGetter(dummyAttributesGetter),
+			options:        []Option{WithInstrumentAttributesGetter(dummyAttributesGetter)},
 			expectedConfig: config{InstrumentAttributesGetter: dummyAttributesGetter},
 		},
 		{
 			name:           "WithDisableSkipErrMeasurement",
-			option:         WithDisableSkipErrMeasurement(true),
+			options:        []Option{WithDisableSkipErrMeasurement(true)},
 			expectedConfig: config{DisableSkipErrMeasurement: true},
 		},
 		{
 			name:           "WithInstrumentErrorAttributesGetter",
-			option:         WithInstrumentErrorAttributesGetter(dummyErrorAttributesGetter),
+			options:        []Option{WithInstrumentErrorAttributesGetter(dummyErrorAttributesGetter)},
 			expectedConfig: config{InstrumentErrorAttributesGetter: dummyErrorAttributesGetter},
+		},
+		{
+			name: "WithAttributes multiple calls should accumulate",
+			options: []Option{
+				WithAttributes(attribute.String("key1", "value1")),
+				WithAttributes(attribute.String("key2", "value2")),
+			},
+			expectedConfig: config{Attributes: []attribute.KeyValue{
+				attribute.String("key1", "value1"),
+				attribute.String("key2", "value2"),
+			}},
+		},
+		{
+			name: "WithAttributes multiple calls with multiple attributes each",
+			options: []Option{
+				WithAttributes(
+					attribute.String("key1", "value1"),
+					attribute.String("key2", "value2"),
+				),
+				WithAttributes(
+					attribute.String("key3", "value3"),
+					attribute.String("key4", "value4"),
+				),
+			},
+			expectedConfig: config{Attributes: []attribute.KeyValue{
+				attribute.String("key1", "value1"),
+				attribute.String("key2", "value2"),
+				attribute.String("key3", "value3"),
+				attribute.String("key4", "value4"),
+			}},
+		},
+		{
+			name:           "WithAttributes with empty attributes",
+			options:        []Option{WithAttributes()},
+			expectedConfig: config{Attributes: nil},
+		},
+		{
+			name: "WithAttributes with empty followed by non-empty",
+			options: []Option{
+				WithAttributes(),
+				WithAttributes(attribute.String("key1", "value1")),
+			},
+			expectedConfig: config{Attributes: []attribute.KeyValue{
+				attribute.String("key1", "value1"),
+			}},
+		},
+		{
+			name: "WithAttributes three calls to verify order",
+			options: []Option{
+				WithAttributes(attribute.String("first", "1")),
+				WithAttributes(attribute.String("second", "2")),
+				WithAttributes(attribute.String("third", "3")),
+			},
+			expectedConfig: config{Attributes: []attribute.KeyValue{
+				attribute.String("first", "1"),
+				attribute.String("second", "2"),
+				attribute.String("third", "3"),
+			}},
+		},
+		{
+			name: "WithAttributes duplicate keys should be preserved",
+			options: []Option{
+				WithAttributes(attribute.String("key", "value1")),
+				WithAttributes(attribute.String("key", "value2")),
+			},
+			expectedConfig: config{Attributes: []attribute.KeyValue{
+				attribute.String("key", "value1"),
+				attribute.String("key", "value2"),
+			}},
 		},
 	}
 
@@ -104,7 +175,9 @@ func TestOptions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var cfg config
 
-			tc.option.Apply(&cfg)
+			for _, opt := range tc.options {
+				opt.Apply(&cfg)
+			}
 
 			switch {
 			case tc.expectedConfig.AttributesGetter != nil:
