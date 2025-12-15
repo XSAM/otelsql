@@ -92,8 +92,8 @@ type config struct {
 
 	InstrumentErrorAttributesGetter InstrumentErrorAttributesGetter
 
-	// DisableSkipErrMeasurement, if set to true, will suppress driver.ErrSkip as an error status in measurements.
-	// The measurement will be recorded as status=ok.
+	// DisableSkipErrMeasurement, if set to true, will suppress driver.ErrSkip as an error status in metrics.
+	// The metric measurement will be recorded as status=ok.
 	// Default is false
 	DisableSkipErrMeasurement bool
 
