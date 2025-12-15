@@ -21,6 +21,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 
 	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
@@ -79,6 +80,7 @@ type config struct {
 	// later release.
 	SQLCommenterEnabled bool
 	SQLCommenter        *commenter
+	TextMapPropagator   propagation.TextMapPropagator
 
 	// AttributesGetter will be called to produce additional attributes while creating spans.
 	// Default returns nil
@@ -179,7 +181,7 @@ func newConfig(options ...Option) config {
 		metric.WithInstrumentationVersion(Version()),
 	)
 
-	cfg.SQLCommenter = newCommenter(cfg.SQLCommenterEnabled)
+	cfg.SQLCommenter = newCommenter(cfg.SQLCommenterEnabled, cfg.TextMapPropagator)
 
 	var err error
 	if cfg.Instruments, err = newInstruments(cfg.Meter); err != nil {
