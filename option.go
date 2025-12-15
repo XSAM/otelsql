@@ -122,8 +122,11 @@ func WithInstrumentAttributesGetter(instrumentAttributesGetter InstrumentAttribu
 	})
 }
 
-// WithDisableSkipErrMeasurement controls whether driver.ErrSkip is treated as an error in measurements.
-// When enabled, measurements with driver.ErrSkip will be recorded as status=ok instead of error.
+// WithDisableSkipErrMeasurement controls whether driver.ErrSkip is treated as an error in metrics.
+// When enabled, metric measurements with driver.ErrSkip will be recorded as status=ok instead of error.
+//
+// This option does not affect span error recording. To suppress driver.ErrSkip in spans, use
+// WithSpanOptions(SpanOptions{DisableErrSkip: true}).
 func WithDisableSkipErrMeasurement(disable bool) Option {
 	return OptionFunc(func(cfg *config) {
 		cfg.DisableSkipErrMeasurement = disable
