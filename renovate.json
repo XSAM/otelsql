@@ -60,10 +60,10 @@
       "matchManagers": [
         "gomod"
       ],
-      "matchPackagePatterns": [
-        "^go\\.opentelemetry\\.io/"
-      ],
-      "enabled": true
+      "enabled": true,
+      "matchPackageNames": [
+        "/^go\\.opentelemetry\\.io//"
+      ]
     }
   ]
 }
