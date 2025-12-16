@@ -83,8 +83,8 @@ func TestOptions(t *testing.T) {
 			expectedConfig: config{SQLCommenterEnabled: true},
 		},
 		{
-			name:   "WithTextMapPropagator",
-			option: WithTextMapPropagator(textMapPropagator),
+			name:    "WithTextMapPropagator",
+			options: []Option{WithTextMapPropagator(textMapPropagator)},
 			expectedConfig: config{
 				TextMapPropagator: textMapPropagator,
 			},
