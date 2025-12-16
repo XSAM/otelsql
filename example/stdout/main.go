@@ -112,6 +112,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	defer func() {
 		_ = db.Close()
 		_ = reg.Unregister()

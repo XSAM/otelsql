@@ -189,5 +189,5 @@ func TestRegisterDBStatsMetrics_Unregister(t *testing.T) {
 	require.NoError(t, err)
 
 	// No data collected after unregister
-	assert.Zero(t, len(got.ScopeMetrics))
+	assert.Empty(t, got.ScopeMetrics)
 }
