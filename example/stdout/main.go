@@ -106,15 +106,16 @@ func main() {
 		panic(err)
 	}
 
-	defer func() { _ = db.Close() }()
-
 	reg, err := otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
 		attrs...,
 	))
 	if err != nil {
 		panic(err)
 	}
-	defer func() { _ = reg.Unregister() }()
+	defer func() {
+		_ = db.Close()
+		_ = reg.Unregister()
+	}()
 
 	err = run(db)
 	if err != nil {
