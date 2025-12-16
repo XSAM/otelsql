@@ -123,17 +123,18 @@ func OpenDB(c driver.Connector, options ...Option) *sql.DB {
 	return sql.OpenDB(connector)
 }
 
-// RegisterDBStatsMetrics register sql.DBStats metrics with OTel instrumentation.
-func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) error {
+// RegisterDBStatsMetrics registers sql.DBStats metrics with OTel instrumentation.
+// Call Unregister on the returned Registration when the db is no longer used.
+func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) (metric.Registration, error) {
 	cfg := newConfig(opts...)
 	meter := cfg.Meter
 
 	instruments, err := newDBStatsInstruments(meter)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = meter.RegisterCallback(func(_ context.Context, observer metric.Observer) error {
+	reg, err := meter.RegisterCallback(func(_ context.Context, observer metric.Observer) error {
 		dbStats := db.Stats()
 
 		recordDBStatsMetrics(dbStats, instruments, cfg, observer)
@@ -147,10 +148,10 @@ func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) error {
 		instruments.connectionClosedMaxIdleTimeTotal,
 		instruments.connectionClosedMaxLifetimeTotal)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return reg, nil
 }
 
 func recordDBStatsMetrics(

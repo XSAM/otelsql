@@ -147,12 +147,14 @@ func TestOpenDB(t *testing.T) {
 func TestRegisterDBStatsMetrics(t *testing.T) {
 	db, err := sql.Open(driverName, "")
 	require.NoError(t, err)
+	t.Cleanup(func() { _ = db.Close() })
 
 	r := sdkmetric.NewManualReader()
 	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(r))
 
-	err = RegisterDBStatsMetrics(db, WithMeterProvider(mp))
+	reg, err := RegisterDBStatsMetrics(db, WithMeterProvider(mp))
 	require.NoError(t, err)
+	t.Cleanup(func() { _ = reg.Unregister() })
 
 	// Should collect 7 metrics
 	got := &metricdata.ResourceMetrics{}
@@ -160,4 +162,32 @@ func TestRegisterDBStatsMetrics(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, got.ScopeMetrics, 1)
 	assert.Len(t, got.ScopeMetrics[0].Metrics, 7)
+}
+
+func TestRegisterDBStatsMetrics_Unregister(t *testing.T) {
+	db, err := sql.Open(driverName, "")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = db.Close() })
+
+	r := sdkmetric.NewManualReader()
+	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(r))
+
+	reg, err := RegisterDBStatsMetrics(db, WithMeterProvider(mp))
+	require.NoError(t, err)
+
+	// Verify the callback records metrics.
+	got := &metricdata.ResourceMetrics{}
+	err = r.Collect(context.Background(), got)
+	require.NoError(t, err)
+	assert.Len(t, got.ScopeMetrics, 1)
+	assert.Len(t, got.ScopeMetrics[0].Metrics, 7)
+
+	require.NoError(t, reg.Unregister())
+
+	got = &metricdata.ResourceMetrics{}
+	err = r.Collect(context.Background(), got)
+	require.NoError(t, err)
+
+	// No data collected after unregister
+	assert.Zero(t, len(got.ScopeMetrics))
 }

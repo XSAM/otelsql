@@ -112,11 +112,12 @@ func ExampleAttributesFromDSN() {
 	defer func() { _ = db.Close() }()
 
 	// Register DB stats to meter
-	err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
+	reg, err := otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
 		attrs...,
 	))
 	if err != nil {
 		panic(err)
 	}
+	defer func() { _ = reg.Unregister() }()
 	// Output:
 }

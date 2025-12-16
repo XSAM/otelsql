@@ -32,12 +32,13 @@ if err != nil {
 }
 defer db.Close()
 
-err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
+reg, err := otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
 	semconv.DBSystemMySQL,
 ))
 if err != nil {
 	panic(err)
 }
+defer func() { _ = reg.Unregister() }()
 ```
 
 Check [Option](https://pkg.go.dev/github.com/XSAM/otelsql#Option) for more features like adding context propagation to SQL queries when enabling [`WithSQLCommenter`](https://pkg.go.dev/github.com/XSAM/otelsql#WithSQLCommenter).

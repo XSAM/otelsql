@@ -187,7 +187,7 @@ func connectDB() *sql.DB {
 	}
 
 	// Register DB stats to meter
-	err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
+	_, err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
 		attrs...,
 	))
 	if err != nil {
