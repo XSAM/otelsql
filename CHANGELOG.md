@@ -29,6 +29,7 @@ This update contains a breaking change of `RegisterDBStatsMetrics` now returning
 - Reduce allocations and improve performance when creating spans. (#549)
 - Reduce allocations when recording metrics. (#550)
 - `RegisterDBStatsMetrics` now returns a `metric.Registration` so callbacks can be unregistered. (#580)
+- Upgrade OTel to `v1.39.0`. (#583)
 
 ## [0.40.0] - 2025-09-08
 
