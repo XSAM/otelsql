@@ -8,6 +8,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### ⚠️ Notice ⚠️
+
+This update contains a breaking change of `RegisterDBStatsMetrics` now returning `(metric.Registration, error)` (previously returned only `error`) so callers can `Unregister()` the callback and avoid memory leaks.
+
+- If you need to unregister: `reg, err := RegisterDBStatsMetrics(...)` + `defer reg.Unregister()`.
+- If you do not need to unregister: `_, err := RegisterDBStatsMetrics(...)`.
+
+### Added
+
+- `WithTextMapPropagator` allows customization of the OTel text map propagator used by SQLCommenter. (#540)
+  This is an experimental feature and may be changed or removed in a later release.
+
 ### Removed
 
 - Drop support for [Go 1.23]. (#533)
@@ -16,6 +28,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Reduce allocations and improve performance when creating spans. (#549)
 - Reduce allocations when recording metrics. (#550)
+- `RegisterDBStatsMetrics` now returns a `metric.Registration` so callbacks can be unregistered. (#580)
+- Upgrade OTel to `v1.39.0`. (#583)
 
 ## [0.40.0] - 2025-09-08
 

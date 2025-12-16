@@ -22,12 +22,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/noop"
+	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 func TestOptions(t *testing.T) {
 	tracerProvider := sdktrace.NewTracerProvider()
 	meterProvider := noop.NewMeterProvider()
+	textMapPropagator := propagation.NewCompositeTextMapPropagator()
 
 	dummyAttributesGetter := func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 		return []attribute.KeyValue{attribute.String("foo", "bar")}
@@ -79,6 +81,13 @@ func TestOptions(t *testing.T) {
 			name:           "WithSQLCommenter",
 			options:        []Option{WithSQLCommenter(true)},
 			expectedConfig: config{SQLCommenterEnabled: true},
+		},
+		{
+			name:   "WithTextMapPropagator",
+			option: WithTextMapPropagator(textMapPropagator),
+			expectedConfig: config{
+				TextMapPropagator: textMapPropagator,
+			},
 		},
 		{
 			name:           "WithAttributesGetter",
