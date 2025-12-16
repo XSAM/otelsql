@@ -45,10 +45,11 @@ func WithTracerProvider(provider trace.TracerProvider) Option {
 	})
 }
 
-// WithAttributes specifies attributes that will be set to each span and measurement.
+// WithAttributes adds the attributes to each span and measurement.
+// If multiple of WithAttributes are passed, the attributes will be extended instead of being overwriting.
 func WithAttributes(attributes ...attribute.KeyValue) Option {
 	return OptionFunc(func(cfg *config) {
-		cfg.Attributes = attributes
+		cfg.Attributes = append(cfg.Attributes, attributes...)
 	})
 }
 
