@@ -155,9 +155,8 @@ func run() error {
 		}
 	}()
 
-	db := connectDB()
-
-	defer func() { _ = db.Close() }()
+	db, cleanup := connectDB()
+	defer cleanup()
 
 	err = runSQLQuery(ctx, db)
 	if err != nil {
@@ -175,7 +174,7 @@ func main() {
 	}
 }
 
-func connectDB() *sql.DB {
+func connectDB() (*sql.DB, func()) {
 	attrs := append(otelsql.AttributesFromDSN(mysqlDSN), semconv.DBSystemNameMySQL)
 
 	// Connect to database
@@ -187,14 +186,17 @@ func connectDB() *sql.DB {
 	}
 
 	// Register DB stats to meter
-	err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
+	reg, err := otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
 		attrs...,
 	))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return db
+	return db, func() {
+		_ = db.Close()
+		_ = reg.Unregister()
+	}
 }
 
 func runSQLQuery(ctx context.Context, db *sql.DB) error {
