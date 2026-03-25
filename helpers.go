@@ -24,12 +24,16 @@ import (
 )
 
 // AttributesFromDSN returns attributes extracted from a DSN string.
-// It makes the best effort to retrieve values for [semconv.ServerAddressKey], [semconv.ServerPortKey],
-// and [semconv.DBNamespaceKey].
+// It always sets [semconv.DBSystemNameKey], falling back to [semconv.DBSystemNameOtherSQL] when
+// the scheme is missing or unrecognized. It makes the best effort to retrieve values for
+// [semconv.ServerAddressKey], [semconv.ServerPortKey], and [semconv.DBNamespaceKey].
 func AttributesFromDSN(dsn string) []attribute.KeyValue {
-	_, serverAddress, serverPort, dbName := parseDSN(dsn)
+	scheme, serverAddress, serverPort, dbName := parseDSN(dsn)
 
 	var attrs []attribute.KeyValue
+
+	attrs = append(attrs, dbSystemFromScheme(scheme))
+
 	if serverAddress != "" {
 		attrs = append(attrs, semconv.ServerAddress(serverAddress))
 	}
@@ -43,6 +47,50 @@ func AttributesFromDSN(dsn string) []attribute.KeyValue {
 	}
 
 	return attrs
+}
+
+// dbSystemByScheme maps lowercase DSN schemes to their [semconv.DBSystemNameKey] attribute.
+var dbSystemByScheme = map[string]attribute.KeyValue{
+	"mysql":            semconv.DBSystemNameMySQL,
+	"postgres":         semconv.DBSystemNamePostgreSQL,
+	"postgresql":       semconv.DBSystemNamePostgreSQL,
+	"sqlserver":        semconv.DBSystemNameMicrosoftSQLServer,
+	"mssql":            semconv.DBSystemNameMicrosoftSQLServer,
+	"oracle":           semconv.DBSystemNameOracleDB,
+	"oracle+cx_oracle": semconv.DBSystemNameOracleDB,
+	"sqlite":           semconv.DBSystemNameSqlite,
+	"sqlite3":          semconv.DBSystemNameSqlite,
+	"mariadb":          semconv.DBSystemNameMariaDB,
+	"cockroachdb":      semconv.DBSystemNameCockroachdb,
+	"cockroach":        semconv.DBSystemNameCockroachdb,
+	"cassandra":        semconv.DBSystemNameCassandra,
+	"redis":            semconv.DBSystemNameRedis,
+	"rediss":           semconv.DBSystemNameRedis,
+	"mongodb":          semconv.DBSystemNameMongoDB,
+	"mongodb+srv":      semconv.DBSystemNameMongoDB,
+	"clickhouse":       semconv.DBSystemNameClickhouse,
+	"trino":            semconv.DBSystemNameTrino,
+	"hive":             semconv.DBSystemNameHive,
+	"spanner":          semconv.DBSystemNameGCPSpanner,
+	"elasticsearch":    semconv.DBSystemNameElasticsearch,
+	"couchbase":        semconv.DBSystemNameCouchbase,
+	"influxdb":         semconv.DBSystemNameInfluxdb,
+	"dynamodb":         semconv.DBSystemNameAWSDynamoDB,
+	"redshift":         semconv.DBSystemNameAWSRedshift,
+	"teradata":         semconv.DBSystemNameTeradata,
+	"firebird":         semconv.DBSystemNameFirebirdsql,
+	"firebirdsql":      semconv.DBSystemNameFirebirdsql,
+	"hbase":            semconv.DBSystemNameHBase,
+}
+
+// dbSystemFromScheme maps a DSN scheme to the corresponding [semconv.DBSystemNameKey] attribute.
+// It returns [semconv.DBSystemNameOtherSQL] if the scheme is not recognized.
+func dbSystemFromScheme(scheme string) attribute.KeyValue {
+	if v, ok := dbSystemByScheme[strings.ToLower(scheme)]; ok {
+		return v
+	}
+
+	return semconv.DBSystemNameOtherSQL
 }
 
 // parseDSN parses a DSN string and returns the scheme, server address, server port, and database name.
