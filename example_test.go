@@ -18,7 +18,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 
-	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.38.0"
 
 	"github.com/XSAM/otelsql"
 )

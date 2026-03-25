@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
+	"go.opentelemetry.io/otel/semconv/v1.38.0/dbconv"
 )
 
 const (
@@ -56,9 +56,9 @@ func newInstruments(meter metric.Meter) (*instruments, error) {
 	}
 
 	if instruments.duration, err = meter.Float64Histogram(
-		semconv.DBClientOperationDurationName,
-		metric.WithDescription(semconv.DBClientOperationDurationDescription),
-		metric.WithUnit(semconv.DBClientOperationDurationUnit),
+		dbconv.ClientOperationDuration{}.Name(),
+		metric.WithDescription(dbconv.ClientOperationDuration{}.Description()),
+		metric.WithUnit(dbconv.ClientOperationDuration{}.Unit()),
 	); err != nil {
 		return nil, fmt.Errorf("failed to create duration instrument, %w", err)
 	}
