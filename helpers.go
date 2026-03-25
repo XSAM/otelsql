@@ -24,61 +24,71 @@ import (
 )
 
 // AttributesFromDSN returns attributes extracted from a DSN string.
-// It makes the best effort to retrieve values for [semconv.ServerAddressKey] and [semconv.ServerPortKey].
+// It makes the best effort to retrieve values for [semconv.ServerAddressKey], [semconv.ServerPortKey],
+// and [semconv.DBNamespaceKey].
 func AttributesFromDSN(dsn string) []attribute.KeyValue {
-	// [scheme://][user[:password]@][protocol([addr])]/dbname[?param1=value1&paramN=valueN]
-	// Find the schema part.
-	schemaIndex := strings.Index(dsn, "://")
-	if schemaIndex != -1 {
-		// Remove the schema part from the DSN.
-		dsn = dsn[schemaIndex+3:]
+	_, serverAddress, serverPort, dbName := parseDSN(dsn)
+
+	var attrs []attribute.KeyValue
+	if serverAddress != "" {
+		attrs = append(attrs, semconv.ServerAddress(serverAddress))
 	}
 
-	// [user[:password]@][protocol([addr])]/dbname[?param1=value1&paramN=valueN]
-	// Find credentials part.
-	atIndex := strings.Index(dsn, "@")
-	if atIndex != -1 {
-		// Remove the credential part from the DSN.
-		dsn = dsn[atIndex+1:]
+	if serverPort != -1 {
+		attrs = append(attrs, semconv.ServerPortKey.Int64(serverPort))
 	}
 
-	// [protocol([addr])]/dbname[?param1=value1&paramN=valueN]
-	// Find the '/' that separates the address part from the database part.
-	pathIndex := strings.Index(dsn, "/")
-	if pathIndex != -1 {
-		// Remove the path part from the DSN.
-		dsn = dsn[:pathIndex]
+	if dbName != "" {
+		attrs = append(attrs, semconv.DBNamespace(dbName))
 	}
 
-	// [protocol([addr])] or [addr]
-	// Find the '(' that starts the address part.
-	openParen := strings.Index(dsn, "(")
-	if openParen != -1 {
-		// Remove the protocol part from the DSN.
-		dsn = dsn[openParen+1 : len(dsn)-1]
+	return attrs
+}
+
+// parseDSN parses a DSN string and returns the scheme, server address, server port, and database name.
+// It handles the format: [scheme://][user[:password]@][protocol([addr])]/dbname[?params]
+// scheme, serverAddress and dbName are empty strings if not found. serverPort is -1 if not found.
+func parseDSN(dsn string) (scheme, serverAddress string, serverPort int64, dbName string) {
+	serverPort = -1
+
+	if i := strings.Index(dsn, "://"); i != -1 {
+		scheme = dsn[:i]
+		dsn = dsn[i+3:]
 	}
 
-	// [addr]
+	if i := strings.Index(dsn, "@"); i != -1 {
+		dsn = dsn[i+1:]
+	}
+
+	if i := strings.Index(dsn, "/"); i != -1 {
+		path := dsn[i+1:]
+		if j := strings.Index(path, "?"); j != -1 {
+			path = path[:j]
+		}
+
+		dbName = path
+		dsn = dsn[:i]
+	}
+
+	if i := strings.Index(dsn, "("); i != -1 {
+		dsn = dsn[i+1 : len(dsn)-1]
+	}
+
 	if len(dsn) == 0 {
-		return nil
+		return scheme, serverAddress, serverPort, dbName
 	}
 
 	host, portStr, err := net.SplitHostPort(dsn)
 	if err != nil {
-		host = dsn
+		serverAddress = dsn
+		return scheme, serverAddress, serverPort, dbName
 	}
 
-	attrs := make([]attribute.KeyValue, 0, 2)
-	if host != "" {
-		attrs = append(attrs, semconv.ServerAddress(host))
+	serverAddress = host
+
+	if port, err := strconv.ParseInt(portStr, 10, 64); err == nil {
+		serverPort = port
 	}
 
-	if portStr != "" {
-		port, err := strconv.ParseInt(portStr, 10, 64)
-		if err == nil {
-			attrs = append(attrs, semconv.ServerPortKey.Int64(port))
-		}
-	}
-
-	return attrs
+	return scheme, serverAddress, serverPort, dbName
 }
