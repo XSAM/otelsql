@@ -219,3 +219,53 @@ func TestAttributesFromDSN(t *testing.T) {
 		})
 	}
 }
+
+func TestDBSystemFromScheme(t *testing.T) {
+	testCases := []struct {
+		scheme   string
+		expected attribute.KeyValue
+	}{
+		{"mysql", semconv.DBSystemNameMySQL},
+		{"postgres", semconv.DBSystemNamePostgreSQL},
+		{"postgresql", semconv.DBSystemNamePostgreSQL},
+		{"sqlserver", semconv.DBSystemNameMicrosoftSQLServer},
+		{"mssql", semconv.DBSystemNameMicrosoftSQLServer},
+		{"oracle", semconv.DBSystemNameOracleDB},
+		{"oracle+cx_oracle", semconv.DBSystemNameOracleDB},
+		{"sqlite", semconv.DBSystemNameSqlite},
+		{"sqlite3", semconv.DBSystemNameSqlite},
+		{"mariadb", semconv.DBSystemNameMariaDB},
+		{"cockroachdb", semconv.DBSystemNameCockroachdb},
+		{"cockroach", semconv.DBSystemNameCockroachdb},
+		{"cassandra", semconv.DBSystemNameCassandra},
+		{"redis", semconv.DBSystemNameRedis},
+		{"rediss", semconv.DBSystemNameRedis},
+		{"mongodb", semconv.DBSystemNameMongoDB},
+		{"mongodb+srv", semconv.DBSystemNameMongoDB},
+		{"clickhouse", semconv.DBSystemNameClickhouse},
+		{"trino", semconv.DBSystemNameTrino},
+		{"hive", semconv.DBSystemNameHive},
+		{"spanner", semconv.DBSystemNameGCPSpanner},
+		{"elasticsearch", semconv.DBSystemNameElasticsearch},
+		{"couchbase", semconv.DBSystemNameCouchbase},
+		{"influxdb", semconv.DBSystemNameInfluxdb},
+		{"dynamodb", semconv.DBSystemNameAWSDynamoDB},
+		{"redshift", semconv.DBSystemNameAWSRedshift},
+		{"teradata", semconv.DBSystemNameTeradata},
+		{"firebird", semconv.DBSystemNameFirebirdsql},
+		{"firebirdsql", semconv.DBSystemNameFirebirdsql},
+		{"hbase", semconv.DBSystemNameHBase},
+		// Case-insensitive
+		{"MySQL", semconv.DBSystemNameMySQL},
+		{"POSTGRES", semconv.DBSystemNamePostgreSQL},
+		// Unknown and empty schemes fall back to OtherSQL
+		{"unknown", semconv.DBSystemNameOtherSQL},
+		{"", semconv.DBSystemNameOtherSQL},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.scheme, func(t *testing.T) {
+			assert.Equal(t, tc.expected, dbSystemFromScheme(tc.scheme))
+		})
+	}
+}

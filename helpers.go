@@ -84,7 +84,7 @@ var dbSystemByScheme = map[string]attribute.KeyValue{
 }
 
 // dbSystemFromScheme maps a DSN scheme to the corresponding [semconv.DBSystemNameKey] attribute.
-// It returns [semconv.DBSystemNameOtherSQL] if the scheme is not recognized.
+// It returns [semconv.DBSystemNameOtherSQL] if the scheme is not recognized or missing.
 func dbSystemFromScheme(scheme string) attribute.KeyValue {
 	if v, ok := dbSystemByScheme[strings.ToLower(scheme)]; ok {
 		return v
