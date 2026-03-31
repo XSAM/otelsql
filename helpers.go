@@ -99,15 +99,18 @@ func dbSystemFromScheme(scheme string) attribute.KeyValue {
 func parseDSN(dsn string) (scheme, serverAddress string, serverPort int64, dbName string) {
 	serverPort = -1
 
+	// Extract scheme
 	if i := strings.Index(dsn, "://"); i != -1 {
 		scheme = dsn[:i]
 		dsn = dsn[i+3:]
 	}
 
+	// Skip credentials
 	if i := strings.Index(dsn, "@"); i != -1 {
 		dsn = dsn[i+1:]
 	}
 
+	// Extract db name
 	if i := strings.Index(dsn, "/"); i != -1 {
 		path := dsn[i+1:]
 		if j := strings.Index(path, "?"); j != -1 {
@@ -118,6 +121,7 @@ func parseDSN(dsn string) (scheme, serverAddress string, serverPort int64, dbNam
 		dsn = dsn[:i]
 	}
 
+	// Skip protocol
 	if i := strings.Index(dsn, "("); i != -1 {
 		dsn = dsn[i+1 : len(dsn)-1]
 	}
@@ -126,6 +130,7 @@ func parseDSN(dsn string) (scheme, serverAddress string, serverPort int64, dbNam
 		return scheme, serverAddress, serverPort, dbName
 	}
 
+	// Extract host and port
 	host, portStr, err := net.SplitHostPort(dsn)
 	if err != nil {
 		serverAddress = dsn
