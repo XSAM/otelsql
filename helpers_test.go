@@ -123,6 +123,7 @@ func TestAttributesFromDSN(t *testing.T) {
 			},
 		},
 		{
+			//nolint:gosec
 			dsn: "root:secret@0.0.0.0:42/db?param1=value1&paramN=valueN",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("0.0.0.0"),

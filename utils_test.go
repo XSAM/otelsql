@@ -250,6 +250,7 @@ func prepareMetrics() (sdkmetric.Reader, *sdkmetric.MeterProvider) {
 
 func getDummyAttributesGetter() AttributesGetter {
 	return func(_ context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+		//nolint:prealloc
 		attrs := []attribute.KeyValue{
 			attribute.String("method", string(method)),
 			attribute.String("query", query),
