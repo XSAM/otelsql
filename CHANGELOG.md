@@ -12,6 +12,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - [Go 1.26] to supported versions. (#611)
 
+### Changed
+
+- Upgrade OTel to `v1.42.0`. (#599)
+
 ### Removed
 
 - Drop support for [Go 1.24]. (#611)
