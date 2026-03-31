@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade OTel Semconv to `v1.40.0`. (#606)
+
 ## [0.42.0] - 2026-03-30
 
 ### ⚠️ Notice ⚠️
