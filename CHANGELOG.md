@@ -8,6 +8,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-03-30
+
+### ⚠️ Notice ⚠️
+
+This is the last release that will support the `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable, legacy metrics, and Semantic Conventions `v1.24.0`.
+
 ### Added
 
 - [Go 1.26] to supported versions. (#611)
@@ -517,7 +523,8 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 [Go 1.24]: https://go.dev/doc/go1.24
 [Go 1.23]: https://go.dev/doc/go1.23
 
-[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.41.0...HEAD
+[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.42.0...HEAD
+[0.42.0]: https://github.com/XSAM/otelsql/releases/tag/v0.42.0
 [0.41.0]: https://github.com/XSAM/otelsql/releases/tag/v0.41.0
 [0.40.0]: https://github.com/XSAM/otelsql/releases/tag/v0.40.0
 [0.39.0]: https://github.com/XSAM/otelsql/releases/tag/v0.39.0
