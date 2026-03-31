@@ -31,7 +31,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "mysql://root:otel_password@example.com/db",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameMySQL,
 				semconv.ServerAddress("example.com"),
 				semconv.DBNamespace("db"),
 			},
@@ -39,7 +38,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "mysql://root:otel_password@tcp(example.com)/db?parseTime=true",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameMySQL,
 				semconv.ServerAddress("example.com"),
 				semconv.DBNamespace("db"),
 			},
@@ -47,7 +45,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "mysql://root:otel_password@tcp(example.com:3307)/db?parseTime=true",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameMySQL,
 				semconv.ServerAddress("example.com"),
 				semconv.ServerPort(3307),
 				semconv.DBNamespace("db"),
@@ -56,7 +53,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "mysql://root:otel_password@tcp([2001:db8:1234:5678:9abc:def0:0001]:3307)/db?parseTime=true",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameMySQL,
 				semconv.ServerAddress("2001:db8:1234:5678:9abc:def0:0001"),
 				semconv.ServerPort(3307),
 				semconv.DBNamespace("db"),
@@ -65,7 +61,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "mysql://root:otel_password@tcp(2001:db8:1234:5678:9abc:def0:0001)/db?parseTime=true",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameMySQL,
 				semconv.ServerAddress("2001:db8:1234:5678:9abc:def0:0001"),
 				semconv.DBNamespace("db"),
 			},
@@ -73,7 +68,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "root:secret@tcp(mysql)/db?parseTime=true",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.ServerAddress("mysql"),
 				semconv.DBNamespace("db"),
 			},
@@ -81,7 +75,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "root:secret@tcp(mysql:3307)/db?parseTime=true",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.ServerAddress("mysql"),
 				semconv.ServerPort(3307),
 				semconv.DBNamespace("db"),
@@ -90,14 +83,12 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "root:secret@/db?parseTime=true",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.DBNamespace("db"),
 			},
 		},
 		{
 			dsn: "example.com/db?parseTime=true",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.ServerAddress("example.com"),
 				semconv.DBNamespace("db"),
 			},
@@ -105,7 +96,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "example.com:3307/db?parseTime=true",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.ServerAddress("example.com"),
 				semconv.ServerPort(3307),
 				semconv.DBNamespace("db"),
@@ -114,7 +104,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "example.com:3307",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.ServerAddress("example.com"),
 				semconv.ServerPort(3307),
 			},
@@ -122,21 +111,18 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "example.com:",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.ServerAddress("example.com"),
 			},
 		},
 		{
 			dsn: "example.com",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.ServerAddress("example.com"),
 			},
 		},
 		{
 			dsn: "example.com/db",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.ServerAddress("example.com"),
 				semconv.DBNamespace("db"),
 			},
@@ -144,7 +130,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "postgres://root:secret@0.0.0.0:42/db?param1=value1&paramN=valueN",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNamePostgreSQL,
 				semconv.ServerAddress("0.0.0.0"),
 				semconv.ServerPort(42),
 				semconv.DBNamespace("db"),
@@ -153,7 +138,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "postgres://root:secret@2001:db8:1234:5678:9abc:def0:0001/db?param1=value1&paramN=valueN",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNamePostgreSQL,
 				semconv.ServerAddress("2001:db8:1234:5678:9abc:def0:0001"),
 				semconv.DBNamespace("db"),
 			},
@@ -161,7 +145,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "postgres://root:secret@[2001:db8:1234:5678:9abc:def0:0001]:42/db?param1=value1&paramN=valueN",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNamePostgreSQL,
 				semconv.ServerAddress("2001:db8:1234:5678:9abc:def0:0001"),
 				semconv.ServerPort(42),
 				semconv.DBNamespace("db"),
@@ -170,7 +153,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		{
 			dsn: "root:secret@0.0.0.0:42/db?param1=value1&paramN=valueN",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.ServerAddress("0.0.0.0"),
 				semconv.ServerPort(42),
 				semconv.DBNamespace("db"),
@@ -180,7 +162,6 @@ func TestAttributesFromDSN(t *testing.T) {
 			// In this case, "tcp" will be considered as the server address.
 			dsn: "root:secret@tcp/db?param1=value1&paramN=valueN",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.ServerAddress("tcp"),
 				semconv.DBNamespace("db"),
 			},
@@ -189,7 +170,6 @@ func TestAttributesFromDSN(t *testing.T) {
 			// DSN lacking a db-name
 			dsn: "sqlserver://user:pass@dbhost:1433",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameMicrosoftSQLServer,
 				semconv.ServerAddress("dbhost"),
 				semconv.ServerPort(1433),
 			},
@@ -198,15 +178,12 @@ func TestAttributesFromDSN(t *testing.T) {
 			// DSN lacking a db-name, with trailing '/'
 			dsn: "postgres://user:pass@dbhost/",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNamePostgreSQL,
 				semconv.ServerAddress("dbhost"),
 			},
 		},
 		{
-			// Unrecognized scheme falls back to OtherSQL
 			dsn: "unknown://user:pass@dbhost/db",
 			expected: []attribute.KeyValue{
-				semconv.DBSystemNameOtherSQL,
 				semconv.ServerAddress("dbhost"),
 				semconv.DBNamespace("db"),
 			},
@@ -217,56 +194,6 @@ func TestAttributesFromDSN(t *testing.T) {
 		t.Run(tc.dsn, func(t *testing.T) {
 			gotAttrs := AttributesFromDSN(tc.dsn)
 			assert.Equal(t, tc.expected, gotAttrs)
-		})
-	}
-}
-
-func TestDBSystemFromScheme(t *testing.T) {
-	testCases := []struct {
-		scheme   string
-		expected attribute.KeyValue
-	}{
-		{"mysql", semconv.DBSystemNameMySQL},
-		{"postgres", semconv.DBSystemNamePostgreSQL},
-		{"postgresql", semconv.DBSystemNamePostgreSQL},
-		{"sqlserver", semconv.DBSystemNameMicrosoftSQLServer},
-		{"mssql", semconv.DBSystemNameMicrosoftSQLServer},
-		{"oracle", semconv.DBSystemNameOracleDB},
-		{"oracle+cx_oracle", semconv.DBSystemNameOracleDB},
-		{"sqlite", semconv.DBSystemNameSqlite},
-		{"sqlite3", semconv.DBSystemNameSqlite},
-		{"mariadb", semconv.DBSystemNameMariaDB},
-		{"cockroachdb", semconv.DBSystemNameCockroachdb},
-		{"cockroach", semconv.DBSystemNameCockroachdb},
-		{"cassandra", semconv.DBSystemNameCassandra},
-		{"redis", semconv.DBSystemNameRedis},
-		{"rediss", semconv.DBSystemNameRedis},
-		{"mongodb", semconv.DBSystemNameMongoDB},
-		{"mongodb+srv", semconv.DBSystemNameMongoDB},
-		{"clickhouse", semconv.DBSystemNameClickhouse},
-		{"trino", semconv.DBSystemNameTrino},
-		{"hive", semconv.DBSystemNameHive},
-		{"spanner", semconv.DBSystemNameGCPSpanner},
-		{"elasticsearch", semconv.DBSystemNameElasticsearch},
-		{"couchbase", semconv.DBSystemNameCouchbase},
-		{"influxdb", semconv.DBSystemNameInfluxdb},
-		{"dynamodb", semconv.DBSystemNameAWSDynamoDB},
-		{"redshift", semconv.DBSystemNameAWSRedshift},
-		{"teradata", semconv.DBSystemNameTeradata},
-		{"firebird", semconv.DBSystemNameFirebirdsql},
-		{"firebirdsql", semconv.DBSystemNameFirebirdsql},
-		{"hbase", semconv.DBSystemNameHBase},
-		// Case-insensitive
-		{"MySQL", semconv.DBSystemNameMySQL},
-		{"POSTGRES", semconv.DBSystemNamePostgreSQL},
-		// Unknown and empty schemes fall back to OtherSQL
-		{"unknown", semconv.DBSystemNameOtherSQL},
-		{"", semconv.DBSystemNameOtherSQL},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.scheme, func(t *testing.T) {
-			assert.Equal(t, tc.expected, dbSystemFromScheme(tc.scheme))
 		})
 	}
 }
