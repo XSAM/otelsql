@@ -13,7 +13,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `AttributesFromDSN` now extracts the database name from the DSN and sets it as the `db.namespace` attribute 
   ([`semconv.DBNamespaceKey`](https://opentelemetry.io/docs/specs/semconv/database/database-spans/#common-attributes))
   and the database system (e.g. `mysql` or `postgresql`) and sets it as the `db.system.name` attribute
-  ([`semconv.DBSystemNameKey`](https://opentelemetry.io/docs/specs/semconv/database/database-spans/#common-attributes)).
 
 ## [0.42.0] - 2026-03-30
 
