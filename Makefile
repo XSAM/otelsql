@@ -15,8 +15,8 @@
 TOOLS_MOD_DIR := ./internal/tools
 
 # All directories with go.mod files related to opentelemetry library. Used for building, testing and linting.
-ALL_GO_MOD_DIRS := $(filter-out $(TOOLS_MOD_DIR), $(shell find . -type f -name 'go.mod' -exec dirname {} \; | egrep -v '^./example' | sort)) $(shell find ./example -type f -name 'go.mod' -exec dirname {} \; | sort)
-ALL_COVERAGE_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | egrep -v '^./example|^$(TOOLS_MOD_DIR)' | sort)
+ALL_GO_MOD_DIRS := $(filter-out $(TOOLS_MOD_DIR), $(shell find . -path './.worktrees' -prune -o -type f -name 'go.mod' -exec dirname {} \; | egrep -v '^./example' | sort)) $(shell find ./example -type f -name 'go.mod' -exec dirname {} \; | sort)
+ALL_COVERAGE_MOD_DIRS := $(shell find . -path './.worktrees' -prune -o -type f -name 'go.mod' -exec dirname {} \; | egrep -v '^./example|^$(TOOLS_MOD_DIR)' | sort)
 
 GO = go
 TIMEOUT = 60

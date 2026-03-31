@@ -22,6 +22,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
+//nolint:gosec
 func TestAttributesFromDSN(t *testing.T) {
 	testCases := []struct {
 		dsn      string
@@ -103,7 +104,6 @@ func TestAttributesFromDSN(t *testing.T) {
 			},
 		},
 		{
-			//nolint:gosec
 			dsn: "postgres://root:secret@0.0.0.0:42/db?param1=value1&paramN=valueN",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("0.0.0.0"),
@@ -124,7 +124,6 @@ func TestAttributesFromDSN(t *testing.T) {
 			},
 		},
 		{
-			//nolint:gosec
 			dsn: "root:secret@0.0.0.0:42/db?param1=value1&paramN=valueN",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("0.0.0.0"),
