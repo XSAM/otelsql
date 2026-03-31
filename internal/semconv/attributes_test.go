@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/attribute"
 	semconvlegacy "go.opentelemetry.io/otel/semconv/v1.24.0"
-	semconv "go.opentelemetry.io/otel/semconv/v1.38.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 )
 
 func TestNewDBQueryTextAttributes(t *testing.T) {
