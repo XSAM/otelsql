@@ -52,36 +52,44 @@ func AttributesFromDSN(dsn string) []attribute.KeyValue {
 func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string) {
 	serverPort = -1
 
-	// Extract scheme
+	// [scheme://][user[:password]@][protocol([addr])]/dbname[?param1=value1&paramN=valueN]
+	// Find the schema part.
 	if i := strings.Index(dsn, "://"); i != -1 {
 		dsn = dsn[i+3:]
 	}
 
-	// Skip credentials
+	// [user[:password]@][protocol([addr])]/dbname[?param1=value1&paramN=valueN]
+	// Find credentials part.
 	if i := strings.Index(dsn, "@"); i != -1 {
 		dsn = dsn[i+1:]
 	}
 
-	// Extract db name
+	// [protocol([addr])]/dbname[?param1=value1&paramN=valueN]
 	if i := strings.Index(dsn, "/"); i != -1 {
 		path := dsn[i+1:]
+		// dbname[?param1=value1&paramN=valueN]
 		if j := strings.Index(path, "?"); j != -1 {
 			path = path[:j]
 		}
-
+		// Extract db name
 		dbName = path
+		// [protocol([addr])] or [addr]
 		dsn = dsn[:i]
 	}
 
+	// [protocol([addr])] or [addr]
+	// Find the '(' that starts the address part.
 	// Skip protocol
 	if i := strings.Index(dsn, "("); i != -1 {
 		rest := dsn[i+1:]
 		if j := strings.Index(rest, ")"); j != -1 {
 			rest = rest[:j]
 		}
+		// Remove the protocol part from the DSN.
 		dsn = rest
 	}
 
+	// [addr]
 	if len(dsn) == 0 {
 		return serverAddress, serverPort, dbName
 	}
