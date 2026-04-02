@@ -31,7 +31,6 @@ This is the last release that will support the `OTEL_SEMCONV_STABILITY_OPT_IN` e
 ### Removed
 
 - Drop support for [Go 1.24]. (#611)
->>>>>>> main
 
 ## [0.41.0] - 2025-12-16
 
