@@ -27,7 +27,7 @@ import (
 // It makes the best effort to retrieve values for
 // [semconv.ServerAddressKey], [semconv.ServerPortKey], and [semconv.DBNamespaceKey].
 func AttributesFromDSN(dsn string) []attribute.KeyValue {
-	_, serverAddress, serverPort, dbName := parseDSN(dsn)
+	serverAddress, serverPort, dbName := parseDSN(dsn)
 
 	var attrs []attribute.KeyValue
 
@@ -46,15 +46,14 @@ func AttributesFromDSN(dsn string) []attribute.KeyValue {
 	return attrs
 }
 
-// parseDSN parses a DSN string and returns the scheme, server address, server port, and database name.
+// parseDSN parses a DSN string and returns the server address, server port, and database name.
 // It handles the format: [scheme://][user[:password]@][protocol([addr])]/dbname[?params]
-// scheme, serverAddress and dbName are empty strings if not found. serverPort is -1 if not found.
-func parseDSN(dsn string) (scheme, serverAddress string, serverPort int64, dbName string) {
+// serverAddress and dbName are empty strings if not found. serverPort is -1 if not found.
+func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string) {
 	serverPort = -1
 
 	// Extract scheme
 	if i := strings.Index(dsn, "://"); i != -1 {
-		scheme = dsn[:i]
 		dsn = dsn[i+3:]
 	}
 
@@ -76,18 +75,22 @@ func parseDSN(dsn string) (scheme, serverAddress string, serverPort int64, dbNam
 
 	// Skip protocol
 	if i := strings.Index(dsn, "("); i != -1 {
-		dsn = dsn[i+1 : len(dsn)-1]
+		rest := dsn[i+1:]
+		if j := strings.Index(rest, ")"); j != -1 {
+			rest = rest[:j]
+		}
+		dsn = rest
 	}
 
 	if len(dsn) == 0 {
-		return scheme, serverAddress, serverPort, dbName
+		return serverAddress, serverPort, dbName
 	}
 
 	// Extract host and port
 	host, portStr, err := net.SplitHostPort(dsn)
 	if err != nil {
 		serverAddress = dsn
-		return scheme, serverAddress, serverPort, dbName
+		return serverAddress, serverPort, dbName
 	}
 
 	serverAddress = host
@@ -96,5 +99,5 @@ func parseDSN(dsn string) (scheme, serverAddress string, serverPort int64, dbNam
 		serverPort = port
 	}
 
-	return scheme, serverAddress, serverPort, dbName
+	return serverAddress, serverPort, dbName
 }

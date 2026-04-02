@@ -188,6 +188,13 @@ func TestAttributesFromDSN(t *testing.T) {
 				semconv.DBNamespace("db"),
 			},
 		},
+		{
+			// malformed DSN shouldn't fail
+			dsn: "root:pass@tcp(dbhost",
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("dbhost"),
+			},
+		},
 	}
 
 	for _, tc := range testCases {
