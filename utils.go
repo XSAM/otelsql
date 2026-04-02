@@ -101,10 +101,10 @@ func recordDuration(
 		attributes = append(attributes, internalsemconv.ErrorTypeAttributes(err)...)
 	}
 
-	instruments.duration.Record(
+	instruments.duration.RecordSet(
 		ctx,
 		duration.Seconds(),
-		metric.WithAttributeSet(attribute.NewSet(attributes...)),
+		attribute.NewSet(attributes...),
 	)
 }
 
