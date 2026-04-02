@@ -97,14 +97,8 @@ test-coverage:
 	  (cd "$${dir}" && \
 	    $(GO) list ./... \
 	    | grep -v third_party \
-	    | grep -v internal \
 	    | xargs $(GO) test -coverpkg=./... -covermode=$(COVERAGE_MODE) -coverprofile="$(COVERAGE_PROFILE)" && \
-	    $(GO) list ./... \
-	    | grep -v third_party \
-	    | grep internal \
-	    | xargs $(GO) test -coverpkg=$$($(GO) list ./... | grep internal | tr '\n' ',') -covermode=$(COVERAGE_MODE) -coverprofile="$(COVERAGE_PROFILE).internal" && \
-	    grep -v "^mode:" "$(COVERAGE_PROFILE).internal" >> "$(COVERAGE_PROFILE)" && \
-	  $(GO) tool cover -html=$(COVERAGE_PROFILE) -o coverage.html); \
+	  $(GO) tool cover -html=coverage.out -o coverage.html); \
 	  [ -f "$${dir}/coverage.out" ] && cat "$${dir}/coverage.out" >> coverage.txt; \
 	done; \
 	sed -i.bak -e '2,$$ { /^mode: /d; }' coverage.txt
