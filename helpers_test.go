@@ -199,8 +199,8 @@ func TestAttributesFromDSN(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.dsn, func(t *testing.T) {
-			gotAttrs := AttributesFromDSN(tc.dsn)
-			assert.Equal(t, tc.expected, gotAttrs)
+			got := AttributesFromDSN(tc.dsn)
+			assert.Equal(t, tc.expected, got)
 		})
 	}
 }
