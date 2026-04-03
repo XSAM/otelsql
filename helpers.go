@@ -88,7 +88,6 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 	// Find the '(' that starts the address part.
 	openParen := strings.Index(dsn, "(")
 	if openParen != -1 {
-		// Skip protocol
 		rest := dsn[openParen+1:]
 		if closeParen := strings.Index(rest, ")"); closeParen != -1 {
 			rest = rest[:closeParen]
