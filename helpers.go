@@ -54,36 +54,40 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 
 	// [scheme://][user[:password]@][protocol([addr])]/dbname[?param1=value1&paramN=valueN]
 	// Find the schema part.
-	if i := strings.Index(dsn, "://"); i != -1 {
-		dsn = dsn[i+3:]
+	schemaIndex := strings.Index(dsn, "://")
+	if schemaIndex != -1 {
+		// Remove the schema part from the DSN.
+		dsn = dsn[schemaIndex+3:]
 	}
 
 	// [user[:password]@][protocol([addr])]/dbname[?param1=value1&paramN=valueN]
 	// Find credentials part.
-	if i := strings.Index(dsn, "@"); i != -1 {
-		dsn = dsn[i+1:]
+	atIndex := strings.Index(dsn, "@")
+	if atIndex != -1 {
+		// Remove the credential part from the DSN.
+		dsn = dsn[atIndex+1:]
 	}
 
 	// [protocol([addr])]/dbname[?param1=value1&paramN=valueN]
-	if i := strings.Index(dsn, "/"); i != -1 {
-		path := dsn[i+1:]
+	if pathIndex := strings.Index(dsn, "/"); pathIndex != -1 {
+		path := dsn[pathIndex+1:]
 		// dbname[?param1=value1&paramN=valueN]
-		if j := strings.Index(path, "?"); j != -1 {
-			path = path[:j]
+		if questionMarkIndex := strings.Index(path, "?"); questionMarkIndex != -1 {
+			path = path[:questionMarkIndex]
 		}
 		// Extract db name
 		dbName = path
 		// [protocol([addr])] or [addr]
-		dsn = dsn[:i]
+		dsn = dsn[:pathIndex]
 	}
 
 	// [protocol([addr])] or [addr]
 	// Find the '(' that starts the address part.
 	// Skip protocol
-	if i := strings.Index(dsn, "("); i != -1 {
-		rest := dsn[i+1:]
-		if j := strings.Index(rest, ")"); j != -1 {
-			rest = rest[:j]
+	if openParen := strings.Index(dsn, "("); openParen != -1 {
+		rest := dsn[openParen+1:]
+		if closeParen := strings.Index(rest, ")"); closeParen != -1 {
+			rest = rest[:closeParen]
 		}
 		// Remove the protocol part from the DSN.
 		dsn = rest
