@@ -69,7 +69,10 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 	}
 
 	// [protocol([addr])]/dbname[?param1=value1&paramN=valueN]
-	if pathIndex := strings.Index(dsn, "/"); pathIndex != -1 {
+	// Find the '/' that separates the address part from the database part.
+	pathIndex := strings.Index(dsn, "/")
+	if pathIndex != -1 {
+		// Remove the path part from the DSN.
 		path := dsn[pathIndex+1:]
 		// dbname[?param1=value1&paramN=valueN]
 		if questionMarkIndex := strings.Index(path, "?"); questionMarkIndex != -1 {
@@ -83,8 +86,9 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 
 	// [protocol([addr])] or [addr]
 	// Find the '(' that starts the address part.
-	// Skip protocol
-	if openParen := strings.Index(dsn, "("); openParen != -1 {
+	openParen := strings.Index(dsn, "(")
+	if openParen != -1 {
+		// Skip protocol
 		rest := dsn[openParen+1:]
 		if closeParen := strings.Index(rest, ")"); closeParen != -1 {
 			rest = rest[:closeParen]
