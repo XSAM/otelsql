@@ -89,7 +89,7 @@ func ExampleRegister() {
 	}
 
 	// Connect to database
-	db, err := otelsql.Open(driverName, mysqlDSN)
+	db, err := sql.Open(driverName, mysqlDSN)
 	if err != nil {
 		panic(err)
 	}
