@@ -29,8 +29,11 @@ var registerLock sync.Mutex
 
 var maxDriverSlot = 1000
 
-// Register initializes and registers OTel wrapped database driver
-// identified by its driverName, using provided Option.
+// Register initializes and registers an OTel-wrapped database driver
+// identified by driverName and returns the generated driver name to use with
+// database/sql APIs.
+// Because the returned name differs from driverName, use [Open] or [OpenDB]
+// instead when db libs depend on the original driver name.
 // It is possible to register multiple wrappers for the same database driver if
 // needing different Option for different connections.
 func Register(driverName string, options ...Option) (string, error) {
