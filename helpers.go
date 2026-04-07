@@ -16,6 +16,7 @@ package otelsql
 
 import (
 	"net"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -55,6 +56,7 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 	// [scheme://][user[:password]@][protocol([addr])][/dbOrInstanceName][?param1=value1&paramN=valueN]
 	// Find the schema part.
 	var scheme string
+
 	schemaIndex := strings.Index(dsn, "://")
 	if schemaIndex != -1 {
 		scheme = dsn[:schemaIndex]
@@ -81,6 +83,7 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 	// [protocol([addr])][/dbOrInstanceName]
 	// Find the '/' that separates the address part from the path (database or instance name).
 	pathIndex := strings.Index(dsn, "/")
+
 	var path string
 	if pathIndex != -1 {
 		path = dsn[pathIndex+1:]
@@ -91,11 +94,8 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 
 	if scheme == "sqlserver" {
 		// sqlserver uses the "database" query param; the path is the instance name, not the database.
-		for _, part := range strings.Split(queryString, "&") {
-			if kv := strings.SplitN(part, "=", 2); len(kv) == 2 && kv[0] == "database" {
-				dbName = kv[1]
-				break
-			}
+		if params, err := url.ParseQuery(queryString); err == nil {
+			dbName = params.Get("database")
 		}
 	} else {
 		// All other drivers encode the database name in the path.

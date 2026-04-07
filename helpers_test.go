@@ -22,7 +22,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 )
 
-//nolint:gosec
 func TestAttributesFromDSN(t *testing.T) {
 	testCases := []struct {
 		dsn      string
