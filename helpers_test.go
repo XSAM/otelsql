@@ -195,6 +195,56 @@ func TestAttributesFromDSN(t *testing.T) {
 				semconv.ServerAddress("dbhost"),
 			},
 		},
+		// MS SQL Server DSNs (go-mssqldb driver)
+		{
+			// database name from "database" query param
+			dsn: "sqlserver://user:pass@dbhost:1433?database=db",
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("dbhost"),
+				semconv.ServerPort(1433),
+				semconv.DBNamespace("db"),
+			},
+		},
+		{
+			// instance name in path, database name from "database" query param
+			dsn: "sqlserver://user:pass@dbhost/SQLEXPRESS?database=db",
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("dbhost"),
+				semconv.DBNamespace("db"),
+			},
+		},
+		{
+			// IPv6 host with port, database name from "database" query param
+			dsn: "sqlserver://user:pass@[::1]:1433?database=db",
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("::1"),
+				semconv.ServerPort(1433),
+				semconv.DBNamespace("db"),
+			},
+		},
+		{
+			// Windows auth (no credentials), database name from "database" query param
+			dsn: "sqlserver://dbhost:1433?database=db",
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("dbhost"),
+				semconv.ServerPort(1433),
+				semconv.DBNamespace("db"),
+			},
+		},
+		{
+			// instance name in path, no "database" query param — database name unknown
+			dsn: "sqlserver://user:pass@dbhost/SQLEXPRESS",
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("dbhost"),
+			},
+		},
+		{
+			// no path, no "database" query param — database name unknown
+			dsn: "sqlserver://user:pass@dbhost",
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("dbhost"),
+			},
+		},
 	}
 
 	for _, tc := range testCases {

@@ -47,20 +47,22 @@ func AttributesFromDSN(dsn string) []attribute.KeyValue {
 }
 
 // parseDSN parses a DSN string and returns the server address, server port, and database name.
-// It handles the format: [scheme://][user[:password]@][protocol([addr])]/dbname[?params]
+// It handles the format: [scheme://][user[:password]@][protocol([addr])][/dbOrInstanceName][?param1=value1&paramN=valueN]
 // serverAddress and dbName are empty strings if not found. serverPort is -1 if not found.
 func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string) {
 	serverPort = -1
 
-	// [scheme://][user[:password]@][protocol([addr])]/dbname[?param1=value1&paramN=valueN]
+	// [scheme://][user[:password]@][protocol([addr])][/dbOrInstanceName][?param1=value1&paramN=valueN]
 	// Find the schema part.
+	var scheme string
 	schemaIndex := strings.Index(dsn, "://")
 	if schemaIndex != -1 {
+		scheme = dsn[:schemaIndex]
 		// Remove the schema part from the DSN.
 		dsn = dsn[schemaIndex+3:]
 	}
 
-	// [user[:password]@][protocol([addr])]/dbname[?param1=value1&paramN=valueN]
+	// [user[:password]@][protocol([addr])][/dbOrInstanceName][?param1=value1&paramN=valueN]
 	// Find credentials part.
 	atIndex := strings.Index(dsn, "@")
 	if atIndex != -1 {
@@ -68,20 +70,36 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 		dsn = dsn[atIndex+1:]
 	}
 
-	// [protocol([addr])]/dbname[?param1=value1&paramN=valueN]
-	// Find the '/' that separates the address part from the database part.
+	// [protocol([addr])][/dbOrInstanceName][?param1=value1&paramN=valueN]
+	// Find the '?' that separates the query string.
+	var queryString string
+	if questionMarkIndex := strings.Index(dsn, "?"); questionMarkIndex != -1 {
+		queryString = dsn[questionMarkIndex+1:]
+		dsn = dsn[:questionMarkIndex]
+	}
+
+	// [protocol([addr])][/dbOrInstanceName]
+	// Find the '/' that separates the address part from the path (database or instance name).
 	pathIndex := strings.Index(dsn, "/")
+	var path string
 	if pathIndex != -1 {
-		// Remove the path part from the DSN.
-		path := dsn[pathIndex+1:]
-		// dbname[?param1=value1&paramN=valueN]
-		if questionMarkIndex := strings.Index(path, "?"); questionMarkIndex != -1 {
-			path = path[:questionMarkIndex]
-		}
-		// Extract db name
-		dbName = path
+		path = dsn[pathIndex+1:]
+
 		// [protocol([addr])] or [addr]
 		dsn = dsn[:pathIndex]
+	}
+
+	if scheme == "sqlserver" {
+		// sqlserver uses the "database" query param; the path is the instance name, not the database.
+		for _, part := range strings.Split(queryString, "&") {
+			if kv := strings.SplitN(part, "=", 2); len(kv) == 2 && kv[0] == "database" {
+				dbName = kv[1]
+				break
+			}
+		}
+	} else {
+		// All other drivers encode the database name in the path.
+		dbName = path
 	}
 
 	// [protocol([addr])] or [addr]
