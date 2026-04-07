@@ -248,6 +248,7 @@ func prepareMetrics() (sdkmetric.Reader, *sdkmetric.MeterProvider) {
 	return metricReader, meterProvider
 }
 
+//nolint:gosec
 func getDummyAttributesGetter() AttributesGetter {
 	return func(_ context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
 		attrs := []attribute.KeyValue{
