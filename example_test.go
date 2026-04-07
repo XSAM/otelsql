@@ -18,7 +18,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 
-	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 
 	"github.com/XSAM/otelsql"
 )
@@ -89,7 +89,7 @@ func ExampleRegister() {
 	}
 
 	// Connect to database
-	db, err := otelsql.Open(driverName, mysqlDSN)
+	db, err := sql.Open(driverName, mysqlDSN)
 	if err != nil {
 		panic(err)
 	}

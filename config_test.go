@@ -23,7 +23,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	semconvlegacy "go.opentelemetry.io/otel/semconv/v1.24.0"
-	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 	"go.opentelemetry.io/otel/trace"
 
 	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
