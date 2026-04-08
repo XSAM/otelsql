@@ -14,7 +14,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
-- Implement `driver.Validator` on `otConn` so that `database/sql` connection pool health checks are properly delegated to the underlying driver connection.
+- Implement `driver.Validator` on `otConn` so that `database/sql` connection pool health checks are properly delegated to the underlying driver connection. (#619)
 
 ## [0.42.0] - 2026-03-30
 
