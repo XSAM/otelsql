@@ -34,6 +34,7 @@ var (
 	_ driver.ConnBeginTx        = (*otConn)(nil)
 	_ driver.SessionResetter    = (*otConn)(nil)
 	_ driver.NamedValueChecker  = (*otConn)(nil)
+	_ driver.Validator          = (*otConn)(nil)
 )
 
 type otConn struct {
@@ -292,6 +293,16 @@ func (c *otConn) CheckNamedValue(namedValue *driver.NamedValue) error {
 	}
 
 	return namedValueChecker.CheckNamedValue(namedValue)
+}
+
+// IsValid implements driver.Validator. It returns false if the underlying Conn
+// implements driver.Validator and reports itself as invalid. Otherwise it returns true.
+func (c *otConn) IsValid() bool {
+	if v, ok := c.Conn.(driver.Validator); ok {
+		return v.IsValid()
+	}
+
+	return true
 }
 
 // Raw returns the underlying driver connection
