@@ -34,8 +34,6 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
-
-	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 )
 
 func TestRecordSpanError(t *testing.T) {
@@ -281,18 +279,17 @@ var keep SpanFilter = func(_ context.Context, _ Method, _ string, _ []driver.Nam
 //nolint:maintidx
 func TestRecordMetric(t *testing.T) {
 	tests := []struct {
-		name                  string
-		cfgOptions            []Option
-		semConvStabilityOptIn internalsemconv.OTelSemConvStabilityOptInType
-		method                Method
-		query                 string
-		args                  []driver.NamedValue
-		err                   error
-		wantMetricData        metricdata.ResourceMetrics
+		name           string
+		cfgOptions     []Option
+		method         Method
+		query          string
+		args           []driver.NamedValue
+		err            error
+		wantMetricData metricdata.ResourceMetrics
 	}{
 		{
 			name:                  "metric with no error",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
+
 			method:                MethodConnQuery,
 			query:                 "example query",
 			wantMetricData: metricdata.ResourceMetrics{
@@ -349,7 +346,7 @@ func TestRecordMetric(t *testing.T) {
 		},
 		{
 			name:                  "metric with an error",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
+
 			method:                MethodConnQuery,
 			query:                 "example query",
 			err:                   assert.AnError,
@@ -408,7 +405,7 @@ func TestRecordMetric(t *testing.T) {
 		},
 		{
 			name:                  "metric with skip error but not disabled",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
+
 			method:                MethodConnQuery,
 			query:                 "example query",
 			err:                   driver.ErrSkip,
@@ -467,7 +464,7 @@ func TestRecordMetric(t *testing.T) {
 		},
 		{
 			name:                  "metric with skip error but disabled",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
+
 			cfgOptions:            []Option{WithDisableSkipErrMeasurement(true)},
 			method:                MethodConnQuery,
 			query:                 "example query",
@@ -526,7 +523,7 @@ func TestRecordMetric(t *testing.T) {
 		},
 		{
 			name:                  "metric with instrumentAttributesGetter",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
+
 			cfgOptions: []Option{
 				WithInstrumentAttributesGetter(
 					func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
@@ -591,7 +588,7 @@ func TestRecordMetric(t *testing.T) {
 		},
 		{
 			name:                  "metric with instrumentErrorAttributesGetter",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
+
 			cfgOptions: []Option{WithInstrumentErrorAttributesGetter(func(_ error) []attribute.KeyValue {
 				return []attribute.KeyValue{attribute.String("errorKey", "errorVal")}
 			})},
@@ -654,7 +651,7 @@ func TestRecordMetric(t *testing.T) {
 		},
 		{
 			name:                  "metric with instrumentErrorAttributesGetter and no error",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInStable,
+
 			cfgOptions: []Option{WithInstrumentErrorAttributesGetter(func(_ error) []attribute.KeyValue {
 				return []attribute.KeyValue{attribute.String("errorKey", "errorVal")}
 			})},
@@ -712,423 +709,6 @@ func TestRecordMetric(t *testing.T) {
 				},
 			},
 		},
-		{
-			name:                  "metric with OTelSemConvStabilityOptInDup",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInDup,
-			method:                MethodConnQuery,
-			query:                 "example query",
-			wantMetricData: metricdata.ResourceMetrics{
-				Resource: resource.Default(),
-				ScopeMetrics: []metricdata.ScopeMetrics{
-					{
-						Scope: instrumentation.Scope{
-							Name:    "github.com/XSAM/otelsql",
-							Version: Version(),
-						},
-						Metrics: []metricdata.Metrics{
-							// Legacy format metric
-							{
-								Name:        "db.sql.latency",
-								Description: "The latency of calls in milliseconds",
-								Unit:        "ms",
-								Data: metricdata.Histogram[float64]{
-									Temporality: metricdata.CumulativeTemporality,
-									DataPoints: []metricdata.HistogramDataPoint[float64]{
-										{
-											Count: 1,
-											Sum:   2000, // 2s converted to ms (2 * 1000)
-											Bounds: []float64{
-												0,
-												5,
-												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
-											},
-											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-											Min:          metricdata.NewExtrema[float64](2000),
-											Max:          metricdata.NewExtrema[float64](2000),
-											Attributes: attribute.NewSet(
-												defaultattribute,
-												attribute.String("method", string(MethodConnQuery)),
-												attribute.String("status", "ok"),
-											),
-										},
-									},
-								},
-							},
-							// New format metric
-							{
-								Name:        "db.client.operation.duration",
-								Description: "Duration of database client operations.",
-								Unit:        "s",
-								Data: metricdata.Histogram[float64]{
-									Temporality: metricdata.CumulativeTemporality,
-									DataPoints: []metricdata.HistogramDataPoint[float64]{
-										{
-											Count: 1,
-											Sum:   2,
-											Bounds: []float64{
-												0,
-												5,
-												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
-											},
-											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-											Min:          metricdata.NewExtrema[float64](2),
-											Max:          metricdata.NewExtrema[float64](2),
-											Attributes: attribute.NewSet(
-												defaultattribute,
-												attribute.String("db.operation.name", string(MethodConnQuery)),
-											),
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name:                  "metric with OTelSemConvStabilityOptInNone",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInNone,
-			method:                MethodConnQuery,
-			query:                 "example query",
-			wantMetricData: metricdata.ResourceMetrics{
-				Resource: resource.Default(),
-				ScopeMetrics: []metricdata.ScopeMetrics{
-					{
-						Scope: instrumentation.Scope{
-							Name:    "github.com/XSAM/otelsql",
-							Version: Version(),
-						},
-						Metrics: []metricdata.Metrics{
-							// Only legacy format metric
-							{
-								Name:        "db.sql.latency",
-								Description: "The latency of calls in milliseconds",
-								Unit:        "ms",
-								Data: metricdata.Histogram[float64]{
-									Temporality: metricdata.CumulativeTemporality,
-									DataPoints: []metricdata.HistogramDataPoint[float64]{
-										{
-											Count: 1,
-											Sum:   2000, // 2s converted to ms (2 * 1000)
-											Bounds: []float64{
-												0,
-												5,
-												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
-											},
-											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-											Min:          metricdata.NewExtrema[float64](2000),
-											Max:          metricdata.NewExtrema[float64](2000),
-											Attributes: attribute.NewSet(
-												defaultattribute,
-												attribute.String("method", string(MethodConnQuery)),
-												attribute.String("status", "ok"),
-											),
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name:                  "metric with OTelSemConvStabilityOptInDup and error",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInDup,
-			method:                MethodConnQuery,
-			query:                 "example query",
-			err:                   assert.AnError,
-			wantMetricData: metricdata.ResourceMetrics{
-				Resource: resource.Default(),
-				ScopeMetrics: []metricdata.ScopeMetrics{
-					{
-						Scope: instrumentation.Scope{
-							Name:    "github.com/XSAM/otelsql",
-							Version: Version(),
-						},
-						Metrics: []metricdata.Metrics{
-							// Legacy format metric with error
-							{
-								Name:        "db.sql.latency",
-								Description: "The latency of calls in milliseconds",
-								Unit:        "ms",
-								Data: metricdata.Histogram[float64]{
-									Temporality: metricdata.CumulativeTemporality,
-									DataPoints: []metricdata.HistogramDataPoint[float64]{
-										{
-											Count: 1,
-											Sum:   2000, // 2s converted to ms (2 * 1000)
-											Bounds: []float64{
-												0,
-												5,
-												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
-											},
-											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-											Min:          metricdata.NewExtrema[float64](2000),
-											Max:          metricdata.NewExtrema[float64](2000),
-											Attributes: attribute.NewSet(
-												defaultattribute,
-												attribute.String("method", string(MethodConnQuery)),
-												attribute.String("status", "error"),
-											),
-										},
-									},
-								},
-							},
-							// New format metric with error
-							{
-								Name:        "db.client.operation.duration",
-								Description: "Duration of database client operations.",
-								Unit:        "s",
-								Data: metricdata.Histogram[float64]{
-									Temporality: metricdata.CumulativeTemporality,
-									DataPoints: []metricdata.HistogramDataPoint[float64]{
-										{
-											Count: 1,
-											Sum:   2,
-											Bounds: []float64{
-												0,
-												5,
-												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
-											},
-											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-											Min:          metricdata.NewExtrema[float64](2),
-											Max:          metricdata.NewExtrema[float64](2),
-											Attributes: attribute.NewSet(
-												defaultattribute,
-												attribute.String("db.operation.name", string(MethodConnQuery)),
-												attribute.String("error.type", "*errors.errorString"),
-											),
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name:                  "metric with OTelSemConvStabilityOptInNone and error",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInNone,
-			method:                MethodConnQuery,
-			query:                 "example query",
-			err:                   assert.AnError,
-			wantMetricData: metricdata.ResourceMetrics{
-				Resource: resource.Default(),
-				ScopeMetrics: []metricdata.ScopeMetrics{
-					{
-						Scope: instrumentation.Scope{
-							Name:    "github.com/XSAM/otelsql",
-							Version: Version(),
-						},
-						Metrics: []metricdata.Metrics{
-							// Only legacy format metric with error
-							{
-								Name:        "db.sql.latency",
-								Description: "The latency of calls in milliseconds",
-								Unit:        "ms",
-								Data: metricdata.Histogram[float64]{
-									Temporality: metricdata.CumulativeTemporality,
-									DataPoints: []metricdata.HistogramDataPoint[float64]{
-										{
-											Count: 1,
-											Sum:   2000, // 2s converted to ms (2 * 1000)
-											Bounds: []float64{
-												0,
-												5,
-												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
-											},
-											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-											Min:          metricdata.NewExtrema[float64](2000),
-											Max:          metricdata.NewExtrema[float64](2000),
-											Attributes: attribute.NewSet(
-												defaultattribute,
-												attribute.String("method", string(MethodConnQuery)),
-												attribute.String("status", "error"),
-											),
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name:                  "metric with OTelSemConvStabilityOptInDup with ErrSkip and DisableSkipErrMeasurement",
-			semConvStabilityOptIn: internalsemconv.OTelSemConvStabilityOptInDup,
-			cfgOptions:            []Option{WithDisableSkipErrMeasurement(true)},
-			method:                MethodConnQuery,
-			query:                 "example query",
-			err:                   driver.ErrSkip,
-			wantMetricData: metricdata.ResourceMetrics{
-				Resource: resource.Default(),
-				ScopeMetrics: []metricdata.ScopeMetrics{
-					{
-						Scope: instrumentation.Scope{
-							Name:    "github.com/XSAM/otelsql",
-							Version: Version(),
-						},
-						Metrics: []metricdata.Metrics{
-							// Legacy format metric with ok status despite error
-							{
-								Name:        "db.sql.latency",
-								Description: "The latency of calls in milliseconds",
-								Unit:        "ms",
-								Data: metricdata.Histogram[float64]{
-									Temporality: metricdata.CumulativeTemporality,
-									DataPoints: []metricdata.HistogramDataPoint[float64]{
-										{
-											Count: 1,
-											Sum:   2000,
-											Bounds: []float64{
-												0,
-												5,
-												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
-											},
-											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-											Min:          metricdata.NewExtrema[float64](2000),
-											Max:          metricdata.NewExtrema[float64](2000),
-											Attributes: attribute.NewSet(
-												defaultattribute,
-												attribute.String("method", string(MethodConnQuery)),
-												attribute.String("status", "ok"),
-											),
-										},
-									},
-								},
-							},
-							// New format metric without error attributes
-							{
-								Name:        "db.client.operation.duration",
-								Description: "Duration of database client operations.",
-								Unit:        "s",
-								Data: metricdata.Histogram[float64]{
-									Temporality: metricdata.CumulativeTemporality,
-									DataPoints: []metricdata.HistogramDataPoint[float64]{
-										{
-											Count: 1,
-											Sum:   2,
-											Bounds: []float64{
-												0,
-												5,
-												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
-											},
-											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-											Min:          metricdata.NewExtrema[float64](2),
-											Max:          metricdata.NewExtrema[float64](2),
-											Attributes: attribute.NewSet(
-												defaultattribute,
-												attribute.String("db.operation.name", string(MethodConnQuery)),
-											),
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
 	}
 
 	for _, tt := range tests {
@@ -1136,7 +716,6 @@ func TestRecordMetric(t *testing.T) {
 			metricReader, meterProvider := prepareMetrics()
 			cfg := newConfig(
 				append(tt.cfgOptions, WithMeterProvider(meterProvider), WithAttributes(defaultattribute))...)
-			cfg.SemConvStabilityOptIn = tt.semConvStabilityOptIn
 
 			timeNow = func() time.Time {
 				return time.Unix(1, 0)
@@ -1235,8 +814,6 @@ func TestCreateSpan(t *testing.T) {
 			// Setup
 			sr, provider := newTracerProvider()
 			tracer := provider.Tracer("test")
-
-			t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
 
 			cfg := newConfig(WithAttributes(defaultattribute))
 			cfg.Tracer = tracer

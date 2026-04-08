@@ -18,12 +18,10 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
-	"slices"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 	"go.opentelemetry.io/otel/trace"
 
@@ -57,34 +55,6 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "")
 	}
-}
-
-func recordLegacyLatency(
-	ctx context.Context,
-	instruments *instruments,
-	cfg config,
-	duration time.Duration,
-	attributes []attribute.KeyValue,
-	method Method,
-	err error,
-) {
-	attributes = append(attributes, queryMethodKey.String(string(method)))
-
-	if err != nil {
-		if cfg.DisableSkipErrMeasurement && errors.Is(err, driver.ErrSkip) {
-			attributes = append(attributes, queryStatusKey.String("ok"))
-		} else {
-			attributes = append(attributes, queryStatusKey.String("error"))
-		}
-	} else {
-		attributes = append(attributes, queryStatusKey.String("ok"))
-	}
-
-	instruments.legacyLatency.Record(
-		ctx,
-		float64(duration.Nanoseconds())/1e6,
-		metric.WithAttributeSet(attribute.NewSet(attributes...)),
-	)
 }
 
 func recordDuration(
@@ -145,16 +115,7 @@ func recordMetric(
 		attributes = append(attributes, getterAttributes...)
 		attributes = append(attributes, errAttributes...)
 
-		switch cfg.SemConvStabilityOptIn {
-		case internalsemconv.OTelSemConvStabilityOptInStable:
-			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
-		case internalsemconv.OTelSemConvStabilityOptInDup:
-			// Intentionally emit both legacy and new metrics for backward compatibility.
-			recordLegacyLatency(ctx, instruments, cfg, duration, slices.Clone(attributes), method, err)
-			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
-		case internalsemconv.OTelSemConvStabilityOptInNone:
-			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, err)
-		}
+		recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
 	}
 }
 
@@ -172,7 +133,7 @@ func createSpan(
 	if span.IsRecording() {
 		var dbStatementAttributes []attribute.KeyValue
 		if enableDBStatement && !cfg.SpanOptions.DisableQuery {
-			dbStatementAttributes = cfg.DBQueryTextAttributes(query)
+			dbStatementAttributes = internalsemconv.DBQueryTextAttributes(query)
 		}
 
 		var getterAttributes []attribute.KeyValue

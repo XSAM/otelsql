@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Removed
+
+- **BREAKING** Remove support for `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable, legacy `db.sql.latency` metric, and `db.statement` span attribute. Only stable Semantic Conventions are now used. (#617)
+
 ### Changed
 
 - Upgrade OTel Semconv to `v1.40.0`. (#606)

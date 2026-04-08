@@ -21,8 +21,6 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-
-	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
 )
 
 var (
@@ -43,7 +41,6 @@ var (
 
 func BenchmarkRecordMetric(b *testing.B) {
 	cfg := newConfig()
-	cfg.SemConvStabilityOptIn = internalsemconv.OTelSemConvStabilityOptInStable
 	// Prevent reallocation of Attributes slice, which increase the chance to detect data races.
 	cfg.Attributes = make([]attribute.KeyValue, 0, 10)
 
@@ -99,7 +96,6 @@ func BenchmarkRecordMetric(b *testing.B) {
 func BenchmarkCreateSpan(b *testing.B) {
 	cfg := newConfig()
 	cfg.Tracer = sdktrace.NewTracerProvider().Tracer("BenchmarkCreateSpan")
-	cfg.SemConvStabilityOptIn = internalsemconv.OTelSemConvStabilityOptInStable
 	// Prevent reallocation of Attributes slice, which increase the chance to detect data races.
 	cfg.Attributes = make([]attribute.KeyValue, 0, 10)
 

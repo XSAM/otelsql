@@ -340,8 +340,6 @@ func TestOtConn_ExecContext(t *testing.T) {
 					ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 					// New conn
-					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
-
 					cfg := newConfig()
 					cfg.Tracer = tracer
 					cfg.SpanOptions.DisableQuery = tc.disableQuery
@@ -446,8 +444,6 @@ func TestOtConn_QueryContext(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
-
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
@@ -589,8 +585,6 @@ func TestOtConn_PrepareContext(t *testing.T) {
 									ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 									// New conn
-									t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
-
 									cfg := newConfig()
 									cfg.Tracer = tracer
 									cfg.SpanOptions.DisableQuery = tc.disableQuery
@@ -709,8 +703,6 @@ func TestOtConn_BeginTx(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
-
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -814,8 +806,6 @@ func TestOtConn_ResetSession(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							// New conn
-							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
-
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.OmitConnResetSession = omitResetSession

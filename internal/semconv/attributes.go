@@ -23,41 +23,14 @@ import (
 	"reflect"
 
 	"go.opentelemetry.io/otel/attribute"
-	semconvlegacy "go.opentelemetry.io/otel/semconv/v1.24.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 )
 
-// NewDBQueryTextAttributes returns a function that generates appropriate database query attributes
-// based on the provided OTelSemConvStabilityOptInType.
-//
-//   - OTelSemConvStabilityOptInNone: Only legacy db.statement attribute
-//   - OTelSemConvStabilityOptInDup: Both legacy db.statement and stable db.query.text attributes
-//   - OTelSemConvStabilityOptInStable: Only stable db.query.text attribute
-func NewDBQueryTextAttributes(optInType OTelSemConvStabilityOptInType) func(query string) []attribute.KeyValue {
-	switch optInType {
-	case OTelSemConvStabilityOptInDup:
-		// Emit both legacy and stable attributes
-		return func(query string) []attribute.KeyValue {
-			return []attribute.KeyValue{
-				semconvlegacy.DBStatementKey.String(query),
-				semconv.DBQueryTextKey.String(query),
-			}
-		}
-	case OTelSemConvStabilityOptInStable:
-		// Only emit stable attribute
-		return func(query string) []attribute.KeyValue {
-			return []attribute.KeyValue{
-				semconv.DBQueryTextKey.String(query),
-			}
-		}
-	default:
-		// OTelSemConvStabilityOptInNone or any unknown types
-		// Only emit legacy attribute
-		return func(query string) []attribute.KeyValue {
-			return []attribute.KeyValue{
-				semconvlegacy.DBStatementKey.String(query),
-			}
-		}
+// DBQueryTextAttributes returns the database query text attributes
+// using the stable db.query.text semantic convention.
+func DBQueryTextAttributes(query string) []attribute.KeyValue {
+	return []attribute.KeyValue{
+		semconv.DBQueryTextKey.String(query),
 	}
 }
 

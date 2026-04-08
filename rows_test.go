@@ -92,8 +92,6 @@ func TestOtRows_Close(t *testing.T) {
 
 					mr := newMockRows(tc.error)
 
-					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
-
 					cfg := newConfig()
 					cfg.Tracer = tracer
 					cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -167,8 +165,6 @@ func TestOtRows_Next(t *testing.T) {
 					ctx, sr, tracer, _ := prepareTraces(false)
 
 					mr := newMockRows(tc.error)
-
-					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
 
 					cfg := newConfig()
 					cfg.Tracer = tracer
@@ -259,8 +255,6 @@ func TestNewRows(t *testing.T) {
 							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
 							mr := newMockRows(false)
-
-							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
 
 							cfg := newConfig()
 							cfg.Tracer = tracer
