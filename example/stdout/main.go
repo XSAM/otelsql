@@ -98,6 +98,10 @@ func main() {
 
 	attrs := append(otelsql.AttributesFromDSN(mysqlDSN), semconv.DBSystemNameMySQL)
 
+	if dbNamespace, err := otelsql.DBNamespaceFromDSN(mysqlDSN); err == nil {
+		attrs = append(attrs, dbNamespace)
+	}
+
 	// Connect to database
 	db, err := otelsql.Open("mysql", mysqlDSN, otelsql.WithAttributes(
 		attrs...,
