@@ -18,10 +18,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 )
 
+//nolint:gosec
 func TestAttributesFromDSN(t *testing.T) {
 	testCases := []struct {
 		dsn      string
@@ -202,7 +204,7 @@ func TestDBNamespaceFromDSN(t *testing.T) {
 			if tc.wantErr {
 				assert.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.expected, got)
 			}
 		})
