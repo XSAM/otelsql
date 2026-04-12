@@ -107,6 +107,7 @@ func DBNamespaceFromDSN(dsn string) (attribute.KeyValue, error) {
 	// [scheme://][user[:password]@][protocol([addr])][/path][?param1=value1&paramN=valueN]
 	// Find the schema part.
 	var scheme string
+
 	schemaIndex := strings.Index(dsn, "://")
 	if schemaIndex != -1 {
 		scheme = dsn[:schemaIndex]
@@ -133,6 +134,7 @@ func DBNamespaceFromDSN(dsn string) (attribute.KeyValue, error) {
 	// [protocol([addr])][/path]
 	// Find the '/' that separates the address part from the path (database or instance name).
 	pathIndex := strings.Index(dsn, "/")
+
 	var path string
 	if pathIndex != -1 {
 		path = dsn[pathIndex+1:]
@@ -141,16 +143,20 @@ func DBNamespaceFromDSN(dsn string) (attribute.KeyValue, error) {
 	if scheme == "oracle" {
 		return attribute.KeyValue{}, errDBNamespaceNotFound
 	}
+
 	if scheme == "sqlserver" {
 		if params, err := url.ParseQuery(queryString); err == nil {
 			if db := params.Get("database"); db != "" {
 				return semconv.DBNamespace(db), nil
 			}
 		}
+
 		return attribute.KeyValue{}, errDBNamespaceNotFound
 	}
+
 	if path == "" {
 		return attribute.KeyValue{}, errDBNamespaceNotFound
 	}
+
 	return semconv.DBNamespace(path), nil
 }

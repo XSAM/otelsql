@@ -244,7 +244,8 @@ func TestAttributesAndDBNamespaceFromDSN(t *testing.T) {
 				semconv.ServerPort(1433),
 				semconv.DBNamespace("db"),
 				semconv.DBSystemNameMicrosoftSQLServer,
-			}},
+			},
+		},
 		// sqlserver: missing db name
 		{
 			dsn:          "sqlserver://user:pass@dbhost/SQLEXPRESS",
@@ -253,7 +254,8 @@ func TestAttributesAndDBNamespaceFromDSN(t *testing.T) {
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("dbhost"),
 				semconv.DBSystemNameMicrosoftSQLServer,
-			}},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -262,6 +264,7 @@ func TestAttributesAndDBNamespaceFromDSN(t *testing.T) {
 			if dbNamespace, err := DBNamespaceFromDSN(tc.dsn); err == nil {
 				got = append(got, dbNamespace)
 			}
+
 			got = append(got, tc.dbSystemName)
 			assert.Equal(t, tc.expected, got)
 		})
