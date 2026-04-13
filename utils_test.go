@@ -250,11 +250,9 @@ func prepareMetrics() (sdkmetric.Reader, *sdkmetric.MeterProvider) {
 
 func getDummyAttributesGetter() AttributesGetter {
 	return func(_ context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
-		//nolint:prealloc
-		attrs := []attribute.KeyValue{
-			attribute.String("method", string(method)),
-			attribute.String("query", query),
-		}
+		attrs := make([]attribute.KeyValue, 2, 2+len(args))
+		attrs[0] = attribute.String("method", string(method))
+		attrs[1] = attribute.String("query", query)
 
 		for i, a := range args {
 			attrs = append(attrs, attribute.String(
