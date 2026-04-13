@@ -243,6 +243,13 @@ func TestAttributesFromDSN(t *testing.T) {
 				semconv.ServerAddress("dbhost"),
 			},
 		},
+		{
+			// Missing closing protocol parenthesis and no path/queryString shouldn't cause a panic
+			dsn: "mysql://root:otel_password@tcp(example.com",
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("example.com"),
+			},
+		},
 	}
 
 	for _, tc := range testCases {

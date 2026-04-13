@@ -10,8 +10,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-- `AttributesFromDSN` now extracts the database name from the DSN and sets it as the `db.namespace` attribute 
-  ([`semconv.DBNamespaceKey`](https://opentelemetry.io/docs/specs/semconv/database/database-spans/#common-attributes)). [#608](https://github.com/XSAM/otelsql/pull/608)
+- `AttributesFromDSN` now extracts the database name from the DSN and sets it as the `db.namespace` attribute
+  ([`semconv.DBNamespaceKey`](https://opentelemetry.io/docs/specs/semconv/database/database-spans/#common-attributes)).
+  Supported schemes: `postgresql`, `postgres`, `mysql`, `clickhouse`, `sqlserver`, `mssql`. [#608](https://github.com/XSAM/otelsql/pull/608)
+
+### Fixed
+
+- Fix panic in `AttributesFromDSN` when the closing protocol parenthesis is missing and the DSN has no path nor query string. [#608](https://github.com/XSAM/otelsql/pull/608)
+- Fix `server.port` parsing in `AttributesFromDSN` when the DSN has no path but has a query string. [#608](https://github.com/XSAM/otelsql/pull/608)
 
 ### Changed
 
