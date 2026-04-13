@@ -11,6 +11,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 
 - Introduce helper function `DBNamespaceFromDSN` to extract the `db.namespace` attribute from a DSN string.
+  Supported schemes: `postgresql`, `postgres`, `mysql`, `clickhouse`, `sqlserver`, `mssql`.
+  All other schemes and scheme-less DSNs return an error.
 
 ### Changed
 

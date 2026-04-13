@@ -60,40 +60,47 @@ func AttributesFromDSN(dsn string) []attribute.KeyValue {
 	}
 
 	// [protocol([addr])] or [addr]
-	// Find the '(' that starts the address part.
-	openParen := strings.Index(dsn, "(")
-	if openParen != -1 {
+	host, port := parseHostPort(dsn)
+
+	var attrs []attribute.KeyValue
+	if host != "" {
+		attrs = append(attrs, semconv.ServerAddress(host))
+	}
+	if port != -1 {
+		attrs = append(attrs, semconv.ServerPortKey.Int64(port))
+	}
+	return attrs
+}
+
+// parseHostPort extracts the server address and port from a DSN fragment.
+// It handles MySQL's protocol(addr) syntax where the address is wrapped in parentheses.
+// serverAddress is an empty string if not found; serverPort is -1 if not found.
+func parseHostPort(dsn string) (serverAddress string, serverPort int64) {
+	serverPort = -1
+
+	// Strip MySQL's protocol(addr) wrapper, e.g. "tcp(host:3306)" → "host:3306".
+	if openParen := strings.Index(dsn, "("); openParen != -1 {
 		rest := dsn[openParen+1:]
 		if closeParen := strings.Index(rest, ")"); closeParen != -1 {
 			rest = rest[:closeParen]
 		}
-		// Remove the protocol part from the DSN.
 		dsn = rest
 	}
 
-	// [addr]
 	if len(dsn) == 0 {
-		return nil
+		return
 	}
 
 	host, portStr, err := net.SplitHostPort(dsn)
 	if err != nil {
-		host = dsn
+		return dsn, serverPort
 	}
 
-	attrs := make([]attribute.KeyValue, 0, 2)
-	if host != "" {
-		attrs = append(attrs, semconv.ServerAddress(host))
+	serverAddress = host
+	if port, err := strconv.ParseInt(portStr, 10, 64); err == nil {
+		serverPort = port
 	}
-
-	if portStr != "" {
-		port, err := strconv.ParseInt(portStr, 10, 64)
-		if err == nil {
-			attrs = append(attrs, semconv.ServerPortKey.Int64(port))
-		}
-	}
-
-	return attrs
+	return
 }
 
 // errDBNamespaceNotFound is returned by [DBNamespaceFromDSN] when no database name can be extracted from the DSN.
@@ -140,23 +147,18 @@ func DBNamespaceFromDSN(dsn string) (attribute.KeyValue, error) {
 		path = dsn[pathIndex+1:]
 	}
 
-	if scheme == "oracle" {
-		return attribute.KeyValue{}, errDBNamespaceNotFound
-	}
-
-	if scheme == "sqlserver" {
+	switch scheme {
+	case "sqlserver", "mssql":
 		if params, err := url.ParseQuery(queryString); err == nil {
 			if db := params.Get("database"); db != "" {
 				return semconv.DBNamespace(db), nil
 			}
 		}
-
-		return attribute.KeyValue{}, errDBNamespaceNotFound
+	case "postgresql", "postgres", "mysql", "clickhouse":
+		if path != "" {
+			return semconv.DBNamespace(path), nil
+		}
 	}
 
-	if path == "" {
-		return attribute.KeyValue{}, errDBNamespaceNotFound
-	}
-
-	return semconv.DBNamespace(path), nil
+	return attribute.KeyValue{}, errDBNamespaceNotFound
 }

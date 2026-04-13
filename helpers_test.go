@@ -173,12 +173,12 @@ func TestDBNamespaceFromDSN(t *testing.T) {
 		{dsn: "mysql://root:pass@example.com/db", expected: semconv.DBNamespace("db")},
 		{dsn: "mysql://root:pass@tcp(example.com)/db?parseTime=true", expected: semconv.DBNamespace("db")},
 		{dsn: "postgres://root:secret@0.0.0.0:42/db?param1=value1", expected: semconv.DBNamespace("db")},
-		{dsn: "unknown://user:pass@dbhost/db", expected: semconv.DBNamespace("db")},
+		{dsn: "unknown://user:pass@dbhost/db", wantErr: true}, // unknown scheme: db.namespace not extracted
 
-		// No scheme
-		{dsn: "root:secret@/db?parseTime=true", expected: semconv.DBNamespace("db")},
-		{dsn: "example.com/db", expected: semconv.DBNamespace("db")},
-		{dsn: "root:secret@tcp(mysql)/db?parseTime=true", expected: semconv.DBNamespace("db")},
+		// No scheme: db.namespace not extracted
+		{dsn: "root:secret@/db?parseTime=true", wantErr: true},
+		{dsn: "example.com/db", wantErr: true},
+		{dsn: "root:secret@tcp(mysql)/db?parseTime=true", wantErr: true},
 
 		// Empty or missing db name
 		{dsn: "example.com:3307", wantErr: true},
