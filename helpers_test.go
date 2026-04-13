@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 )
@@ -52,6 +53,13 @@ func TestAttributesFromDSN(t *testing.T) {
 			dsn: "mysql://root:otel_password@tcp(2001:db8:1234:5678:9abc:def0:0001)/db?parseTime=true",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("2001:db8:1234:5678:9abc:def0:0001"),
+			},
+		},
+		{
+			dsn: "sqlserver://user:pass@dbhost:1433?database=db",
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("dbhost"),
+				semconv.ServerPort(1433),
 			},
 		},
 		{
@@ -137,11 +145,131 @@ func TestAttributesFromDSN(t *testing.T) {
 				semconv.ServerAddress("tcp"),
 			},
 		},
+		{
+			// Missing closing protocol parenthesis and no path/queryString shouldn't cause a panic
+			dsn: "mysql://root:otel_password@tcp(example.com",
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("example.com"),
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.dsn, func(t *testing.T) {
 			got := AttributesFromDSN(tc.dsn)
+			assert.Equal(t, tc.expected, got)
+		})
+	}
+}
+
+//nolint:gosec
+func TestDBNamespaceFromDSN(t *testing.T) {
+	testCases := []struct {
+		dsn      string
+		expected attribute.KeyValue
+		wantErr  bool
+	}{
+		// Standard URL-style DSNs
+		{dsn: "mysql://root:pass@example.com/db", expected: semconv.DBNamespace("db")},
+		{dsn: "mysql://root:pass@tcp(example.com)/db?parseTime=true", expected: semconv.DBNamespace("db")},
+		{dsn: "postgres://root:secret@0.0.0.0:42/db?param1=value1", expected: semconv.DBNamespace("db")},
+		{dsn: "unknown://user:pass@dbhost/db", wantErr: true}, // unknown scheme: db.namespace not extracted
+
+		// No scheme: db.namespace not extracted
+		{dsn: "root:secret@/db?parseTime=true", wantErr: true},
+		{dsn: "example.com/db", wantErr: true},
+		{dsn: "root:secret@tcp(mysql)/db?parseTime=true", wantErr: true},
+
+		// Empty or missing db name
+		{dsn: "example.com:3307", wantErr: true},
+		{dsn: "postgres://user:pass@dbhost/", wantErr: true},
+		{dsn: "sqlserver://user:pass@dbhost", wantErr: true},
+
+		// sqlserver: database from query param
+		{dsn: "sqlserver://user:pass@dbhost:1433?database=db", expected: semconv.DBNamespace("db")},
+		{dsn: "sqlserver://user:pass@dbhost/SQLEXPRESS?database=db", expected: semconv.DBNamespace("db")},
+		{dsn: "sqlserver://dbhost:1433?database=db", expected: semconv.DBNamespace("db")},
+
+		// sqlserver: no database query param
+		{dsn: "sqlserver://user:pass@dbhost/SQLEXPRESS", wantErr: true},
+		{dsn: "sqlserver://user:pass@dbhost:1433", wantErr: true},
+
+		// oracle: db namespace not supported
+		{dsn: "oracle://user:pass@dbhost:1521/service", wantErr: true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.dsn, func(t *testing.T) {
+			got, err := DBNamespaceFromDSN(tc.dsn)
+			if tc.wantErr {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, got)
+			}
+		})
+	}
+}
+
+//nolint:gosec
+func TestAttributesAndDBNamespaceFromDSN(t *testing.T) {
+	testCases := []struct {
+		dsn          string
+		dbSystemName attribute.KeyValue
+		expected     []attribute.KeyValue
+	}{
+		// Standard URL-style DSNs
+		{
+			dsn:          "mysql://root:pass@example.com/db",
+			dbSystemName: semconv.DBSystemNameMySQL,
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("example.com"),
+				semconv.DBNamespace("db"),
+				semconv.DBSystemNameMySQL,
+			},
+		},
+		// Empty or missing db name
+		{
+			dsn:          "mysql://root:pass@example.com",
+			dbSystemName: semconv.DBSystemNameMySQL,
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("example.com"),
+				semconv.DBSystemNameMySQL,
+			},
+		},
+		//
+		// sqlserver: database from query param
+		{
+			dsn:          "sqlserver://user:pass@dbhost:1433?database=db",
+			dbSystemName: semconv.DBSystemNameMicrosoftSQLServer,
+
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("dbhost"),
+				semconv.ServerPort(1433),
+				semconv.DBNamespace("db"),
+				semconv.DBSystemNameMicrosoftSQLServer,
+			},
+		},
+		// sqlserver: missing db name
+		{
+			dsn:          "sqlserver://user:pass@dbhost/SQLEXPRESS",
+			dbSystemName: semconv.DBSystemNameMicrosoftSQLServer,
+
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("dbhost"),
+				semconv.DBSystemNameMicrosoftSQLServer,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.dsn, func(t *testing.T) {
+			got := AttributesFromDSN(tc.dsn)
+			if dbNamespace, err := DBNamespaceFromDSN(tc.dsn); err == nil {
+				got = append(got, dbNamespace)
+			}
+
+			got = append(got, tc.dbSystemName)
 			assert.Equal(t, tc.expected, got)
 		})
 	}

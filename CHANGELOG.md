@@ -8,6 +8,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- Introduce helper function `DBNamespaceFromDSN` to extract the `db.namespace` attribute from a DSN string.
+  Supported schemes: `postgresql`, `postgres`, `mysql`, `clickhouse`, `sqlserver`, `mssql`.
+  All other schemes and scheme-less DSNs return an error.
+
 ### Changed
 
 - Upgrade OTel Semconv to `v1.40.0`. (#606)
@@ -15,6 +21,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 
 - Implement `driver.Validator` on `otConn` so that `database/sql` connection pool health checks are properly delegated to the underlying driver connection. (#619)
+- Fix panic in `AttributesFromDSN` when the closing protocol parenthesis is missing and the DSN has no path nor query string.
+- Fix `server.port` parsing in `AttributesFromDSN` when the DSN has no path but has a query string.
 
 ## [0.42.0] - 2026-03-30
 
