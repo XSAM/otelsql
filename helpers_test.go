@@ -162,7 +162,6 @@ func TestAttributesFromDSN(t *testing.T) {
 	}
 }
 
-//nolint:gosec
 func TestDBNamespaceFromDSN(t *testing.T) {
 	testCases := []struct {
 		dsn      string
@@ -226,7 +225,8 @@ func TestAttributesAndDBNamespaceFromDSN(t *testing.T) {
 				semconv.ServerAddress("example.com"),
 				semconv.DBNamespace("db"),
 				semconv.DBSystemNameMySQL,
-			}},
+			},
+		},
 		// Empty or missing db name
 		{
 			dsn:          "mysql://root:pass@example.com",
@@ -234,7 +234,8 @@ func TestAttributesAndDBNamespaceFromDSN(t *testing.T) {
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("example.com"),
 				semconv.DBSystemNameMySQL,
-			}},
+			},
+		},
 		//
 		// sqlserver: database from query param
 		{

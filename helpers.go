@@ -66,9 +66,11 @@ func AttributesFromDSN(dsn string) []attribute.KeyValue {
 	if host != "" {
 		attrs = append(attrs, semconv.ServerAddress(host))
 	}
+
 	if port != -1 {
 		attrs = append(attrs, semconv.ServerPortKey.Int64(port))
 	}
+
 	return attrs
 }
 
@@ -84,6 +86,7 @@ func parseHostPort(dsn string) (serverAddress string, serverPort int64) {
 		if closeParen := strings.Index(rest, ")"); closeParen != -1 {
 			rest = rest[:closeParen]
 		}
+
 		dsn = rest
 	}
 
@@ -97,9 +100,11 @@ func parseHostPort(dsn string) (serverAddress string, serverPort int64) {
 	}
 
 	serverAddress = host
+
 	if port, err := strconv.ParseInt(portStr, 10, 64); err == nil {
 		serverPort = port
 	}
+
 	return
 }
 
