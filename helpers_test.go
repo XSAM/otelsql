@@ -162,6 +162,7 @@ func TestAttributesFromDSN(t *testing.T) {
 	}
 }
 
+//nolint:gosec
 func TestDBNamespaceFromDSN(t *testing.T) {
 	testCases := []struct {
 		dsn      string
