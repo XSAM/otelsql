@@ -48,12 +48,10 @@ func AttributesFromDSN(dsn string) []attribute.KeyValue {
 }
 
 // parseDSN parses a DSN string and returns the server address, server port, and database name.
-// It handles the format: [scheme://][user[:password]@][protocol([addr])][/dbOrInstanceName][?param1=value1&paramN=valueN]
+// It handles the format: [scheme://][user[:password]@][protocol([addr])][/path][?param1=value1&paramN=valueN]
 // serverAddress and dbName are empty strings if not found. serverPort is -1 if not found.
 func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string) {
-	serverPort = -1
-
-	// [scheme://][user[:password]@][protocol([addr])][/dbOrInstanceName][?param1=value1&paramN=valueN]
+	// [scheme://][user[:password]@][protocol([addr])][/path][?param1=value1&paramN=valueN]
 	// Find the schema part.
 	var scheme string
 
@@ -64,7 +62,7 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 		dsn = dsn[schemaIndex+3:]
 	}
 
-	// [user[:password]@][protocol([addr])][/dbOrInstanceName][?param1=value1&paramN=valueN]
+	// [user[:password]@][protocol([addr])][/path][?param1=value1&paramN=valueN]
 	// Find credentials part.
 	atIndex := strings.Index(dsn, "@")
 	if atIndex != -1 {
@@ -72,7 +70,7 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 		dsn = dsn[atIndex+1:]
 	}
 
-	// [protocol([addr])][/dbOrInstanceName][?param1=value1&paramN=valueN]
+	// [protocol([addr])][/path][?param1=value1&paramN=valueN]
 	// Find the '?' that separates the query string.
 	var queryString string
 	if questionMarkIndex := strings.Index(dsn, "?"); questionMarkIndex != -1 {
@@ -80,7 +78,7 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 		dsn = dsn[:questionMarkIndex]
 	}
 
-	// [protocol([addr])][/dbOrInstanceName]
+	// [protocol([addr])][/path]
 	// Find the '/' that separates the address part from the path (database or instance name).
 	pathIndex := strings.Index(dsn, "/")
 
@@ -92,38 +90,45 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 		dsn = dsn[:pathIndex]
 	}
 
-	if scheme == "sqlserver" {
+	switch scheme {
+	case "sqlserver", "mssql":
 		// sqlserver uses the "database" query param; the path is the instance name, not the database.
 		if params, err := url.ParseQuery(queryString); err == nil {
 			dbName = params.Get("database")
 		}
-	} else {
-		// All other drivers encode the database name in the path.
+	case "postgresql", "postgres", "mysql", "clickhouse":
 		dbName = path
 	}
 
-	// [protocol([addr])] or [addr]
-	// Find the '(' that starts the address part.
-	openParen := strings.Index(dsn, "(")
-	if openParen != -1 {
+	// [protocol([addr])]
+	serverAddress, serverPort = parseHostPort(dsn)
+
+	return serverAddress, serverPort, dbName
+}
+
+// parseHostPort extracts the server address and port from a DSN fragment.
+// It handles MySQL's protocol(addr) syntax where the address is wrapped in parentheses.
+// serverAddress is an empty string if not found; serverPort is -1 if not found.
+func parseHostPort(dsn string) (serverAddress string, serverPort int64) {
+	serverPort = -1
+
+	// Strip MySQL's protocol(addr) wrapper, e.g. "tcp(host:3306)" → "host:3306".
+	if openParen := strings.Index(dsn, "("); openParen != -1 {
 		rest := dsn[openParen+1:]
 		if closeParen := strings.Index(rest, ")"); closeParen != -1 {
 			rest = rest[:closeParen]
 		}
-		// Remove the protocol part from the DSN.
+
 		dsn = rest
 	}
 
-	// [addr]
 	if len(dsn) == 0 {
-		return serverAddress, serverPort, dbName
+		return
 	}
 
-	// Extract host and port
 	host, portStr, err := net.SplitHostPort(dsn)
 	if err != nil {
-		serverAddress = dsn
-		return serverAddress, serverPort, dbName
+		return dsn, serverPort
 	}
 
 	serverAddress = host
@@ -132,5 +137,5 @@ func parseDSN(dsn string) (serverAddress string, serverPort int64, dbName string
 		serverPort = port
 	}
 
-	return serverAddress, serverPort, dbName
+	return
 }

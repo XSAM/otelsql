@@ -22,7 +22,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 )
 
-//nolint:gosec
 func TestAttributesFromDSN(t *testing.T) {
 	testCases := []struct {
 		dsn      string
@@ -66,39 +65,38 @@ func TestAttributesFromDSN(t *testing.T) {
 			},
 		},
 		{
+			// no scheme: db.namespace not extracted
 			dsn: "root:secret@tcp(mysql)/db?parseTime=true",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("mysql"),
-				semconv.DBNamespace("db"),
 			},
 		},
 		{
+			// no scheme: db.namespace not extracted
 			dsn: "root:secret@tcp(mysql:3307)/db?parseTime=true",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("mysql"),
 				semconv.ServerPort(3307),
-				semconv.DBNamespace("db"),
 			},
 		},
 		{
-			dsn: "root:secret@/db?parseTime=true",
-			expected: []attribute.KeyValue{
-				semconv.DBNamespace("db"),
-			},
+			// no scheme: db.namespace not extracted
+			dsn:      "root:secret@/db?parseTime=true",
+			expected: nil,
 		},
 		{
+			// no scheme: db.namespace not extracted
 			dsn: "example.com/db?parseTime=true",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("example.com"),
-				semconv.DBNamespace("db"),
 			},
 		},
 		{
+			// no scheme: db.namespace not extracted
 			dsn: "example.com:3307/db?parseTime=true",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("example.com"),
 				semconv.ServerPort(3307),
-				semconv.DBNamespace("db"),
 			},
 		},
 		{
@@ -121,10 +119,10 @@ func TestAttributesFromDSN(t *testing.T) {
 			},
 		},
 		{
+			// no scheme: db.namespace not extracted
 			dsn: "example.com/db",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("example.com"),
-				semconv.DBNamespace("db"),
 			},
 		},
 		{
@@ -151,19 +149,18 @@ func TestAttributesFromDSN(t *testing.T) {
 			},
 		},
 		{
+			// no scheme: db.namespace not extracted
 			dsn: "root:secret@0.0.0.0:42/db?param1=value1&paramN=valueN",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("0.0.0.0"),
 				semconv.ServerPort(42),
-				semconv.DBNamespace("db"),
 			},
 		},
 		{
-			// In this case, "tcp" will be considered as the server address.
+			// no scheme: db.namespace not extracted; "tcp" is considered as the server address
 			dsn: "root:secret@tcp/db?param1=value1&paramN=valueN",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("tcp"),
-				semconv.DBNamespace("db"),
 			},
 		},
 		{
@@ -182,10 +179,10 @@ func TestAttributesFromDSN(t *testing.T) {
 			},
 		},
 		{
+			// unknown scheme: db.namespace not extracted
 			dsn: "unknown://user:pass@dbhost/db",
 			expected: []attribute.KeyValue{
 				semconv.ServerAddress("dbhost"),
-				semconv.DBNamespace("db"),
 			},
 		},
 		{
