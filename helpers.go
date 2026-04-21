@@ -26,46 +26,14 @@ import (
 // AttributesFromDSN returns attributes extracted from a DSN string.
 // It makes the best effort to retrieve values for [semconv.ServerAddressKey] and [semconv.ServerPortKey].
 func AttributesFromDSN(dsn string) []attribute.KeyValue {
-	// [scheme://][user[:password]@][protocol([addr])]/dbname[?param1=value1&paramN=valueN]
-	// Find the schema part.
-	schemaIndex := strings.Index(dsn, "://")
-	if schemaIndex != -1 {
-		// Remove the schema part from the DSN.
-		dsn = dsn[schemaIndex+3:]
-	}
-
-	// [user[:password]@][protocol([addr])]/dbname[?param1=value1&paramN=valueN]
-	// Find credentials part.
-	atIndex := strings.Index(dsn, "@")
-	if atIndex != -1 {
-		// Remove the credential part from the DSN.
-		dsn = dsn[atIndex+1:]
-	}
-
-	// [protocol([addr])]/dbname[?param1=value1&paramN=valueN]
-	// Find the '/' that separates the address part from the database part.
-	pathIndex := strings.Index(dsn, "/")
-	if pathIndex != -1 {
-		// Remove the path part from the DSN.
-		dsn = dsn[:pathIndex]
-	}
-
-	// [protocol([addr])] or [addr]
-	// Find the '(' that starts the address part.
-	openParen := strings.Index(dsn, "(")
-	if openParen != -1 {
-		// Remove the protocol part from the DSN.
-		dsn = dsn[openParen+1 : len(dsn)-1]
-	}
-
-	// [addr]
-	if len(dsn) == 0 {
+	addr := addrFromDSN(dsn)
+	if addr == "" {
 		return nil
 	}
 
-	host, portStr, err := net.SplitHostPort(dsn)
+	host, portStr, err := net.SplitHostPort(addr)
 	if err != nil {
-		host = dsn
+		host = addr
 	}
 
 	attrs := make([]attribute.KeyValue, 0, 2)
@@ -74,11 +42,44 @@ func AttributesFromDSN(dsn string) []attribute.KeyValue {
 	}
 
 	if portStr != "" {
-		port, err := strconv.ParseInt(portStr, 10, 64)
-		if err == nil {
+		if port, err := strconv.ParseInt(portStr, 10, 64); err == nil {
 			attrs = append(attrs, semconv.ServerPortKey.Int64(port))
 		}
 	}
 
 	return attrs
+}
+
+// addrFromDSN extracts the network address (host[:port] or unix-socket path)
+// from a DSN string, stripping any scheme, credentials, protocol wrapper,
+// and trailing dbname/query components.
+func addrFromDSN(dsn string) string {
+	// [scheme://][user[:password]@][protocol([addr])]/dbname[?param1=value1&paramN=valueN]
+	// Strip scheme.
+	if i := strings.Index(dsn, "://"); i != -1 {
+		dsn = dsn[i+3:]
+	}
+
+	// Strip credentials.
+	if i := strings.Index(dsn, "@"); i != -1 {
+		dsn = dsn[i+1:]
+	}
+
+	// If the DSN uses the protocol(addr) form, extract addr from between
+	// the parens first. Splitting on '/' up front would break on addresses
+	// like unix(/tmp/mysql.sock), which contain a '/' inside the parens
+	// and used to trigger an out-of-range slice panic (#624).
+	openParen := strings.Index(dsn, "(")
+
+	closeParen := strings.Index(dsn, ")")
+	if openParen != -1 && closeParen > openParen {
+		return dsn[openParen+1 : closeParen]
+	}
+
+	// Bare address form: addr/db?params. Trim the path suffix.
+	if i := strings.Index(dsn, "/"); i != -1 {
+		return dsn[:i]
+	}
+
+	return dsn
 }

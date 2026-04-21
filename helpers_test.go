@@ -137,6 +137,14 @@ func TestAttributesFromDSN(t *testing.T) {
 				semconv.ServerAddress("tcp"),
 			},
 		},
+		{
+			// Unix domain socket DSN: the address inside unix(...) contains '/',
+			// which previously made the naive "split on first /" logic panic.
+			dsn: "username:password@unix(/tmp/mysql.sock)/mysql?parseTime=true",
+			expected: []attribute.KeyValue{
+				semconv.ServerAddress("/tmp/mysql.sock"),
+			},
+		},
 	}
 
 	for _, tc := range testCases {
