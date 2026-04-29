@@ -140,3 +140,11 @@ func WithInstrumentErrorAttributesGetter(instrumentErrorAttributesGetter Instrum
 		cfg.InstrumentErrorAttributesGetter = instrumentErrorAttributesGetter
 	})
 }
+
+// WithOperationNameSetter takes OperationNameSetter that will be called to produce the operation name for metric instruments.
+// If not set, the default behavior uses the method name.
+func WithOperationNameSetter(operationNameSetter OperationNameSetter) Option {
+	return OptionFunc(func(cfg *config) {
+		cfg.OperationNameSetter = operationNameSetter
+	})
+}

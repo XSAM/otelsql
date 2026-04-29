@@ -39,6 +39,10 @@ func TestOptions(t *testing.T) {
 		return []attribute.KeyValue{attribute.String("errorKey", "errorVal")}
 	}
 
+	dummyOperationNameSetter := func(_ context.Context, _ Method, _ string) string {
+		return "custom_operation"
+	}
+
 	testCases := []struct {
 		name           string
 		options        []Option
@@ -108,6 +112,11 @@ func TestOptions(t *testing.T) {
 			name:           "WithInstrumentErrorAttributesGetter",
 			options:        []Option{WithInstrumentErrorAttributesGetter(dummyErrorAttributesGetter)},
 			expectedConfig: config{InstrumentErrorAttributesGetter: dummyErrorAttributesGetter},
+		},
+		{
+			name:           "WithOperationNameSetter",
+			options:        []Option{WithOperationNameSetter(dummyOperationNameSetter)},
+			expectedConfig: config{OperationNameSetter: dummyOperationNameSetter},
 		},
 		{
 			name: "WithAttributes multiple calls should accumulate",
@@ -206,6 +215,12 @@ func TestOptions(t *testing.T) {
 					t,
 					tc.expectedConfig.InstrumentErrorAttributesGetter(assert.AnError),
 					cfg.InstrumentErrorAttributesGetter(assert.AnError),
+				)
+			case tc.expectedConfig.OperationNameSetter != nil:
+				assert.Equal(
+					t,
+					tc.expectedConfig.OperationNameSetter(context.Background(), "", ""),
+					cfg.OperationNameSetter(context.Background(), "", ""),
 				)
 			default:
 				assert.Equal(t, tc.expectedConfig, cfg)

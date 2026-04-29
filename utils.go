@@ -66,9 +66,14 @@ func recordLegacyLatency(
 	duration time.Duration,
 	attributes []attribute.KeyValue,
 	method Method,
+	query string,
 	err error,
 ) {
-	attributes = append(attributes, queryMethodKey.String(string(method)))
+	operationName := string(method)
+	if cfg.OperationNameSetter != nil {
+		operationName = cfg.OperationNameSetter(ctx, method, query)
+	}
+	attributes = append(attributes, queryMethodKey.String(operationName))
 
 	if err != nil {
 		if cfg.DisableSkipErrMeasurement && errors.Is(err, driver.ErrSkip) {
@@ -94,9 +99,14 @@ func recordDuration(
 	duration time.Duration,
 	attributes []attribute.KeyValue,
 	method Method,
+	query string,
 	err error,
 ) {
-	attributes = append(attributes, semconv.DBOperationName(string(method)))
+	operationName := string(method)
+	if cfg.OperationNameSetter != nil {
+		operationName = cfg.OperationNameSetter(ctx, method, query)
+	}
+	attributes = append(attributes, semconv.DBOperationName(operationName))
 	if err != nil && (!cfg.DisableSkipErrMeasurement || !errors.Is(err, driver.ErrSkip)) {
 		attributes = append(attributes, internalsemconv.ErrorTypeAttributes(err)...)
 	}
@@ -147,13 +157,13 @@ func recordMetric(
 
 		switch cfg.SemConvStabilityOptIn {
 		case internalsemconv.OTelSemConvStabilityOptInStable:
-			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
+			recordDuration(ctx, instruments, cfg, duration, attributes, method, query, err)
 		case internalsemconv.OTelSemConvStabilityOptInDup:
 			// Intentionally emit both legacy and new metrics for backward compatibility.
-			recordLegacyLatency(ctx, instruments, cfg, duration, slices.Clone(attributes), method, err)
-			recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
+			recordLegacyLatency(ctx, instruments, cfg, duration, slices.Clone(attributes), method, query, err)
+			recordDuration(ctx, instruments, cfg, duration, attributes, method, query, err)
 		case internalsemconv.OTelSemConvStabilityOptInNone:
-			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, err)
+			recordLegacyLatency(ctx, instruments, cfg, duration, attributes, method, query, err)
 		}
 	}
 }

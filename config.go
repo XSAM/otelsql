@@ -49,6 +49,9 @@ type InstrumentAttributesGetter func(ctx context.Context, method Method, query s
 // InstrumentErrorAttributesGetter provides additional error-related attributes while recording metrics to instruments.
 type InstrumentErrorAttributesGetter func(err error) []attribute.KeyValue
 
+// OperationNameSetter allows controlling the operation name provided to metric instruments.
+type OperationNameSetter func(ctx context.Context, method Method, query string) string
+
 // SpanFilter is a function that determines whether a span should be created for a given SQL operation.
 // It returns true if the span should be created, or false to skip span creation.
 type SpanFilter func(ctx context.Context, method Method, query string, args []driver.NamedValue) bool
@@ -91,6 +94,10 @@ type config struct {
 	InstrumentAttributesGetter InstrumentAttributesGetter
 
 	InstrumentErrorAttributesGetter InstrumentErrorAttributesGetter
+
+	// OperationNameSetter will be called to produce the operation name for metric instruments.
+	// If nil, the default behavior uses the method name.
+	OperationNameSetter OperationNameSetter
 
 	// DisableSkipErrMeasurement, if set to true, will suppress driver.ErrSkip as an error status in metrics.
 	// The metric measurement will be recorded as status=ok.
