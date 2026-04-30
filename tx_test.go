@@ -97,8 +97,6 @@ func TestOtTx_Commit(t *testing.T) {
 					mt := newMockTx(tc.error)
 
 					// New tx
-					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
-
 					cfg := newConfig()
 					cfg.Tracer = tracer
 					cfg.SpanOptions.SpanFilter = spanFilterFn
@@ -176,8 +174,6 @@ func TestOtTx_Rollback(t *testing.T) {
 					mt := newMockTx(tc.error)
 
 					// New tx
-					t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
-
 					cfg := newConfig()
 					cfg.Tracer = tracer
 					cfg.SpanOptions.SpanFilter = spanFilterFn

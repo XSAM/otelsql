@@ -21,58 +21,34 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/attribute"
-	semconvlegacy "go.opentelemetry.io/otel/semconv/v1.24.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 )
 
-func TestNewDBQueryTextAttributes(t *testing.T) {
-	const query = "SELECT * FROM users"
-
+func TestDBQueryTextAttributes(t *testing.T) {
 	tests := []struct {
-		name      string
-		optInType OTelSemConvStabilityOptInType
-		expected  []attribute.KeyValue
+		name     string
+		query    string
+		expected []attribute.KeyValue
 	}{
 		{
-			name:      "none",
-			optInType: OTelSemConvStabilityOptInNone,
+			name:  "normal query",
+			query: "SELECT * FROM users",
 			expected: []attribute.KeyValue{
-				semconvlegacy.DBStatementKey.String(query),
+				semconv.DBQueryTextKey.String("SELECT * FROM users"),
 			},
 		},
 		{
-			name:      "dup",
-			optInType: OTelSemConvStabilityOptInDup,
+			name:  "empty query",
+			query: "",
 			expected: []attribute.KeyValue{
-				semconvlegacy.DBStatementKey.String(query),
-				semconv.DBQueryTextKey.String(query),
-			},
-		},
-		{
-			name:      "stable",
-			optInType: OTelSemConvStabilityOptInStable,
-			expected: []attribute.KeyValue{
-				semconv.DBQueryTextKey.String(query),
-			},
-		},
-		{
-			name:      "unknown",
-			optInType: OTelSemConvStabilityOptInType(999), // An undefined type
-			expected: []attribute.KeyValue{
-				semconvlegacy.DBStatementKey.String(query),
+				semconv.DBQueryTextKey.String(""),
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Get the function for the specified opt-in type
-			fn := NewDBQueryTextAttributes(tt.optInType)
-
-			// Call the function with the test query
-			result := fn(query)
-
-			// Verify the result matches what we expect
+			result := DBQueryTextAttributes(tt.query)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

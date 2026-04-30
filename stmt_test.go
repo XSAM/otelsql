@@ -182,8 +182,6 @@ func TestOtStmt_ExecContext(t *testing.T) {
 							}
 
 							// New stmt
-							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
-
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
@@ -299,8 +297,6 @@ func TestOtStmt_QueryContext(t *testing.T) {
 							}
 
 							// New stmt
-							t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
-
 							cfg := newConfig()
 							cfg.Tracer = tracer
 							cfg.SpanOptions.DisableQuery = tc.disableQuery
@@ -360,9 +356,7 @@ func (nvc *namedValueChecker) CheckNamedValue(_ *driver.NamedValue) error {
 }
 
 func TestOtStmt_CheckNamedValue(t *testing.T) {
-	t.Setenv("OTEL_SEMCONV_STABILITY_OPT_IN", "database")
 	// Generate a variable that implements the driver.NamedValueChecker
-
 	testCases := []struct {
 		name   string
 		stmt   driver.Stmt
