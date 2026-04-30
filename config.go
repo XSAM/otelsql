@@ -29,9 +29,7 @@ const (
 	instrumentationName = "github.com/XSAM/otelsql"
 )
 
-var (
-	connectionStatusKey = attribute.Key("status")
-)
+var connectionStatusKey = attribute.Key("status")
 
 // SpanNameFormatter supports formatting span names.
 type SpanNameFormatter func(ctx context.Context, method Method, query string) string
@@ -92,7 +90,6 @@ type config struct {
 	// The metric measurement will be recorded as status=ok.
 	// Default is false
 	DisableSkipErrMeasurement bool
-
 }
 
 // SpanOptions holds configuration of tracing span to decide

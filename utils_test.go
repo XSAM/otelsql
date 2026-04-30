@@ -288,10 +288,10 @@ func TestRecordMetric(t *testing.T) {
 		wantMetricData metricdata.ResourceMetrics
 	}{
 		{
-			name:                  "metric with no error",
+			name: "metric with no error",
 
-			method:                MethodConnQuery,
-			query:                 "example query",
+			method: MethodConnQuery,
+			query:  "example query",
 			wantMetricData: metricdata.ResourceMetrics{
 				Resource: resource.Default(),
 				ScopeMetrics: []metricdata.ScopeMetrics{
@@ -345,11 +345,11 @@ func TestRecordMetric(t *testing.T) {
 			},
 		},
 		{
-			name:                  "metric with an error",
+			name: "metric with an error",
 
-			method:                MethodConnQuery,
-			query:                 "example query",
-			err:                   assert.AnError,
+			method: MethodConnQuery,
+			query:  "example query",
+			err:    assert.AnError,
 			wantMetricData: metricdata.ResourceMetrics{
 				Resource: resource.Default(),
 				ScopeMetrics: []metricdata.ScopeMetrics{
@@ -404,11 +404,11 @@ func TestRecordMetric(t *testing.T) {
 			},
 		},
 		{
-			name:                  "metric with skip error but not disabled",
+			name: "metric with skip error but not disabled",
 
-			method:                MethodConnQuery,
-			query:                 "example query",
-			err:                   driver.ErrSkip,
+			method: MethodConnQuery,
+			query:  "example query",
+			err:    driver.ErrSkip,
 			wantMetricData: metricdata.ResourceMetrics{
 				Resource: resource.Default(),
 				ScopeMetrics: []metricdata.ScopeMetrics{
@@ -463,12 +463,12 @@ func TestRecordMetric(t *testing.T) {
 			},
 		},
 		{
-			name:                  "metric with skip error but disabled",
+			name: "metric with skip error but disabled",
 
-			cfgOptions:            []Option{WithDisableSkipErrMeasurement(true)},
-			method:                MethodConnQuery,
-			query:                 "example query",
-			err:                   driver.ErrSkip,
+			cfgOptions: []Option{WithDisableSkipErrMeasurement(true)},
+			method:     MethodConnQuery,
+			query:      "example query",
+			err:        driver.ErrSkip,
 			wantMetricData: metricdata.ResourceMetrics{
 				Resource: resource.Default(),
 				ScopeMetrics: []metricdata.ScopeMetrics{
@@ -522,7 +522,7 @@ func TestRecordMetric(t *testing.T) {
 			},
 		},
 		{
-			name:                  "metric with instrumentAttributesGetter",
+			name: "metric with instrumentAttributesGetter",
 
 			cfgOptions: []Option{
 				WithInstrumentAttributesGetter(
@@ -587,7 +587,7 @@ func TestRecordMetric(t *testing.T) {
 			},
 		},
 		{
-			name:                  "metric with instrumentErrorAttributesGetter",
+			name: "metric with instrumentErrorAttributesGetter",
 
 			cfgOptions: []Option{WithInstrumentErrorAttributesGetter(func(_ error) []attribute.KeyValue {
 				return []attribute.KeyValue{attribute.String("errorKey", "errorVal")}
@@ -650,7 +650,7 @@ func TestRecordMetric(t *testing.T) {
 			},
 		},
 		{
-			name:                  "metric with instrumentErrorAttributesGetter and no error",
+			name: "metric with instrumentErrorAttributesGetter and no error",
 
 			cfgOptions: []Option{WithInstrumentErrorAttributesGetter(func(_ error) []attribute.KeyValue {
 				return []attribute.KeyValue{attribute.String("errorKey", "errorVal")}

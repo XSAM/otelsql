@@ -357,7 +357,6 @@ func (nvc *namedValueChecker) CheckNamedValue(_ *driver.NamedValue) error {
 
 func TestOtStmt_CheckNamedValue(t *testing.T) {
 	// Generate a variable that implements the driver.NamedValueChecker
-
 	testCases := []struct {
 		name   string
 		stmt   driver.Stmt

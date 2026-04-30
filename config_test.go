@@ -60,4 +60,3 @@ func TestNewConfig(t *testing.T) {
 	}, cfg)
 	assert.NotNil(t, cfg.Instruments)
 }
-
