@@ -22,7 +22,6 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 	"go.opentelemetry.io/otel/trace"
 
 	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
@@ -92,9 +91,17 @@ func (s *durationMetric) RecordQuery(cfg *config, method Method, query string, a
 func (s *durationMetric) record(cfg *config, method Method, getterAttributes []attribute.KeyValue, errp *error) {
 	duration := timeNow().Sub(s.startTime)
 
+	methodBase, methodHasBase := cfg.metricMethodAttrs[method]
+
 	var err error
 	if errp != nil {
 		err = *errp
+	}
+
+	// Fast path: success, no dynamic getters, known method.
+	if methodHasBase && err == nil && len(getterAttributes) == 0 {
+		cfg.Instruments.duration.RecordSet(s.ctx, duration.Seconds(), methodBase.set)
+		return
 	}
 
 	var (
@@ -112,16 +119,19 @@ func (s *durationMetric) record(cfg *config, method Method, getterAttributes []a
 		}
 	}
 
-	// number of attributes + InstrumentAttributesGetter + InstrumentErrorAttributesGetter + estimated 2 from recordDuration.
+	methodAttrs := methodBase.attrs
+	if !methodHasBase {
+		methodAttrs = getMethodAttributes(method, cfg.Attributes)
+	}
+
 	attributes := make(
 		[]attribute.KeyValue,
-		len(cfg.Attributes),
-		len(cfg.Attributes)+len(getterAttributes)+len(getterErrAttributes)+1+len(errAttributes),
+		len(methodAttrs),
+		len(methodAttrs)+len(getterAttributes)+len(getterErrAttributes)+len(errAttributes),
 	)
-	copy(attributes, cfg.Attributes)
+	copy(attributes, methodAttrs)
 	attributes = append(attributes, getterAttributes...)
 	attributes = append(attributes, getterErrAttributes...)
-	attributes = append(attributes, semconv.DBOperationName(string(method)))
 	attributes = append(attributes, errAttributes...)
 
 	cfg.Instruments.duration.RecordSet(

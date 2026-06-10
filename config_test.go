@@ -52,7 +52,9 @@ func TestNewConfig(t *testing.T) {
 		),
 		// No need to check values of instruments in this part.
 		Instruments: cfg.Instruments,
-		SpanOptions: SpanOptions{Ping: true},
+		// No need to check values of metricBase in this part.
+		metricMethodAttrs: cfg.metricMethodAttrs,
+		SpanOptions:       SpanOptions{Ping: true},
 		Attributes: []attribute.KeyValue{
 			semconv.DBSystemNameMySQL,
 		},

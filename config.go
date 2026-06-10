@@ -54,6 +54,9 @@ type config struct {
 	MeterProvider metric.MeterProvider
 	Meter         metric.Meter
 
+	// metricMethodAttrs holds the precomputed base attributes per Method.
+	metricMethodAttrs map[Method]methodMetricAttributes
+
 	Instruments *instruments
 
 	SpanOptions SpanOptions
@@ -169,5 +172,22 @@ func newConfig(options ...Option) *config {
 		otel.Handle(err)
 	}
 
+	cfg.metricMethodAttrs = buildMethodAttributes(cfg.Attributes)
+
 	return cfg
+}
+
+func buildMethodAttributes(base []attribute.KeyValue) map[Method]methodMetricAttributes {
+	out := make(map[Method]methodMetricAttributes, len(allMethods))
+
+	for _, m := range allMethods {
+		attrs := getMethodAttributes(m, base)
+
+		out[m] = methodMetricAttributes{
+			attrs: attrs,
+			set:   attribute.NewSet(attrs...),
+		}
+	}
+
+	return out
 }
