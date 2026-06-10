@@ -130,29 +130,42 @@ func createSpan(
 	args []driver.NamedValue,
 ) (context.Context, trace.Span) {
 	spanCtx, span := cfg.Tracer.Start(ctx, cfg.SpanNameFormatter(ctx, method, query), spanKindClientOption)
-	if span.IsRecording() {
-		var dbStatementAttributes []attribute.KeyValue
-		if enableDBStatement && !cfg.SpanOptions.DisableQuery {
-			dbStatementAttributes = internalsemconv.DBQueryTextAttributes(query)
-		}
-
-		var getterAttributes []attribute.KeyValue
-		if cfg.AttributesGetter != nil {
-			getterAttributes = cfg.AttributesGetter(ctx, method, query, args)
-		}
-
-		// Allocate attributes slice (Attributes + AttributesGetter + DBQueryTextAttributes).
-		attributes := make(
-			[]attribute.KeyValue,
-			len(cfg.Attributes),
-			len(cfg.Attributes)+len(getterAttributes)+len(dbStatementAttributes),
-		)
-		copy(attributes, cfg.Attributes)
-		attributes = append(attributes, dbStatementAttributes...)
-		attributes = append(attributes, getterAttributes...)
-
-		span.SetAttributes(attributes...)
+	if !span.IsRecording() {
+		return spanCtx, span
 	}
+
+	addDBStatement := enableDBStatement && !cfg.SpanOptions.DisableQuery
+
+	// Fast path when we only have to add config attributes
+	if cfg.AttributesGetter == nil && !addDBStatement {
+		if len(cfg.Attributes) > 0 {
+			span.SetAttributes(cfg.Attributes...)
+		}
+
+		return spanCtx, span
+	}
+
+	var dbStatementAttributes []attribute.KeyValue
+	if addDBStatement {
+		dbStatementAttributes = internalsemconv.DBQueryTextAttributes(query)
+	}
+
+	var getterAttributes []attribute.KeyValue
+	if cfg.AttributesGetter != nil {
+		getterAttributes = cfg.AttributesGetter(ctx, method, query, args)
+	}
+
+	// Allocate attributes slice (Attributes + AttributesGetter + DBQueryTextAttributes).
+	attributes := make(
+		[]attribute.KeyValue,
+		len(cfg.Attributes),
+		len(cfg.Attributes)+len(getterAttributes)+len(dbStatementAttributes),
+	)
+	copy(attributes, cfg.Attributes)
+	attributes = append(attributes, dbStatementAttributes...)
+	attributes = append(attributes, getterAttributes...)
+
+	span.SetAttributes(attributes...)
 
 	return spanCtx, span
 }
