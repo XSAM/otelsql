@@ -57,25 +57,17 @@ func (c *otConn) Ping(ctx context.Context) (err error) {
 	}
 
 	method := MethodConnPing
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, "", nil)
 
-	defer func() {
-		onDefer(err)
-	}()
+	metric := startDurationMetric(ctx)
+	defer metric.Record(c.cfg, method, &err)
 
 	if c.cfg.SpanOptions.Ping {
 		if filterSpan(ctx, c.cfg.SpanOptions, method, "", nil) {
 			var span trace.Span
 
 			ctx, span = createSpan(ctx, c.cfg, method, false, "", nil)
-
-			defer func() {
-				if err != nil {
-					recordSpanError(span, c.cfg.SpanOptions, err)
-				}
-
-				span.End()
-			}()
+			defer span.End()
+			defer recordSpanErrorDeferred(span, c.cfg.SpanOptions, &err)
 		}
 	}
 
@@ -102,11 +94,9 @@ func (c *otConn) ExecContext(
 	}
 
 	method := MethodConnExec
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, query, args)
 
-	defer func() {
-		onDefer(err)
-	}()
+	metric := startDurationMetric(ctx)
+	defer metric.Record(c.cfg, method, &err)
 
 	var span trace.Span
 	if filterSpan(ctx, c.cfg.SpanOptions, method, query, args) {
@@ -141,11 +131,9 @@ func (c *otConn) QueryContext(
 	}
 
 	method := MethodConnQuery
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, query, args)
 
-	defer func() {
-		onDefer(err)
-	}()
+	metric := startDurationMetric(ctx)
+	defer metric.RecordQuery(c.cfg, method, query, args, &err)
 
 	var span trace.Span
 
@@ -166,11 +154,9 @@ func (c *otConn) QueryContext(
 
 func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.Stmt, err error) {
 	method := MethodConnPrepare
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, query, nil)
 
-	defer func() {
-		onDefer(err)
-	}()
+	metric := startDurationMetric(ctx)
+	defer metric.RecordQuery(c.cfg, method, query, nil, &err)
 
 	var span trace.Span
 	if !c.cfg.SpanOptions.OmitConnPrepare && filterSpan(ctx, c.cfg.SpanOptions, method, query, nil) {
@@ -203,11 +189,9 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 
 func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.Tx, err error) {
 	method := MethodConnBeginTx
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, "", nil)
 
-	defer func() {
-		onDefer(err)
-	}()
+	metric := startDurationMetric(ctx)
+	defer metric.Record(c.cfg, method, &err)
 
 	var beginTxCtx context.Context
 
@@ -265,11 +249,9 @@ func (c *otConn) ResetSession(ctx context.Context) (err error) {
 	}
 
 	method := MethodConnResetSession
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, "", nil)
 
-	defer func() {
-		onDefer(err)
-	}()
+	metric := startDurationMetric(ctx)
+	defer metric.Record(c.cfg, method, &err)
 
 	var span trace.Span
 	if !c.cfg.SpanOptions.OmitConnResetSession && filterSpan(ctx, c.cfg.SpanOptions, method, "", nil) {

@@ -39,11 +39,9 @@ func newTx(ctx context.Context, tx driver.Tx, cfg *config) *otTx {
 
 func (t *otTx) Commit() (err error) {
 	method := MethodTxCommit
-	onDefer := recordMetric(t.ctx, t.cfg.Instruments, t.cfg, method, "", nil)
 
-	defer func() {
-		onDefer(err)
-	}()
+	metric := startDurationMetric(t.ctx)
+	defer metric.Record(t.cfg, method, &err)
 
 	var span trace.Span
 	if filterSpan(t.ctx, t.cfg.SpanOptions, method, "", nil) {
@@ -62,11 +60,9 @@ func (t *otTx) Commit() (err error) {
 
 func (t *otTx) Rollback() (err error) {
 	method := MethodTxRollback
-	onDefer := recordMetric(t.ctx, t.cfg.Instruments, t.cfg, method, "", nil)
 
-	defer func() {
-		onDefer(err)
-	}()
+	metric := startDurationMetric(t.ctx)
+	defer metric.Record(t.cfg, method, &err)
 
 	var span trace.Span
 	if filterSpan(t.ctx, t.cfg.SpanOptions, method, "", nil) {

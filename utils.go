@@ -30,12 +30,8 @@ import (
 
 var timeNow = time.Now
 
-func recordSpanErrorDeferred(span trace.Span, opts SpanOptions, err *error) {
-	recordSpanError(span, opts, *err)
-}
-
 func recordSpanError(span trace.Span, opts SpanOptions, err error) {
-	if span == nil {
+	if span == nil || !span.IsRecording() {
 		return
 	}
 
@@ -57,66 +53,82 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 	}
 }
 
-func recordDuration(
-	ctx context.Context,
-	instruments *instruments,
-	cfg *config,
-	duration time.Duration,
-	attributes []attribute.KeyValue,
-	method Method,
-	err error,
-) {
-	attributes = append(attributes, semconv.DBOperationName(string(method)))
-	if err != nil && (!cfg.DisableSkipErrMeasurement || !errors.Is(err, driver.ErrSkip)) {
-		attributes = append(attributes, internalsemconv.ErrorTypeAttributes(err)...)
+// recordSpanErrorDeferred is used when using `defer` to record a span error.
+// It takes a pointer to the caller's error so the value of the error is read correctly.
+func recordSpanErrorDeferred(span trace.Span, opts SpanOptions, errp *error) {
+	recordSpanError(span, opts, *errp)
+}
+
+type durationMetric struct {
+	ctx       context.Context
+	startTime time.Time
+}
+
+func startDurationMetric(ctx context.Context) durationMetric {
+	return durationMetric{
+		ctx:       ctx,
+		startTime: timeNow(),
+	}
+}
+
+func (s *durationMetric) Record(cfg *config, method Method, err *error) {
+	var getterAttributes []attribute.KeyValue
+	if cfg.InstrumentAttributesGetter != nil {
+		getterAttributes = cfg.InstrumentAttributesGetter(s.ctx, method, "", nil)
 	}
 
-	instruments.duration.RecordSet(
-		ctx,
+	s.record(cfg, method, getterAttributes, err)
+}
+
+func (s *durationMetric) RecordQuery(cfg *config, method Method, query string, args []driver.NamedValue, err *error) {
+	var getterAttributes []attribute.KeyValue
+	if cfg.InstrumentAttributesGetter != nil {
+		getterAttributes = cfg.InstrumentAttributesGetter(s.ctx, method, query, args)
+	}
+
+	s.record(cfg, method, getterAttributes, err)
+}
+
+func (s *durationMetric) record(cfg *config, method Method, getterAttributes []attribute.KeyValue, errp *error) {
+	duration := timeNow().Sub(s.startTime)
+
+	var err error
+	if errp != nil {
+		err = *errp
+	}
+
+	var (
+		errAttributes       []attribute.KeyValue
+		getterErrAttributes []attribute.KeyValue
+	)
+
+	if err != nil {
+		if !cfg.DisableSkipErrMeasurement || !errors.Is(err, driver.ErrSkip) {
+			errAttributes = internalsemconv.ErrorTypeAttributes(err)
+		}
+
+		if cfg.InstrumentErrorAttributesGetter != nil {
+			getterErrAttributes = cfg.InstrumentErrorAttributesGetter(err)
+		}
+	}
+
+	// number of attributes + InstrumentAttributesGetter + InstrumentErrorAttributesGetter + estimated 2 from recordDuration.
+	attributes := make(
+		[]attribute.KeyValue,
+		len(cfg.Attributes),
+		len(cfg.Attributes)+len(getterAttributes)+len(getterErrAttributes)+1+len(errAttributes),
+	)
+	copy(attributes, cfg.Attributes)
+	attributes = append(attributes, getterAttributes...)
+	attributes = append(attributes, getterErrAttributes...)
+	attributes = append(attributes, semconv.DBOperationName(string(method)))
+	attributes = append(attributes, errAttributes...)
+
+	cfg.Instruments.duration.RecordSet(
+		s.ctx,
 		duration.Seconds(),
 		attribute.NewSet(attributes...),
 	)
-}
-
-// TODO: remove instruments from arguments.
-func recordMetric(
-	ctx context.Context,
-	instruments *instruments,
-	cfg *config,
-	method Method,
-	query string,
-	args []driver.NamedValue,
-) func(error) {
-	startTime := timeNow()
-
-	return func(err error) {
-		duration := timeNow().Sub(startTime)
-
-		var getterAttributes []attribute.KeyValue
-		if cfg.InstrumentAttributesGetter != nil {
-			getterAttributes = cfg.InstrumentAttributesGetter(ctx, method, query, args)
-		}
-
-		var errAttributes []attribute.KeyValue
-
-		if err != nil {
-			if cfg.InstrumentErrorAttributesGetter != nil {
-				errAttributes = cfg.InstrumentErrorAttributesGetter(err)
-			}
-		}
-
-		// number of attributes + InstrumentAttributesGetter + InstrumentErrorAttributesGetter + estimated 2 from recordDuration.
-		attributes := make(
-			[]attribute.KeyValue,
-			len(cfg.Attributes),
-			len(cfg.Attributes)+len(getterAttributes)+len(errAttributes)+2,
-		)
-		copy(attributes, cfg.Attributes)
-		attributes = append(attributes, getterAttributes...)
-		attributes = append(attributes, errAttributes...)
-
-		recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
-	}
 }
 
 var spanKindClientOption = trace.WithSpanKind(trace.SpanKindClient)

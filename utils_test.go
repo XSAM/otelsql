@@ -725,13 +725,13 @@ func TestRecordMetric(t *testing.T) {
 				timeNow = time.Now
 			})
 
-			recordFunc := recordMetric(context.Background(), cfg.Instruments, cfg, tt.method, tt.query, tt.args)
+			metric := startDurationMetric(context.Background())
 
 			timeNow = func() time.Time {
 				return time.Unix(3, 0)
 			}
 
-			recordFunc(tt.err)
+			metric.RecordQuery(cfg, tt.method, tt.query, tt.args, &tt.err)
 
 			var metricsData metricdata.ResourceMetrics
 
