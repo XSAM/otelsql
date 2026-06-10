@@ -42,7 +42,6 @@ func TestRecordSpanError(t *testing.T) {
 		opts          SpanOptions
 		err           error
 		expectedError bool
-		nilSpan       bool
 	}{
 		{
 			name:          "no error",
@@ -83,42 +82,36 @@ func TestRecordSpanError(t *testing.T) {
 			opts:          SpanOptions{RecordError: func(_ error) bool { return true }},
 			expectedError: true,
 		},
-		{
-			name:          "nil span",
-			err:           nil,
-			nilSpan:       true,
-			expectedError: false,
-		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			if !tc.nilSpan {
-				// Create a span
-				sr, provider := newTracerProvider()
-				tracer := provider.Tracer("test")
-				// Not using the spans from the SDK due to the limited data access.
-				_, _ = tracer.Start(context.Background(), "test")
+			// Create a span
+			sr, provider := newTracerProvider()
+			tracer := provider.Tracer("test")
+			// Not using the spans from the SDK due to the limited data access.
+			_, _ = tracer.Start(context.Background(), "test")
 
-				// Get the span
-				spanList := sr.Started()
-				require.Len(t, spanList, 1)
-				span := spanList[0]
+			// Get the span
+			spanList := sr.Started()
+			require.Len(t, spanList, 1)
+			span := spanList[0]
 
-				// Update the span
-				recordSpanError(span, tc.opts, tc.err)
+			// Update the span
+			recordSpanError(span, tc.opts, tc.err)
 
-				// Check result
-				if tc.expectedError {
-					assert.Equal(t, codes.Error, span.Status().Code)
-				} else {
-					assert.Equal(t, codes.Unset, span.Status().Code)
-				}
+			// Check result
+			if tc.expectedError {
+				assert.Equal(t, codes.Error, span.Status().Code)
 			} else {
-				recordSpanError(nil, tc.opts, tc.err)
+				assert.Equal(t, codes.Unset, span.Status().Code)
 			}
 		})
 	}
+
+	t.Run("nil span", func(_ *testing.T) {
+		recordSpanError(nil, SpanOptions{}, nil)
+	})
 }
 
 func newTracerProvider() (*tracetest.SpanRecorder, trace.TracerProvider) {
@@ -717,21 +710,26 @@ func TestRecordMetric(t *testing.T) {
 			cfg := newConfig(
 				append(tt.cfgOptions, WithMeterProvider(meterProvider), WithAttributes(defaultattribute))...)
 
-			timeNow = func() time.Time {
-				return time.Unix(1, 0)
-			}
-
 			t.Cleanup(func() {
 				timeNow = time.Now
 			})
 
-			metric := startDurationMetric(context.Background())
+			func() {
+				timeNow = func() time.Time {
+					return time.Unix(1, 0)
+				}
 
-			timeNow = func() time.Time {
-				return time.Unix(3, 0)
-			}
+				var metricErr error
 
-			metric.RecordQuery(cfg, tt.method, tt.query, tt.args, &tt.err)
+				metric := startDurationMetric(context.Background())
+				defer metric.RecordQuery(cfg, tt.method, tt.query, tt.args, &metricErr)
+
+				timeNow = func() time.Time {
+					return time.Unix(3, 0)
+				}
+
+				metricErr = tt.err
+			}()
 
 			var metricsData metricdata.ResourceMetrics
 
