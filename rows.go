@@ -36,11 +36,11 @@ type otRows struct {
 	driver.Rows
 
 	span    trace.Span
-	cfg     config
+	cfg     *config
 	onClose func(err error)
 }
 
-func newRows(ctx context.Context, rows driver.Rows, cfg config) *otRows {
+func newRows(ctx context.Context, rows driver.Rows, cfg *config) *otRows {
 	var span trace.Span
 
 	method := MethodRows

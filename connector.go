@@ -30,7 +30,7 @@ var (
 type otConnector struct {
 	driver.Connector
 	otDriver *otDriver
-	cfg      config
+	cfg      *config
 }
 
 func newConnector(connector driver.Connector, otDriver *otDriver) *otConnector {

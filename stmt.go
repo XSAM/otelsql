@@ -30,13 +30,13 @@ var (
 
 type otStmt struct {
 	driver.Stmt
-	cfg config
+	cfg *config
 
 	query  string
 	otConn *otConn
 }
 
-func newStmt(stmt driver.Stmt, cfg config, query string, otConn *otConn) *otStmt {
+func newStmt(stmt driver.Stmt, cfg *config, query string, otConn *otConn) *otStmt {
 	return &otStmt{
 		Stmt:   stmt,
 		cfg:    cfg,

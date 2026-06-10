@@ -143,14 +143,14 @@ func defaultSpanNameFormatter(_ context.Context, method Method, _ string) string
 }
 
 // newConfig returns a config with all Options set.
-func newConfig(options ...Option) config {
-	cfg := config{
+func newConfig(options ...Option) *config {
+	cfg := &config{
 		TracerProvider:    otel.GetTracerProvider(),
 		MeterProvider:     otel.GetMeterProvider(),
 		SpanNameFormatter: defaultSpanNameFormatter,
 	}
 	for _, opt := range options {
-		opt.Apply(&cfg)
+		opt.Apply(cfg)
 	}
 
 	cfg.Tracer = cfg.TracerProvider.Tracer(

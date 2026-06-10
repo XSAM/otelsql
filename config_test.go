@@ -39,7 +39,7 @@ func TestNewConfig(t *testing.T) {
 	// Ignore function compares for test equality check
 	cfg.SpanNameFormatter = nil
 
-	assert.Equal(t, config{
+	assert.Equal(t, &config{
 		TracerProvider: otel.GetTracerProvider(),
 		Tracer: otel.GetTracerProvider().Tracer(
 			instrumentationName,

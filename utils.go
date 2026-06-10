@@ -60,7 +60,7 @@ func recordSpanError(span trace.Span, opts SpanOptions, err error) {
 func recordDuration(
 	ctx context.Context,
 	instruments *instruments,
-	cfg config,
+	cfg *config,
 	duration time.Duration,
 	attributes []attribute.KeyValue,
 	method Method,
@@ -82,7 +82,7 @@ func recordDuration(
 func recordMetric(
 	ctx context.Context,
 	instruments *instruments,
-	cfg config,
+	cfg *config,
 	method Method,
 	query string,
 	args []driver.NamedValue,
@@ -123,7 +123,7 @@ var spanKindClientOption = trace.WithSpanKind(trace.SpanKindClient)
 
 func createSpan(
 	ctx context.Context,
-	cfg config,
+	cfg *config,
 	method Method,
 	enableDBStatement bool,
 	query string,

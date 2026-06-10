@@ -39,10 +39,10 @@ var (
 
 type otConn struct {
 	driver.Conn
-	cfg config
+	cfg *config
 }
 
-func newConn(conn driver.Conn, cfg config) *otConn {
+func newConn(conn driver.Conn, cfg *config) *otConn {
 	return &otConn{
 		Conn: conn,
 		cfg:  cfg,

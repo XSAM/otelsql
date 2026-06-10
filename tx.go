@@ -26,10 +26,10 @@ var _ driver.Tx = (*otTx)(nil)
 type otTx struct {
 	tx  driver.Tx
 	ctx context.Context
-	cfg config
+	cfg *config
 }
 
-func newTx(ctx context.Context, tx driver.Tx, cfg config) *otTx {
+func newTx(ctx context.Context, tx driver.Tx, cfg *config) *otTx {
 	return &otTx{
 		tx:  tx,
 		ctx: ctx,

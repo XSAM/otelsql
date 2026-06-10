@@ -23,10 +23,10 @@ var (
 
 type otDriver struct {
 	driver driver.Driver
-	cfg    config
+	cfg    *config
 }
 
-func newDriver(dri driver.Driver, cfg config) driver.Driver {
+func newDriver(dri driver.Driver, cfg *config) driver.Driver {
 	if _, ok := dri.(driver.DriverContext); ok {
 		return newOtDriver(dri, cfg)
 	}
@@ -34,7 +34,7 @@ func newDriver(dri driver.Driver, cfg config) driver.Driver {
 	return struct{ driver.Driver }{newOtDriver(dri, cfg)}
 }
 
-func newOtDriver(dri driver.Driver, cfg config) *otDriver {
+func newOtDriver(dri driver.Driver, cfg *config) *otDriver {
 	return &otDriver{driver: dri, cfg: cfg}
 }
 

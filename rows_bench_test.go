@@ -33,12 +33,12 @@ func BenchmarkNewRows(b *testing.B) {
 }
 
 func BenchmarkRows_Next(b *testing.B) {
-	configs := make(map[string]config, len(benchMarkConfigs))
+	configs := make(map[string]*config, len(benchMarkConfigs))
 	for name, cfg := range benchMarkConfigs {
 		configs[name] = cfg()
 	}
 
-	configs["DefaultWithRowsNextEvent"] = func() config {
+	configs["DefaultWithRowsNextEvent"] = func() *config {
 		cfg := newBenchConfig()
 		cfg.SpanOptions.RowsNext = true
 

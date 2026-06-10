@@ -111,7 +111,7 @@ var benchAttrs = []attribute.KeyValue{
 	attribute.String("db.namespace", "test"),
 }
 
-func newBenchConfig() config {
+func newBenchConfig() *config {
 	cfg := newConfig()
 	cfg.Tracer = sdktrace.NewTracerProvider().Tracer("benchmark")
 	// Use a fixed-capacity slice so cfg.Attributes header stays stable across
@@ -122,7 +122,7 @@ func newBenchConfig() config {
 	return cfg
 }
 
-func newBenchConfigNeverSample() config {
+func newBenchConfigNeverSample() *config {
 	cfg := newBenchConfig()
 	cfg.Tracer = sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.NeverSample())).
 		Tracer("benchmark")
@@ -130,7 +130,7 @@ func newBenchConfigNeverSample() config {
 	return cfg
 }
 
-var benchMarkConfigs = map[string]func() config{
+var benchMarkConfigs = map[string]func() *config{
 	"Default":     newBenchConfig,
 	"NeverSample": newBenchConfigNeverSample,
 }
