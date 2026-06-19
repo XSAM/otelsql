@@ -17,7 +17,6 @@ package otelsql
 import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -76,8 +75,7 @@ func WithMeterProvider(provider metric.MeterProvider) Option {
 	})
 }
 
-// WithSQLCommenter will enable or disable context propagation for database
-// by injecting a comment into SQL statements.
+// WithSQLCommenter will enable a commenter allowing injecting a comment into SQL statements.
 //
 // e.g., a SQL query
 //
@@ -91,20 +89,9 @@ func WithMeterProvider(provider metric.MeterProvider) Option {
 //
 // Notice: This option is EXPERIMENTAL and may be changed or removed in a
 // later release.
-func WithSQLCommenter(enabled bool) Option {
+func WithSQLCommenter(commenter Commenter) Option {
 	return OptionFunc(func(cfg *config) {
-		cfg.SQLCommenterEnabled = enabled
-	})
-}
-
-// WithTextMapPropagator specifies a text map propagator to used by the SQLCommenter
-// option. If none is specified, the global text map propagator is used.
-//
-// Notice: This option is EXPERIMENTAL and may be changed or removed in a
-// later release.
-func WithTextMapPropagator(propagator propagation.TextMapPropagator) Option {
-	return OptionFunc(func(cfg *config) {
-		cfg.TextMapPropagator = propagator
+		cfg.SQLCommenter = commenter
 	})
 }
 
