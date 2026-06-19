@@ -58,7 +58,7 @@ func TestNewConfig(t *testing.T) {
 		Attributes: []attribute.KeyValue{
 			semconv.DBSystemNameMySQL,
 		},
-		SQLCommenter: newCommenter(false, otel.GetTextMapPropagator()),
+		SQLCommenter: noopCommenter{},
 	}, cfg)
 	assert.NotNil(t, cfg.Instruments)
 }
