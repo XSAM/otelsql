@@ -14,7 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
-- Upgrade OTel Semconv to `v1.40.0`. (#606)
+- ~~Upgrade OTel Semconv to `v1.40.0`.~~ (#606)
+- Upgrade OTel Semconv to `v1.44.0`. (#615)
 
 ### Fixed
 
