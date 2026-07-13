@@ -108,6 +108,8 @@ linters:
     - spancheck
     - nonamedreturns
   settings:
+    goconst:
+      ignore-tests: true
     gomoddirectives:
       replace-local: true
 formatters:
