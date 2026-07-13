@@ -12,3 +12,4 @@ vendor/
 example/otel-collector/otel-collector
 example/stdout/stdout
 .worktrees
+.claude/worktrees
