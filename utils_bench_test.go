@@ -40,13 +40,18 @@ var (
 )
 
 func BenchmarkRecordMetric(b *testing.B) {
-	cfg := newConfig()
-	// Prevent reallocation of Attributes slice, which increase the chance to detect data races.
-	cfg.Attributes = make([]attribute.KeyValue, 0, 10)
+	newCfg := func() *config {
+		cfg := newConfig()
+
+		// Prevent reallocation of Attributes slice, which increase the chance to detect data races.
+		cfg.Attributes = make([]attribute.KeyValue, 0, 10)
+
+		return cfg
+	}
 
 	b.Run("InstrumentAttributesGetter", func(b *testing.B) {
 		b.Run("5", func(b *testing.B) {
-			cfg := cfg
+			cfg := newCfg()
 			cfg.InstrumentAttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 				return attrs5
 			}
@@ -55,21 +60,14 @@ func BenchmarkRecordMetric(b *testing.B) {
 			b.ResetTimer()
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					recordFunc := recordMetric(
-						context.Background(),
-						cfg.Instruments,
-						cfg,
-						MethodStmtQuery,
-						"SELECT 1",
-						nil,
-					)
-					recordFunc(nil)
+					metric := startDurationMetric(context.Background())
+					metric.RecordQuery(cfg, MethodStmtQuery, "SELECT 1", nil, nil)
 				}
 			})
 		})
 
 		b.Run("10", func(b *testing.B) {
-			cfg := cfg
+			cfg := newCfg()
 			cfg.InstrumentAttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 				return attrs10
 			}
@@ -78,15 +76,8 @@ func BenchmarkRecordMetric(b *testing.B) {
 			b.ResetTimer()
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					recordFunc := recordMetric(
-						context.Background(),
-						cfg.Instruments,
-						cfg,
-						MethodStmtQuery,
-						"SELECT 1",
-						nil,
-					)
-					recordFunc(nil)
+					metric := startDurationMetric(context.Background())
+					metric.RecordQuery(cfg, MethodStmtQuery, "SELECT 1", nil, nil)
 				}
 			})
 		})
@@ -94,15 +85,19 @@ func BenchmarkRecordMetric(b *testing.B) {
 }
 
 func BenchmarkCreateSpan(b *testing.B) {
-	cfg := newConfig()
-	cfg.Tracer = sdktrace.NewTracerProvider().Tracer("BenchmarkCreateSpan")
-	// Prevent reallocation of Attributes slice, which increase the chance to detect data races.
-	cfg.Attributes = make([]attribute.KeyValue, 0, 10)
+	newCfg := func() *config {
+		cfg := newConfig()
+		cfg.Tracer = sdktrace.NewTracerProvider().Tracer("BenchmarkCreateSpan")
+		// Prevent reallocation of Attributes slice, which increase the chance to detect data races.
+		cfg.Attributes = make([]attribute.KeyValue, 0, 10)
+
+		return cfg
+	}
 
 	b.Run("AttributesGetter", func(b *testing.B) {
 		b.Run("5", func(b *testing.B) {
 			ctx := b.Context()
-			cfg := cfg
+			cfg := newCfg()
 			cfg.AttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 				return attrs5
 			}
@@ -118,7 +113,7 @@ func BenchmarkCreateSpan(b *testing.B) {
 
 		b.Run("10", func(b *testing.B) {
 			ctx := b.Context()
-			cfg := cfg
+			cfg := newCfg()
 			cfg.AttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
 				return attrs10
 			}
@@ -135,7 +130,7 @@ func BenchmarkCreateSpan(b *testing.B) {
 
 	b.Run("Never Sampling", func(b *testing.B) {
 		ctx := b.Context()
-		cfg := cfg
+		cfg := newCfg()
 		cfg.Tracer = sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.NeverSample())).
 			Tracer("BenchmarkCreateSpan")
 

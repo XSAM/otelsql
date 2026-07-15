@@ -90,13 +90,13 @@ func newMockLegacyConn(shouldError bool) *mockLegacyConn {
 }
 
 func TestOtConn_PingWithLegacyConn(t *testing.T) {
-	otelConn := newConn(newMockLegacyConn(false), config{})
+	otelConn := newConn(newMockLegacyConn(false), &config{})
 	err := otelConn.Ping(context.Background())
 	assert.NoError(t, err)
 }
 
 func TestOtConn_ResetSessionWithLegacyConn(t *testing.T) {
-	otelConn := newConn(newMockLegacyConn(false), config{})
+	otelConn := newConn(newMockLegacyConn(false), &config{})
 	err := otelConn.ResetSession(context.Background())
 	assert.NoError(t, err)
 }

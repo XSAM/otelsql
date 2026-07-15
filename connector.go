@@ -30,7 +30,7 @@ var (
 type otConnector struct {
 	driver.Connector
 	otDriver *otDriver
-	cfg      config
+	cfg      *config
 }
 
 func newConnector(connector driver.Connector, otDriver *otDriver) *otConnector {
@@ -43,11 +43,9 @@ func newConnector(connector driver.Connector, otDriver *otDriver) *otConnector {
 
 func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err error) {
 	method := MethodConnectorConnect
-	onDefer := recordMetric(ctx, c.cfg.Instruments, c.cfg, method, "", nil)
 
-	defer func() {
-		onDefer(err)
-	}()
+	metric := startDurationMetric(ctx)
+	defer metric.Record(c.cfg, method, &err)
 
 	var span trace.Span
 	if !c.cfg.SpanOptions.OmitConnectorConnect && filterSpan(ctx, c.cfg.SpanOptions, method, "", nil) {

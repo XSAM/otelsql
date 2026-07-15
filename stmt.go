@@ -30,13 +30,13 @@ var (
 
 type otStmt struct {
 	driver.Stmt
-	cfg config
+	cfg *config
 
 	query  string
 	otConn *otConn
 }
 
-func newStmt(stmt driver.Stmt, cfg config, query string, otConn *otConn) *otStmt {
+func newStmt(stmt driver.Stmt, cfg *config, query string, otConn *otConn) *otStmt {
 	return &otStmt{
 		Stmt:   stmt,
 		cfg:    cfg,
@@ -49,11 +49,9 @@ func (s *otStmt) ExecContext(
 	ctx context.Context, args []driver.NamedValue,
 ) (result driver.Result, err error) {
 	method := MethodStmtExec
-	onDefer := recordMetric(ctx, s.cfg.Instruments, s.cfg, method, s.query, args)
 
-	defer func() {
-		onDefer(err)
-	}()
+	metric := startDurationMetric(ctx)
+	defer metric.RecordQuery(s.cfg, method, s.query, args, &err)
 
 	var span trace.Span
 	if filterSpan(ctx, s.cfg.SpanOptions, method, s.query, args) {
@@ -87,11 +85,9 @@ func (s *otStmt) QueryContext(
 	ctx context.Context, args []driver.NamedValue,
 ) (rows driver.Rows, err error) {
 	method := MethodStmtQuery
-	onDefer := recordMetric(ctx, s.cfg.Instruments, s.cfg, method, s.query, args)
 
-	defer func() {
-		onDefer(err)
-	}()
+	metric := startDurationMetric(ctx)
+	defer metric.RecordQuery(s.cfg, method, s.query, args, &err)
 
 	var span trace.Span
 
