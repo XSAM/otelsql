@@ -20,12 +20,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
-func TestCommenter_WithComment(t *testing.T) {
+func TestPropagationCommenter(t *testing.T) {
 	query := "foo"
 
 	traceID, err := trace.TraceIDFromHex("a3d3b88cf7994e554c1afbdceec1620b")
@@ -52,35 +53,24 @@ func TestCommenter_WithComment(t *testing.T) {
 
 	testCases := []struct {
 		name       string
-		enabled    bool
 		ctx        context.Context
 		propagator propagation.TextMapPropagator
 		expected   string
 	}{
 		{
 			name:       "empty context",
-			enabled:    true,
 			ctx:        context.Background(),
 			propagator: stdPropagator,
 			expected:   query,
 		},
 		{
-			name:       "context with disable",
-			enabled:    false,
-			ctx:        ctx,
-			propagator: stdPropagator,
-			expected:   query,
-		},
-		{
 			name:       "nil propagator",
-			enabled:    true,
 			ctx:        ctx,
 			propagator: nil,
 			expected:   query,
 		},
 		{
 			name:       "context and propagator",
-			enabled:    true,
 			ctx:        ctx,
 			propagator: stdPropagator,
 			expected:   query + " /*tracestate='rojo%3D00f067aa0ba902b7%2Ccongo%3Dt61rcWkgMzE',traceparent='00-a3d3b88cf7994e554c1afbdceec1620b-683ec6a9a3a265fb-01',baggage='foo%3Dbar'*/",
@@ -89,9 +79,77 @@ func TestCommenter_WithComment(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c := newCommenter(tc.enabled, tc.propagator)
+			c := NewPropagationCommenter(tc.propagator)
 
-			result := c.withComment(tc.ctx, query)
+			result := c.Query(tc.ctx, query)
+			assert.Equal(t, tc.expected, result)
+
+			result = c.Exec(tc.ctx, query)
+			assert.Equal(t, tc.expected, result)
+
+			result = c.Prepare(tc.ctx, query)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestNewFixedCommenter(t *testing.T) {
+	query := "foo"
+
+	traceID, err := trace.TraceIDFromHex("a3d3b88cf7994e554c1afbdceec1620b")
+	require.NoError(t, err)
+	spanID, err := trace.SpanIDFromHex("683ec6a9a3a265fb")
+	require.NoError(t, err)
+
+	ctx := trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: traceID,
+		SpanID:  spanID,
+	}))
+
+	testCases := []struct {
+		name       string
+		ctx        context.Context
+		attributes attribute.Set
+		expected   string
+	}{
+		{
+			name:       "empty context + empty attributes",
+			ctx:        context.Background(),
+			attributes: attribute.Set{},
+			expected:   query,
+		},
+		{
+			name: "ignores invalid attributes",
+			ctx:  ctx,
+			attributes: attribute.NewSet(
+				attribute.KeyValue{
+					Key:   "",
+					Value: attribute.StringValue("bar"),
+				}),
+			expected: query,
+		},
+		{
+			name: "attributes",
+			ctx:  ctx,
+			attributes: attribute.NewSet(
+				attribute.String("service", "go test"),
+				attribute.String("tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"),
+			),
+			expected: query + " /*service='go+test',tracestate='rojo%3D00f067aa0ba902b7%2Ccongo%3Dt61rcWkgMzE'*/",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := NewFixedCommenter(tc.attributes)
+
+			result := c.Query(tc.ctx, query)
+			assert.Equal(t, tc.expected, result)
+
+			result = c.Exec(tc.ctx, query)
+			assert.Equal(t, tc.expected, result)
+
+			result = c.Prepare(tc.ctx, query)
 			assert.Equal(t, tc.expected, result)
 		})
 	}
