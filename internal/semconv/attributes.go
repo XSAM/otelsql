@@ -35,19 +35,22 @@ func DBQueryTextAttributes(query string) []attribute.KeyValue {
 }
 
 // ErrorTypeAttributes converts an error to a slice of attribute.KeyValue.
+//
+// Deprecated: Use ErrorTypeAttribute instead.
 func ErrorTypeAttributes(err error) []attribute.KeyValue {
-	if err == nil {
-		return nil
-	}
+	return []attribute.KeyValue{ErrorTypeAttribute(err)}
+}
 
+// ErrorTypeAttribute converts an error to [attribute.KeyValue].
+func ErrorTypeAttribute(err error) attribute.KeyValue {
 	// Handle common driver errors with specific error types
 	switch {
 	case errors.Is(err, driver.ErrBadConn):
-		return []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrBadConn")}
+		return semconv.ErrorTypeKey.String("database/sql/driver.ErrBadConn")
 	case errors.Is(err, driver.ErrSkip):
-		return []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrSkip")}
+		return semconv.ErrorTypeKey.String("database/sql/driver.ErrSkip")
 	case errors.Is(err, driver.ErrRemoveArgument):
-		return []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrRemoveArgument")}
+		return semconv.ErrorTypeKey.String("database/sql/driver.ErrRemoveArgument")
 	}
 
 	t := reflect.TypeOf(err)
@@ -62,8 +65,8 @@ func ErrorTypeAttributes(err error) []attribute.KeyValue {
 	}
 
 	if value == "" {
-		return []attribute.KeyValue{semconv.ErrorTypeOther}
+		return semconv.ErrorTypeOther
 	}
 
-	return []attribute.KeyValue{semconv.ErrorTypeKey.String(value)}
+	return semconv.ErrorTypeKey.String(value)
 }
