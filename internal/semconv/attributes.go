@@ -34,13 +34,6 @@ func DBQueryTextAttributes(query string) []attribute.KeyValue {
 	}
 }
 
-// ErrorTypeAttributes converts an error to a slice of attribute.KeyValue.
-//
-// Deprecated: Use ErrorTypeAttribute instead.
-func ErrorTypeAttributes(err error) []attribute.KeyValue {
-	return []attribute.KeyValue{ErrorTypeAttribute(err)}
-}
-
 // ErrorTypeAttribute converts an error to [attribute.KeyValue].
 func ErrorTypeAttribute(err error) attribute.KeyValue {
 	// Handle common driver errors with specific error types
@@ -62,10 +55,6 @@ func ErrorTypeAttribute(err error) attribute.KeyValue {
 		value = t.String()
 	} else {
 		value = fmt.Sprintf("%s.%s", t.PkgPath(), t.Name())
-	}
-
-	if value == "" {
-		return semconv.ErrorTypeOther
 	}
 
 	return semconv.ErrorTypeKey.String(value)
