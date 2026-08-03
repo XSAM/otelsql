@@ -48,14 +48,10 @@ func ErrorTypeAttribute(err error) attribute.KeyValue {
 
 	t := reflect.TypeOf(err)
 
-	var value string
-
 	if t.PkgPath() == "" && t.Name() == "" {
 		// Likely a builtin type.
-		value = t.String()
-	} else {
-		value = fmt.Sprintf("%s.%s", t.PkgPath(), t.Name())
+		return semconv.ErrorTypeKey.String(t.String())
 	}
 
-	return semconv.ErrorTypeKey.String(value)
+	return semconv.ErrorTypeKey.String(fmt.Sprintf("%s.%s", t.PkgPath(), t.Name()))
 }
