@@ -68,7 +68,7 @@ func recordDuration(
 ) {
 	attributes = append(attributes, semconv.DBOperationName(string(method)))
 	if err != nil && (!cfg.DisableSkipErrMeasurement || !errors.Is(err, driver.ErrSkip)) {
-		attributes = append(attributes, internalsemconv.ErrorTypeAttributes(err)...)
+		attributes = append(attributes, internalsemconv.ErrorTypeAttribute(err))
 	}
 
 	instruments.duration.RecordSet(
