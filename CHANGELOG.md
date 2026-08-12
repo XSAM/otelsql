@@ -23,6 +23,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Implement `driver.Validator` on `otConn` so that `database/sql` connection pool health checks are properly delegated to the underlying driver connection. (#619)
 - `AttributesFromDSN` no longer panics on DSNs that wrap a unix-socket path in the `protocol(/path/to.sock)` form, e.g. `unix(/tmp/mysql.sock)/dbname`. The parser now extracts the address from inside the parentheses before splitting on `/`. (#625)
+- `db.client.operation.duration` histogram now uses the explicit bucket boundaries recommended by the OTel Semantic Conventions (`0.001` to `10` seconds) instead of the SDK defaults, which placed virtually all database operations in the first bucket. (#632)
 
 ## [0.42.0] - 2026-03-30
 

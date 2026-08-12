@@ -15,11 +15,15 @@
 package otelsql
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/noop"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
 func TestNewInstruments(t *testing.T) {
@@ -28,6 +32,29 @@ func TestNewInstruments(t *testing.T) {
 
 	assert.NotNil(t, instruments)
 	assert.NotNil(t, instruments.duration)
+}
+
+func TestNewInstrumentsDurationBucketBoundaries(t *testing.T) {
+	r := sdkmetric.NewManualReader()
+	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(r))
+
+	instruments, err := newInstruments(mp.Meter("test"))
+	require.NoError(t, err)
+
+	instruments.duration.RecordSet(context.Background(), 0.001, *attribute.EmptySet())
+
+	got := &metricdata.ResourceMetrics{}
+	err = r.Collect(context.Background(), got)
+	require.NoError(t, err)
+	require.Len(t, got.ScopeMetrics, 1)
+	require.Len(t, got.ScopeMetrics[0].Metrics, 1)
+
+	histogram, ok := got.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[float64])
+	require.True(t, ok)
+	require.Len(t, histogram.DataPoints, 1)
+
+	assert.Equal(t, []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10},
+		histogram.DataPoints[0].Bounds)
 }
 
 func TestNewDBStatsInstruments(t *testing.T) {
