@@ -158,7 +158,7 @@ func RegisterDBStatsMetrics(db *sql.DB, opts ...Option) (metric.Registration, er
 }
 
 func recordDBStatsMetrics(
-	dbStats sql.DBStats, instruments *dbStatsInstruments, cfg config, observer metric.Observer,
+	dbStats sql.DBStats, instruments *dbStatsInstruments, cfg *config, observer metric.Observer,
 ) {
 	observer.ObserveInt64(instruments.connectionMaxOpen,
 		int64(dbStats.MaxOpenConnections),
