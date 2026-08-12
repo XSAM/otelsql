@@ -13,6 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Replace `ErrorTypeAttributes` with `ErrorTypeAttribute` to avoid allocating an additional slice. (#643)
 
 ### Fixed
+
 - `db.client.operation.duration` histogram now uses the explicit bucket boundaries recommended by the OTel Semantic Conventions (`0.001` to `10` seconds) instead of the SDK defaults, which placed virtually all database operations in the first bucket. (#632)
 
 ## [0.43.0] - 2026-07-12
