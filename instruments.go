@@ -45,7 +45,10 @@ func newInstruments(meter metric.Meter) (*instruments, error) {
 	var instruments instruments
 
 	var err error
-	if instruments.duration, err = dbconv.NewClientOperationDuration(meter); err != nil {
+	if instruments.duration, err = dbconv.NewClientOperationDuration(
+		meter,
+		metric.WithExplicitBucketBoundaries(0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10),
+	); err != nil {
 		return nil, fmt.Errorf("failed to create duration instrument, %w", err)
 	}
 
