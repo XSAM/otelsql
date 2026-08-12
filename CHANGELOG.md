@@ -16,6 +16,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - `db.client.operation.duration` histogram now uses the explicit bucket boundaries recommended by the OTel Semantic Conventions (`0.001` to `10` seconds) instead of the SDK defaults, which placed virtually all database operations in the first bucket. (#632)
 
+<!-- Released section -->
+<!-- Don't change this section unless doing release -->
+
 ## [0.43.0] - 2026-07-12
 
 ### Removed
@@ -541,6 +544,8 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 - CI files.
 - Example code for a basic usage.
 - Apache-2.0 license.
+
+<!-- Released section ended -->
 
 [Go 1.26]: https://go.dev/doc/go1.26
 [Go 1.25]: https://go.dev/doc/go1.25
