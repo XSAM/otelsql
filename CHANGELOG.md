@@ -8,9 +8,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- [Go 1.27] to supported versions. (#557)
+- Support `driver.RowsColumnScanner` on Go 1.27. (#557)
+
 ### Changed
 
 - Replace `ErrorTypeAttributes` with `ErrorTypeAttribute` to avoid allocating an additional slice. (#643)
+
+### Removed
+
+- Drop support for [Go 1.25]. (#557)
 
 ### Fixed
 
@@ -547,6 +556,7 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 
 <!-- Released section ended -->
 
+[Go 1.27]: https://go.dev/doc/go1.27
 [Go 1.26]: https://go.dev/doc/go1.26
 [Go 1.25]: https://go.dev/doc/go1.25
 [Go 1.24]: https://go.dev/doc/go1.24

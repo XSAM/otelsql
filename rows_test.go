@@ -294,7 +294,9 @@ func TestNewRows(t *testing.T) {
 								attributesGetter:   tc.attributesGetter,
 							})
 
-							assert.Equal(t, mr, rows.Rows)
+							otelRows, ok := rows.(*otRows)
+							require.True(t, ok)
+							assert.Equal(t, mr, otelRows.Rows)
 						})
 					}
 				})
