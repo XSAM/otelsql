@@ -13,7 +13,7 @@ The next release will require at least [Go 1.26].
 
 ### Added
 
-- Support testing of [Go 1.27]. (#648)
+- Support testing of [Go 1.27]. (#650)
 
 ### Changed
 
