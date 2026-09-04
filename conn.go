@@ -114,7 +114,7 @@ func (c *otConn) ExecContext(
 		defer span.End()
 	}
 
-	res, err = execer.ExecContext(ctx, c.cfg.SQLCommenter.withComment(ctx, query), args)
+	res, err = execer.ExecContext(ctx, c.cfg.SQLCommenter.Exec(ctx, query), args)
 	if err != nil {
 		recordSpanError(span, c.cfg.SpanOptions, err)
 		return nil, err
@@ -155,7 +155,7 @@ func (c *otConn) QueryContext(
 		defer span.End()
 	}
 
-	rows, err = queryer.QueryContext(queryCtx, c.cfg.SQLCommenter.withComment(queryCtx, query), args)
+	rows, err = queryer.QueryContext(queryCtx, c.cfg.SQLCommenter.Query(queryCtx, query), args)
 	if err != nil {
 		recordSpanError(span, c.cfg.SpanOptions, err)
 		return nil, err
@@ -179,7 +179,7 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 		defer recordSpanErrorDeferred(span, c.cfg.SpanOptions, &err)
 	}
 
-	commentedQuery := c.cfg.SQLCommenter.withComment(ctx, query)
+	commentedQuery := c.cfg.SQLCommenter.Prepare(ctx, query)
 
 	if preparer, ok := c.Conn.(driver.ConnPrepareContext); ok {
 		if stmt, err = preparer.PrepareContext(ctx, commentedQuery); err != nil {

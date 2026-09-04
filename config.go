@@ -21,7 +21,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -65,16 +64,14 @@ type config struct {
 	// Default use method as span name
 	SpanNameFormatter SpanNameFormatter
 
-	// SQLCommenterEnabled enables context propagation for database
+	// SQLCommenter enables context propagation for database
 	// by injecting a comment into SQL statements.
 	//
 	// Experimental
 	//
 	// Notice: This config is EXPERIMENTAL and may be changed or removed in a
 	// later release.
-	SQLCommenterEnabled bool
-	SQLCommenter        *commenter
-	TextMapPropagator   propagation.TextMapPropagator
+	SQLCommenter Commenter
 
 	// AttributesGetter will be called to produce additional attributes while creating spans.
 	// Default returns nil
@@ -162,7 +159,9 @@ func newConfig(options ...Option) config {
 		metric.WithInstrumentationVersion(Version()),
 	)
 
-	cfg.SQLCommenter = newCommenter(cfg.SQLCommenterEnabled, cfg.TextMapPropagator)
+	if cfg.SQLCommenter == nil {
+		cfg.SQLCommenter = noopCommenter{}
+	}
 
 	var err error
 	if cfg.Instruments, err = newInstruments(cfg.Meter); err != nil {
