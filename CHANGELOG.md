@@ -8,13 +8,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+This release is the last to support [Go 1.25].
+The next release will require at least [Go 1.26].
+
 ### Added
 
+- Support testing of [Go 1.27]. (#650)
 - Add `WithSpanErrorAttributesGetter` option to set additional attributes (e.g., `db.response.status_code`) on spans when an operation returns an error. (#651)
 
 ### Changed
 
 - Replace `ErrorTypeAttributes` with `ErrorTypeAttribute` to avoid allocating an additional slice. (#643)
+- Upgrade OTel Semconv to `v1.46.0`. (#644)
 
 ### Fixed
 
@@ -551,6 +556,7 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 
 <!-- Released section ended -->
 
+[Go 1.27]: https://go.dev/doc/go1.27
 [Go 1.26]: https://go.dev/doc/go1.26
 [Go 1.25]: https://go.dev/doc/go1.25
 [Go 1.24]: https://go.dev/doc/go1.24
