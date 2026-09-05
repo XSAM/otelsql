@@ -40,6 +40,17 @@ type otRows struct {
 	onClose func(err error)
 }
 
+// rowsContext returns the context that should be used to create the sql.rows span.
+// When SpanOptions.RowsChildOfQuery is set, the query span's context is used so the
+// rows span becomes a child of the query span; otherwise the caller's context is used.
+func rowsContext(ctx, queryCtx context.Context, cfg config) context.Context {
+	if cfg.SpanOptions.RowsChildOfQuery {
+		return queryCtx
+	}
+
+	return ctx
+}
+
 func newRows(ctx context.Context, rows driver.Rows, cfg config) driver.Rows {
 	var span trace.Span
 

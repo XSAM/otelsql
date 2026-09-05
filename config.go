@@ -140,6 +140,20 @@ type SpanOptions struct {
 	// OmitRows if set to true will suppress sql.rows spans
 	OmitRows bool
 
+	// RowsChildOfQuery, if set to true, will create sql.rows spans as children of
+	// the sql.conn.query or sql.stmt.query span that produced the rows, instead of
+	// as siblings under the caller's span.
+	//
+	// This builds an explicit causal relationship between a query span and the
+	// span that measures iterating over its result set, which is useful when
+	// multiple queries run concurrently under the same parent span. Note that the
+	// rows span will start right before the query span ends, so the child span
+	// will appear after its parent on the timeline.
+	//
+	// If the query span is not created (e.g., OmitConnQuery is set or SpanFilter
+	// returns false), the sql.rows span falls back to the caller's span as its parent.
+	RowsChildOfQuery bool
+
 	// OmitConnectorConnect if set to true will suppress sql.connector.connect spans
 	OmitConnectorConnect bool
 

@@ -15,6 +15,7 @@
 package otelsql
 
 import (
+	"context"
 	"database/sql/driver"
 	"errors"
 	"testing"
@@ -212,6 +213,20 @@ func TestOtRows_Next(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRowsContext(t *testing.T) {
+	type ctxKey struct{}
+
+	ctx := context.Background()
+	queryCtx := context.WithValue(ctx, ctxKey{}, "query")
+
+	var cfg config
+
+	assert.Equal(t, ctx, rowsContext(ctx, queryCtx, cfg))
+
+	cfg.SpanOptions.RowsChildOfQuery = true
+	assert.Equal(t, queryCtx, rowsContext(ctx, queryCtx, cfg))
 }
 
 func TestNewRows(t *testing.T) {
