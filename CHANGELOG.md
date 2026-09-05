@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - Replace `ErrorTypeAttributes` with `ErrorTypeAttribute` to avoid allocating an additional slice. (#643)
+- Upgrade OTel Semconv to `v1.46.0`. (#644)
 
 ### Fixed
 
