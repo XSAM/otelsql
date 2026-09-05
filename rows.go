@@ -135,7 +135,7 @@ func (r otRows) Close() (err error) {
 
 	err = r.Rows.Close()
 	if err != nil {
-		recordSpanError(r.span, r.cfg.SpanOptions, err)
+		recordSpanError(r.span, r.cfg, err)
 	}
 
 	return
@@ -149,7 +149,7 @@ func (r otRows) Next(dest []driver.Value) (err error) {
 	err = r.Rows.Next(dest)
 	// io.EOF is not an error. It is expected to happen during iteration.
 	if err != nil && !errors.Is(err, io.EOF) {
-		recordSpanError(r.span, r.cfg.SpanOptions, err)
+		recordSpanError(r.span, r.cfg, err)
 	}
 
 	return

@@ -57,7 +57,7 @@ func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err 
 
 	connection, err = c.Connector.Connect(ctx)
 	if err != nil {
-		recordSpanError(span, c.cfg.SpanOptions, err)
+		recordSpanError(span, c.cfg, err)
 		return nil, err
 	}
 
