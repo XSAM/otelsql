@@ -267,6 +267,53 @@ func assertSpanList(
 	}
 }
 
+// assertRowsSpan verifies the span created in newRows() by a query method.
+// querySpanOmitted reports whether the query span (sql.conn.query or sql.stmt.query)
+// was not created, in which case the rows span falls back to the caller's span as its parent.
+func assertRowsSpan(
+	ctx context.Context,
+	t *testing.T,
+	sr *tracetest.SpanRecorder,
+	cfg config,
+	rows driver.Rows,
+	dummySpan trace.Span,
+	querySpanOmitted bool,
+) {
+	t.Helper()
+
+	otelRows, ok := rows.(*otRows)
+	require.True(t, ok)
+
+	if !filterSpan(ctx, cfg.SpanOptions, MethodRows, "", nil) {
+		assert.Nil(t, otelRows.span)
+		return
+	}
+
+	require.NotNil(t, otelRows.span)
+
+	endedSpanList := sr.Ended()
+	startedSpanList := sr.Started()
+	// The rows span is started but not ended until rows.Close() is called.
+	require.Len(t, startedSpanList, len(endedSpanList)+1)
+	rowsSpan := startedSpanList[len(endedSpanList)]
+	// Make sure this span is the same as the span from otelRows
+	require.Equal(t, otelRows.span.SpanContext().SpanID(), rowsSpan.SpanContext().SpanID())
+
+	switch {
+	case cfg.SpanOptions.RowsChildOfQuery && !querySpanOmitted:
+		// The query span is the last ended span, and the rows span is its child.
+		querySpan := endedSpanList[len(endedSpanList)-1]
+		assert.Equal(t, querySpan.SpanContext().TraceID(), rowsSpan.SpanContext().TraceID())
+		assert.Equal(t, querySpan.SpanContext().SpanID(), rowsSpan.Parent().SpanID())
+	case dummySpan != nil:
+		// The rows span is the child of the dummySpan
+		assert.Equal(t, dummySpan.SpanContext().TraceID(), rowsSpan.SpanContext().TraceID())
+		assert.Equal(t, dummySpan.SpanContext().SpanID(), rowsSpan.Parent().SpanID())
+	default:
+		assert.False(t, rowsSpan.Parent().IsValid())
+	}
+}
+
 func getExpectedSpanCount(noParentSpan bool, omitSpan bool) int {
 	if !noParentSpan {
 		if !omitSpan {

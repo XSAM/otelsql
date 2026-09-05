@@ -15,6 +15,7 @@ The next release will require at least [Go 1.26].
 
 - Support testing of [Go 1.27]. (#650)
 - Add `WithSpanErrorAttributesGetter` option to set additional attributes (e.g., `db.response.status_code`) on spans when an operation returns an error. (#651)
+- Add `SpanOptions.RowsChildOfQuery` to create `sql.rows` spans as children of the `sql.conn.query` or `sql.stmt.query` span that produced them, so concurrent queries can be correlated with their result iteration. (#652)
 
 ### Changed
 

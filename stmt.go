@@ -127,7 +127,7 @@ func (s *otStmt) QueryContext(
 		}
 	}
 
-	return newRows(ctx, rows, s.cfg), nil
+	return newRows(rowsContext(ctx, queryCtx, s.cfg), rows, s.cfg), nil
 }
 
 func (s *otStmt) CheckNamedValue(namedValue *driver.NamedValue) error {

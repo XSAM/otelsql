@@ -161,7 +161,7 @@ func (c *otConn) QueryContext(
 		return nil, err
 	}
 
-	return newRows(ctx, rows, c.cfg), nil
+	return newRows(rowsContext(ctx, queryCtx, c.cfg), rows, c.cfg), nil
 }
 
 func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.Stmt, err error) {
