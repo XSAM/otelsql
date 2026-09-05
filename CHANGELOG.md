@@ -14,7 +14,8 @@ The next release will require at least [Go 1.26].
 ### Added
 
 - Support testing of [Go 1.27]. (#650)
-- Support `driver.RowsColumnScanner` on Go 1.27. (#557)
+- Add `WithSpanErrorAttributesGetter` option to set additional attributes (e.g., `db.response.status_code`) on spans when an operation returns an error. (#651)
+- Support `driver.RowsColumnScanner` on Go 1.27. (#649)
 
 ### Changed
 

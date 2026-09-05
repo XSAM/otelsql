@@ -30,31 +30,32 @@ import (
 
 var timeNow = time.Now
 
-func recordSpanErrorDeferred(span trace.Span, opts SpanOptions, err *error) {
-	recordSpanError(span, opts, *err)
+func recordSpanErrorDeferred(span trace.Span, cfg config, err *error) {
+	recordSpanError(span, cfg, *err)
 }
 
-func recordSpanError(span trace.Span, opts SpanOptions, err error) {
-	if span == nil {
+func recordSpanError(span trace.Span, cfg config, err error) {
+	if span == nil || err == nil {
 		return
 	}
 
+	if cfg.SpanErrorAttributesGetter != nil && span.IsRecording() {
+		if attributes := cfg.SpanErrorAttributesGetter(err); len(attributes) > 0 {
+			span.SetAttributes(attributes...)
+		}
+	}
+
+	opts := cfg.SpanOptions
 	if opts.RecordError != nil && !opts.RecordError(err) {
 		return
 	}
 
-	switch {
-	case err == nil:
+	if opts.DisableErrSkip && errors.Is(err, driver.ErrSkip) {
 		return
-	case errors.Is(err, driver.ErrSkip):
-		if !opts.DisableErrSkip {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, "")
-		}
-	default:
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "")
 	}
+
+	span.RecordError(err)
+	span.SetStatus(codes.Error, "")
 }
 
 func recordDuration(

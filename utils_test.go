@@ -37,12 +37,18 @@ import (
 )
 
 func TestRecordSpanError(t *testing.T) {
+	errorAttributesGetter := func(err error) []attribute.KeyValue {
+		return []attribute.KeyValue{attribute.String("error.message", err.Error())}
+	}
+
 	testCases := []struct {
-		name          string
-		opts          SpanOptions
-		err           error
-		expectedError bool
-		nilSpan       bool
+		name               string
+		opts               SpanOptions
+		getter             SpanErrorAttributesGetter
+		err                error
+		expectedError      bool
+		expectedAttributes []attribute.KeyValue
+		nilSpan            bool
 	}{
 		{
 			name:          "no error",
@@ -89,10 +95,52 @@ func TestRecordSpanError(t *testing.T) {
 			nilSpan:       true,
 			expectedError: false,
 		},
+		{
+			name:               "error attributes getter sets attributes on span",
+			err:                errors.New("error"),
+			getter:             errorAttributesGetter,
+			expectedError:      true,
+			expectedAttributes: []attribute.KeyValue{attribute.String("error.message", "error")},
+		},
+		{
+			name:   "error attributes getter is not called without error",
+			err:    nil,
+			getter: func(_ error) []attribute.KeyValue { panic("should not be called") },
+		},
+		{
+			name:               "error attributes getter is called even if RecordError returns false",
+			err:                errors.New("error"),
+			opts:               SpanOptions{RecordError: func(_ error) bool { return false }},
+			getter:             errorAttributesGetter,
+			expectedError:      false,
+			expectedAttributes: []attribute.KeyValue{attribute.String("error.message", "error")},
+		},
+		{
+			name:               "error attributes getter is called for ErrSkip with DisableErrSkip",
+			err:                driver.ErrSkip,
+			opts:               SpanOptions{DisableErrSkip: true},
+			getter:             errorAttributesGetter,
+			expectedError:      false,
+			expectedAttributes: []attribute.KeyValue{attribute.String("error.message", driver.ErrSkip.Error())},
+		},
+		{
+			name:          "error attributes getter returning nil sets no attributes",
+			err:           errors.New("error"),
+			getter:        func(_ error) []attribute.KeyValue { return nil },
+			expectedError: true,
+		},
+		{
+			name:    "nil span with error attributes getter",
+			err:     errors.New("error"),
+			getter:  func(_ error) []attribute.KeyValue { panic("should not be called") },
+			nilSpan: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			cfg := config{SpanOptions: tc.opts, SpanErrorAttributesGetter: tc.getter}
+
 			if !tc.nilSpan {
 				// Create a span
 				sr, provider := newTracerProvider()
@@ -106,7 +154,7 @@ func TestRecordSpanError(t *testing.T) {
 				span := spanList[0]
 
 				// Update the span
-				recordSpanError(span, tc.opts, tc.err)
+				recordSpanError(span, cfg, tc.err)
 
 				// Check result
 				if tc.expectedError {
@@ -114,11 +162,25 @@ func TestRecordSpanError(t *testing.T) {
 				} else {
 					assert.Equal(t, codes.Unset, span.Status().Code)
 				}
+
+				assert.Equal(t, tc.expectedAttributes, span.Attributes())
 			} else {
-				recordSpanError(nil, tc.opts, tc.err)
+				recordSpanError(nil, cfg, tc.err)
 			}
 		})
 	}
+}
+
+func TestRecordSpanErrorNonRecordingSpan(t *testing.T) {
+	// A sampled-out span is not recording, so the getter must not be called.
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.NeverSample()))
+	_, span := provider.Tracer("test").Start(context.Background(), "test")
+	require.False(t, span.IsRecording())
+
+	cfg := config{SpanErrorAttributesGetter: func(_ error) []attribute.KeyValue {
+		panic("should not be called")
+	}}
+	recordSpanError(span, cfg, errors.New("error"))
 }
 
 func newTracerProvider() (*tracetest.SpanRecorder, trace.TracerProvider) {
