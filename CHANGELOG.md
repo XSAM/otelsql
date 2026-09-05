@@ -8,18 +8,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+This release is the last to support [Go 1.25].
+The next release will require at least [Go 1.26].
+
 ### Added
 
-- [Go 1.27] to supported versions. (#557)
+- Support testing of [Go 1.27]. (#650)
 - Support `driver.RowsColumnScanner` on Go 1.27. (#557)
 
 ### Changed
 
 - Replace `ErrorTypeAttributes` with `ErrorTypeAttribute` to avoid allocating an additional slice. (#643)
-
-### Removed
-
-- Drop support for [Go 1.25]. (#557)
+- Upgrade OTel Semconv to `v1.46.0`. (#644)
 
 ### Fixed
 
