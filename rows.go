@@ -51,7 +51,7 @@ func rowsContext(ctx, queryCtx context.Context, cfg config) context.Context {
 	return ctx
 }
 
-func newRows(ctx context.Context, rows driver.Rows, cfg config) *otRows {
+func newRows(ctx context.Context, rows driver.Rows, cfg config) driver.Rows {
 	var span trace.Span
 
 	method := MethodRows
@@ -61,12 +61,12 @@ func newRows(ctx context.Context, rows driver.Rows, cfg config) *otRows {
 		_, span = createSpan(ctx, cfg, method, false, "", nil)
 	}
 
-	return &otRows{
+	return wrapRowsColumnScanner(&otRows{
 		Rows:    rows,
 		span:    span,
 		cfg:     cfg,
 		onClose: onClose,
-	}
+	})
 }
 
 // HasNextResultSet calls the implements the driver.RowsNextResultSet for otRows.
@@ -153,15 +153,23 @@ func (r otRows) Close() (err error) {
 }
 
 func (r otRows) Next(dest []driver.Value) (err error) {
+	r.beforeNext()
+
+	err = r.Rows.Next(dest)
+	r.afterNext(err)
+
+	return
+}
+
+func (r otRows) beforeNext() {
 	if r.cfg.SpanOptions.RowsNext && r.span != nil {
 		r.span.AddEvent(string(EventRowsNext))
 	}
+}
 
-	err = r.Rows.Next(dest)
+func (r otRows) afterNext(err error) {
 	// io.EOF is not an error. It is expected to happen during iteration.
 	if err != nil && !errors.Is(err, io.EOF) {
 		recordSpanError(r.span, r.cfg, err)
 	}
-
-	return
 }
