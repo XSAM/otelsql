@@ -8,6 +8,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+<!-- Released section -->
+<!-- Don't change this section unless doing release -->
+
+## [0.44.0] - 2026-09-06
+
 This release is the last to support [Go 1.25].
 The next release will require at least [Go 1.26].
 
@@ -26,9 +31,6 @@ The next release will require at least [Go 1.26].
 ### Fixed
 
 - `db.client.operation.duration` histogram now uses the explicit bucket boundaries recommended by the OTel Semantic Conventions (`0.001` to `10` seconds) instead of the SDK defaults, which placed virtually all database operations in the first bucket. (#632)
-
-<!-- Released section -->
-<!-- Don't change this section unless doing release -->
 
 ## [0.43.0] - 2026-07-12
 
