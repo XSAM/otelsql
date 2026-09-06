@@ -38,7 +38,7 @@ The next release will require at least [Go 1.26].
 
 ### Changed
 
-- ~~Upgrade OTel Semconv to `v1.40.0`.~~ (#606)
+- ~~Upgrade OTel to `v1.40.0`.~~ (#606)
 - Upgrade OTel to `v1.44.0`. (#615)
 
 ### Fixed
