@@ -21,7 +21,7 @@ The next release will require at least [Go 1.26].
 ### Changed
 
 - Replace `ErrorTypeAttributes` with `ErrorTypeAttribute` to avoid allocating an additional slice. (#643)
-- Upgrade OTel Semconv to `v1.46.0`. (#644)
+- Upgrade OTel to `v1.46.0`. (#644)
 
 ### Fixed
 
@@ -38,8 +38,8 @@ The next release will require at least [Go 1.26].
 
 ### Changed
 
-- ~~Upgrade OTel Semconv to `v1.40.0`.~~ (#606)
-- Upgrade OTel Semconv to `v1.44.0`. (#615)
+- ~~Upgrade OTel to `v1.40.0`.~~ (#606)
+- Upgrade OTel to `v1.44.0`. (#615)
 
 ### Fixed
 
