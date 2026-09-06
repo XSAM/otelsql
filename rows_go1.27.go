@@ -47,6 +47,11 @@ func (r otRowsColumnScanner) NextRow() (err error) {
 	return
 }
 
-func (r otRowsColumnScanner) ScanColumn(scanCtx driver.ScanContext, index int, dest any) error {
-	return r.scanner.ScanColumn(scanCtx, index, dest)
+func (r otRowsColumnScanner) ScanColumn(scanCtx driver.ScanContext, index int, dest any) (err error) {
+	err = r.scanner.ScanColumn(scanCtx, index, dest)
+	if err != nil {
+		recordSpanError(r.span, r.cfg, err)
+	}
+
+	return
 }

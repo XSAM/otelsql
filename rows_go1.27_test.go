@@ -153,6 +153,29 @@ func TestNewRows_RowsColumnScanner(t *testing.T) {
 		assert.Len(t, spans[1].Events(), 1)
 	})
 
+	t.Run("records ScanColumn errors", func(t *testing.T) {
+		ctx, sr, tracer, _ := prepareTraces(false)
+		scanColumnErr := errors.New("scan column")
+		mr := &mockRowsColumnScanner{
+			mockRows:      newMockRows(false),
+			scanColumnErr: scanColumnErr,
+		}
+
+		cfg := newConfig()
+		cfg.Tracer = tracer
+
+		rows := newRows(ctx, mr, cfg)
+		scanner, ok := rows.(driver.RowsColumnScanner)
+		require.True(t, ok)
+		require.ErrorIs(t, scanner.ScanColumn(driver.ScanContext{}, 0, new(string)), scanColumnErr)
+
+		spans := sr.Started()
+		require.Len(t, spans, 2)
+		assert.Equal(t, codes.Error, spans[1].Status().Code)
+		require.Len(t, spans[1].Events(), 1)
+		assert.Equal(t, "exception", spans[1].Events()[0].Name)
+	})
+
 	t.Run("does not record NextRow EOF as an error", func(t *testing.T) {
 		ctx, sr, tracer, _ := prepareTraces(false)
 		mr := &mockRowsColumnScanner{
@@ -221,4 +244,44 @@ func TestRowsColumnScanner_DatabaseSQL(t *testing.T) {
 	require.Len(t, spans, 3)
 	assert.Len(t, spans[2].Events(), 1)
 	assert.Equal(t, codes.Unset, spans[2].Status().Code)
+}
+
+func TestRowsColumnScanner_DatabaseSQLScanError(t *testing.T) {
+	ctx, sr, tracer, _ := prepareTraces(false)
+	scanColumnErr := errors.New("scan column")
+	mr := &mockRowsColumnScanner{
+		mockRows:      newMockRows(false),
+		scanColumnErr: scanColumnErr,
+	}
+
+	cfg := newConfig()
+	cfg.Tracer = tracer
+	cfg.SpanOptions.RowsNext = true
+
+	conn := &mockRowsColumnScannerConn{
+		mockConn: newMockConn(false),
+		rows:     mr,
+	}
+	db := sql.OpenDB(&singleConnConnector{conn: newConn(conn, cfg)})
+
+	t.Cleanup(func() {
+		require.NoError(t, db.Close())
+	})
+
+	rows, err := db.QueryContext(ctx, testQueryString)
+
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, rows.Close())
+	}()
+
+	require.True(t, rows.Next())
+	require.ErrorIs(t, rows.Scan(new(string)), scanColumnErr)
+	require.NoError(t, rows.Err())
+
+	spans := sr.Started()
+	require.Len(t, spans, 3)
+	assert.Equal(t, codes.Error, spans[2].Status().Code)
+	require.Len(t, spans[2].Events(), 2)
+	assert.Equal(t, "exception", spans[2].Events()[1].Name)
 }
