@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Skip computing metric attributes, including calls to `InstrumentAttributesGetter` and `InstrumentErrorAttributesGetter`, when the `db.client.operation.duration` instrument is disabled, for example because no SDK is registered, the `MeterProvider` is a no-op, or a view drops the instrument. (#662)
+
 ### Removed
 
 - Drop support for [Go 1.25]. (#655)

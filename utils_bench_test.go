@@ -41,7 +41,8 @@ var (
 )
 
 func BenchmarkRecordMetric(b *testing.B) {
-	cfg := newConfig()
+	_, meterProvider := prepareMetrics()
+	cfg := newConfig(WithMeterProvider(meterProvider))
 	// Prevent reallocation of Attributes slice, which increase the chance to detect data races.
 	cfg.Attributes = make([]attribute.KeyValue, 0, 10)
 
@@ -114,6 +115,30 @@ func BenchmarkRecordMetric(b *testing.B) {
 					recordFunc(err)
 				}
 			})
+		})
+	})
+
+	b.Run("Disabled", func(b *testing.B) {
+		// No SDK is registered, so the global MeterProvider drops every measurement.
+		cfg := newConfig()
+		cfg.InstrumentAttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
+			return attrs10
+		}
+
+		b.ReportAllocs()
+		b.ResetTimer()
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				recordFunc := recordMetric(
+					context.Background(),
+					cfg.Instruments,
+					cfg,
+					MethodStmtQuery,
+					"SELECT 1",
+					nil,
+				)
+				recordFunc(nil)
+			}
 		})
 	})
 }
