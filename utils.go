@@ -91,6 +91,13 @@ func recordMetric(
 	startTime := timeNow()
 
 	return func(err error) {
+		// Skip computing attributes for a measurement that would be dropped,
+		// for example because no SDK is registered, the MeterProvider is a no-op,
+		// or a view drops the instrument.
+		if !instruments.duration.Enabled(ctx) {
+			return
+		}
+
 		duration := timeNow().Sub(startTime)
 
 		var getterAttributes []attribute.KeyValue
