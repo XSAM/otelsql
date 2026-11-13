@@ -29,33 +29,34 @@ import (
 
 var timeNow = time.Now
 
-func recordSpanError(span trace.Span, opts SpanOptions, err error) {
-	if span == nil || !span.IsRecording() {
+func recordSpanError(span trace.Span, cfg *config, err error) {
+	if span == nil || err == nil || !span.IsRecording() {
 		return
 	}
 
+	if cfg.SpanErrorAttributesGetter != nil {
+		if attributes := cfg.SpanErrorAttributesGetter(err); len(attributes) > 0 {
+			span.SetAttributes(attributes...)
+		}
+	}
+
+	opts := cfg.SpanOptions
 	if opts.RecordError != nil && !opts.RecordError(err) {
 		return
 	}
 
-	switch {
-	case err == nil:
+	if opts.DisableErrSkip && errors.Is(err, driver.ErrSkip) {
 		return
-	case errors.Is(err, driver.ErrSkip):
-		if !opts.DisableErrSkip {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, "")
-		}
-	default:
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "")
 	}
+
+	span.RecordError(err)
+	span.SetStatus(codes.Error, "")
 }
 
 // recordSpanErrorDeferred is used when using `defer` to record a span error.
 // It takes a pointer to the caller's error so the value of the error is read correctly.
-func recordSpanErrorDeferred(span trace.Span, opts SpanOptions, errp *error) {
-	recordSpanError(span, opts, *errp)
+func recordSpanErrorDeferred(span trace.Span, cfg *config, errp *error) {
+	recordSpanError(span, cfg, *errp)
 }
 
 type durationMetric struct {
@@ -105,14 +106,12 @@ func (s *durationMetric) record(cfg *config, method Method, getterAttributes []a
 	}
 
 	var (
-		errAttributes       []attribute.KeyValue
+		recordErrorType     bool
 		getterErrAttributes []attribute.KeyValue
 	)
 
 	if err != nil {
-		if !cfg.DisableSkipErrMeasurement || !errors.Is(err, driver.ErrSkip) {
-			errAttributes = internalsemconv.ErrorTypeAttributes(err)
-		}
+		recordErrorType = !cfg.DisableSkipErrMeasurement || !errors.Is(err, driver.ErrSkip)
 
 		if cfg.InstrumentErrorAttributesGetter != nil {
 			getterErrAttributes = cfg.InstrumentErrorAttributesGetter(err)
@@ -127,12 +126,15 @@ func (s *durationMetric) record(cfg *config, method Method, getterAttributes []a
 	attributes := make(
 		[]attribute.KeyValue,
 		len(methodAttrs),
-		len(methodAttrs)+len(getterAttributes)+len(getterErrAttributes)+len(errAttributes),
+		len(methodAttrs)+len(getterAttributes)+len(getterErrAttributes)+1,
 	)
 	copy(attributes, methodAttrs)
 	attributes = append(attributes, getterAttributes...)
 	attributes = append(attributes, getterErrAttributes...)
-	attributes = append(attributes, errAttributes...)
+
+	if recordErrorType {
+		attributes = append(attributes, internalsemconv.ErrorTypeAttribute(err))
+	}
 
 	cfg.Instruments.duration.RecordSet(
 		s.ctx,

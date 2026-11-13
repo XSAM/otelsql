@@ -17,6 +17,7 @@ package otelsql
 import (
 	"context"
 	"database/sql/driver"
+	"errors"
 	"testing"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -78,6 +79,23 @@ func BenchmarkRecordMetric(b *testing.B) {
 				for pb.Next() {
 					metric := startDurationMetric(context.Background())
 					metric.RecordQuery(cfg, MethodStmtQuery, "SELECT 1", nil, nil)
+				}
+			})
+		})
+
+		b.Run("with error", func(b *testing.B) {
+			cfg := newCfg()
+			cfg.InstrumentAttributesGetter = func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
+				return attrs10
+			}
+			err := errors.New("bench error")
+
+			b.ReportAllocs()
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					metric := startDurationMetric(b.Context())
+					metric.RecordQuery(cfg, MethodStmtQuery, "SELECT 1", nil, &err)
 				}
 			})
 		})

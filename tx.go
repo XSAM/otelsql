@@ -51,7 +51,7 @@ func (t *otTx) Commit() (err error) {
 
 	err = t.tx.Commit()
 	if err != nil {
-		recordSpanError(span, t.cfg.SpanOptions, err)
+		recordSpanError(span, t.cfg, err)
 		return err
 	}
 
@@ -72,7 +72,7 @@ func (t *otTx) Rollback() (err error) {
 
 	err = t.tx.Rollback()
 	if err != nil {
-		recordSpanError(span, t.cfg.SpanOptions, err)
+		recordSpanError(span, t.cfg, err)
 		return err
 	}
 

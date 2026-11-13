@@ -37,11 +37,18 @@ import (
 )
 
 func TestRecordSpanError(t *testing.T) {
+	errorAttributesGetter := func(err error) []attribute.KeyValue {
+		return []attribute.KeyValue{attribute.String("error.message", err.Error())}
+	}
+
 	testCases := []struct {
-		name          string
-		opts          SpanOptions
-		err           error
-		expectedError bool
+		name               string
+		opts               SpanOptions
+		getter             SpanErrorAttributesGetter
+		err                error
+		expectedError      bool
+		expectedAttributes []attribute.KeyValue
+		nilSpan            bool
 	}{
 		{
 			name:          "no error",
@@ -82,36 +89,98 @@ func TestRecordSpanError(t *testing.T) {
 			opts:          SpanOptions{RecordError: func(_ error) bool { return true }},
 			expectedError: true,
 		},
+		{
+			name:          "nil span",
+			err:           nil,
+			nilSpan:       true,
+			expectedError: false,
+		},
+		{
+			name:               "error attributes getter sets attributes on span",
+			err:                errors.New("error"),
+			getter:             errorAttributesGetter,
+			expectedError:      true,
+			expectedAttributes: []attribute.KeyValue{attribute.String("error.message", "error")},
+		},
+		{
+			name:   "error attributes getter is not called without error",
+			err:    nil,
+			getter: func(_ error) []attribute.KeyValue { panic("should not be called") },
+		},
+		{
+			name:               "error attributes getter is called even if RecordError returns false",
+			err:                errors.New("error"),
+			opts:               SpanOptions{RecordError: func(_ error) bool { return false }},
+			getter:             errorAttributesGetter,
+			expectedError:      false,
+			expectedAttributes: []attribute.KeyValue{attribute.String("error.message", "error")},
+		},
+		{
+			name:               "error attributes getter is called for ErrSkip with DisableErrSkip",
+			err:                driver.ErrSkip,
+			opts:               SpanOptions{DisableErrSkip: true},
+			getter:             errorAttributesGetter,
+			expectedError:      false,
+			expectedAttributes: []attribute.KeyValue{attribute.String("error.message", driver.ErrSkip.Error())},
+		},
+		{
+			name:          "error attributes getter returning nil sets no attributes",
+			err:           errors.New("error"),
+			getter:        func(_ error) []attribute.KeyValue { return nil },
+			expectedError: true,
+		},
+		{
+			name:    "nil span with error attributes getter",
+			err:     errors.New("error"),
+			getter:  func(_ error) []attribute.KeyValue { panic("should not be called") },
+			nilSpan: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Create a span
-			sr, provider := newTracerProvider()
-			tracer := provider.Tracer("test")
-			// Not using the spans from the SDK due to the limited data access.
-			_, _ = tracer.Start(context.Background(), "test")
+			cfg := &config{SpanOptions: tc.opts, SpanErrorAttributesGetter: tc.getter}
 
-			// Get the span
-			spanList := sr.Started()
-			require.Len(t, spanList, 1)
-			span := spanList[0]
+			if !tc.nilSpan {
+				// Create a span
+				sr, provider := newTracerProvider()
+				tracer := provider.Tracer("test")
+				// Not using the spans from the SDK due to the limited data access.
+				_, _ = tracer.Start(context.Background(), "test")
 
-			// Update the span
-			recordSpanError(span, tc.opts, tc.err)
+				// Get the span
+				spanList := sr.Started()
+				require.Len(t, spanList, 1)
+				span := spanList[0]
 
-			// Check result
-			if tc.expectedError {
-				assert.Equal(t, codes.Error, span.Status().Code)
+				// Update the span
+				recordSpanError(span, cfg, tc.err)
+
+				// Check result
+				if tc.expectedError {
+					assert.Equal(t, codes.Error, span.Status().Code)
+				} else {
+					assert.Equal(t, codes.Unset, span.Status().Code)
+				}
+
+				assert.Equal(t, tc.expectedAttributes, span.Attributes())
 			} else {
-				assert.Equal(t, codes.Unset, span.Status().Code)
+				recordSpanError(nil, cfg, tc.err)
 			}
 		})
 	}
+}
 
-	t.Run("nil span", func(_ *testing.T) {
-		recordSpanError(nil, SpanOptions{}, nil)
-	})
+func TestRecordSpanErrorNonRecordingSpan(t *testing.T) {
+	// A sampled-out span is not recording, so the getter must not be called.
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.NeverSample()))
+	_, span := provider.Tracer("test").Start(context.Background(), "test")
+	require.False(t, span.IsRecording())
+
+	cfg := &config{SpanErrorAttributesGetter: func(_ error) []attribute.KeyValue {
+		panic("should not be called")
+	}}
+	recordSpanError(span, cfg, errors.New("error"))
 }
 
 func newTracerProvider() (*tracetest.SpanRecorder, trace.TracerProvider) {
@@ -195,6 +264,53 @@ func assertSpanList(
 
 	if parameter.ctx != nil {
 		assert.Equal(t, span.SpanContext(), trace.SpanContextFromContext(parameter.ctx))
+	}
+}
+
+// assertRowsSpan verifies the span created in newRows() by a query method.
+// querySpanOmitted reports whether the query span (sql.conn.query or sql.stmt.query)
+// was not created, in which case the rows span falls back to the caller's span as its parent.
+func assertRowsSpan(
+	ctx context.Context,
+	t *testing.T,
+	sr *tracetest.SpanRecorder,
+	cfg *config,
+	rows driver.Rows,
+	dummySpan trace.Span,
+	querySpanOmitted bool,
+) {
+	t.Helper()
+
+	otelRows, ok := rows.(*otRows)
+	require.True(t, ok)
+
+	if !filterSpan(ctx, cfg.SpanOptions, MethodRows, "", nil) {
+		assert.Nil(t, otelRows.span)
+		return
+	}
+
+	require.NotNil(t, otelRows.span)
+
+	endedSpanList := sr.Ended()
+	startedSpanList := sr.Started()
+	// The rows span is started but not ended until rows.Close() is called.
+	require.Len(t, startedSpanList, len(endedSpanList)+1)
+	rowsSpan := startedSpanList[len(endedSpanList)]
+	// Make sure this span is the same as the span from otelRows
+	require.Equal(t, otelRows.span.SpanContext().SpanID(), rowsSpan.SpanContext().SpanID())
+
+	switch {
+	case cfg.SpanOptions.RowsChildOfQuery && !querySpanOmitted:
+		// The query span is the last ended span, and the rows span is its child.
+		querySpan := endedSpanList[len(endedSpanList)-1]
+		assert.Equal(t, querySpan.SpanContext().TraceID(), rowsSpan.SpanContext().TraceID())
+		assert.Equal(t, querySpan.SpanContext().SpanID(), rowsSpan.Parent().SpanID())
+	case dummySpan != nil:
+		// The rows span is the child of the dummySpan
+		assert.Equal(t, dummySpan.SpanContext().TraceID(), rowsSpan.SpanContext().TraceID())
+		assert.Equal(t, dummySpan.SpanContext().SpanID(), rowsSpan.Parent().SpanID())
+	default:
+		assert.False(t, rowsSpan.Parent().IsValid())
 	}
 }
 
@@ -305,23 +421,17 @@ func TestRecordMetric(t *testing.T) {
 											Count: 1,
 											Sum:   2,
 											Bounds: []float64{
-												0,
+												0.001,
+												0.005,
+												0.01,
+												0.05,
+												0.1,
+												0.5,
+												1,
 												5,
 												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
 											},
-											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
@@ -363,23 +473,17 @@ func TestRecordMetric(t *testing.T) {
 											Count: 1,
 											Sum:   2,
 											Bounds: []float64{
-												0,
+												0.001,
+												0.005,
+												0.01,
+												0.05,
+												0.1,
+												0.5,
+												1,
 												5,
 												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
 											},
-											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
@@ -422,23 +526,17 @@ func TestRecordMetric(t *testing.T) {
 											Count: 1,
 											Sum:   2,
 											Bounds: []float64{
-												0,
+												0.001,
+												0.005,
+												0.01,
+												0.05,
+												0.1,
+												0.5,
+												1,
 												5,
 												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
 											},
-											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
@@ -482,23 +580,17 @@ func TestRecordMetric(t *testing.T) {
 											Count: 1,
 											Sum:   2,
 											Bounds: []float64{
-												0,
+												0.001,
+												0.005,
+												0.01,
+												0.05,
+												0.1,
+												0.5,
+												1,
 												5,
 												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
 											},
-											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
@@ -546,23 +638,17 @@ func TestRecordMetric(t *testing.T) {
 											Count: 1,
 											Sum:   2,
 											Bounds: []float64{
-												0,
+												0.001,
+												0.005,
+												0.01,
+												0.05,
+												0.1,
+												0.5,
+												1,
 												5,
 												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
 											},
-											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
@@ -608,23 +694,17 @@ func TestRecordMetric(t *testing.T) {
 											Count: 1,
 											Sum:   2,
 											Bounds: []float64{
-												0,
+												0.001,
+												0.005,
+												0.01,
+												0.05,
+												0.1,
+												0.5,
+												1,
 												5,
 												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
 											},
-											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(
@@ -670,23 +750,17 @@ func TestRecordMetric(t *testing.T) {
 											Count: 1,
 											Sum:   2,
 											Bounds: []float64{
-												0,
+												0.001,
+												0.005,
+												0.01,
+												0.05,
+												0.1,
+												0.5,
+												1,
 												5,
 												10,
-												25,
-												50,
-												75,
-												100,
-												250,
-												500,
-												750,
-												1000,
-												2500,
-												5000,
-												7500,
-												10000,
 											},
-											BucketCounts: []uint64{0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+											BucketCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
 											Min:          metricdata.NewExtrema[float64](2),
 											Max:          metricdata.NewExtrema[float64](2),
 											Attributes: attribute.NewSet(

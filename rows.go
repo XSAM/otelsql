@@ -40,7 +40,18 @@ type otRows struct {
 	metric durationMetric
 }
 
-func newRows(ctx context.Context, rows driver.Rows, cfg *config) *otRows {
+// rowsContext returns the context that should be used to create the sql.rows span.
+// When SpanOptions.RowsChildOfQuery is set, the query span's context is used so the
+// rows span becomes a child of the query span; otherwise the caller's context is used.
+func rowsContext(ctx, queryCtx context.Context, cfg *config) context.Context {
+	if cfg.SpanOptions.RowsChildOfQuery {
+		return queryCtx
+	}
+
+	return ctx
+}
+
+func newRows(ctx context.Context, rows driver.Rows, cfg *config) driver.Rows {
 	var span trace.Span
 
 	method := MethodRows
@@ -48,12 +59,12 @@ func newRows(ctx context.Context, rows driver.Rows, cfg *config) *otRows {
 		_, span = createSpan(ctx, cfg, method, false, "", nil)
 	}
 
-	return &otRows{
+	return wrapRowsColumnScanner(&otRows{
 		Rows:   rows,
 		cfg:    cfg,
 		span:   span,
 		metric: startDurationMetric(ctx),
-	}
+	})
 }
 
 // HasNextResultSet calls the implements the driver.RowsNextResultSet for otRows.
@@ -126,7 +137,7 @@ func (r *otRows) Close() error {
 	err := r.Rows.Close()
 	if r.span != nil {
 		if err != nil {
-			recordSpanError(r.span, r.cfg.SpanOptions, err)
+			recordSpanError(r.span, r.cfg, err)
 		}
 
 		r.span.End()
@@ -138,15 +149,23 @@ func (r *otRows) Close() error {
 }
 
 func (r *otRows) Next(dest []driver.Value) (err error) {
+	r.beforeNext()
+
+	err = r.Rows.Next(dest)
+	r.afterNext(err)
+
+	return
+}
+
+func (r *otRows) beforeNext() {
 	if r.cfg.SpanOptions.RowsNext && r.span != nil {
 		r.span.AddEvent(string(EventRowsNext))
 	}
+}
 
-	err = r.Rows.Next(dest)
+func (r *otRows) afterNext(err error) {
 	// io.EOF is not an error. It is expected to happen during iteration.
 	if err != nil && !errors.Is(err, io.EOF) {
-		recordSpanError(r.span, r.cfg.SpanOptions, err)
+		recordSpanError(r.span, r.cfg, err)
 	}
-
-	return
 }

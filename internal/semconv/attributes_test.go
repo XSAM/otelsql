@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package semconv
+package semconv_test
 
 import (
 	"database/sql/driver"
@@ -21,7 +21,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
+	otelsemconv "go.opentelemetry.io/otel/semconv/v1.40.0"
+
+	"github.com/XSAM/otelsql/internal/semconv"
 )
 
 func TestDBQueryTextAttributes(t *testing.T) {
@@ -34,25 +36,27 @@ func TestDBQueryTextAttributes(t *testing.T) {
 			name:  "normal query",
 			query: "SELECT * FROM users",
 			expected: []attribute.KeyValue{
-				semconv.DBQueryTextKey.String("SELECT * FROM users"),
+				otelsemconv.DBQueryTextKey.String("SELECT * FROM users"),
 			},
 		},
 		{
 			name:  "empty query",
 			query: "",
 			expected: []attribute.KeyValue{
-				semconv.DBQueryTextKey.String(""),
+				otelsemconv.DBQueryTextKey.String(""),
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := DBQueryTextAttributes(tt.query)
+			result := semconv.DBQueryTextAttributes(tt.query)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
+
+var _ error = (*customError)(nil)
 
 // customError is a test error type.
 type customError struct {
@@ -63,49 +67,42 @@ func (e customError) Error() string {
 	return e.msg
 }
 
-func TestErrorTypeAttributes(t *testing.T) {
-	tests := []struct {
+func TestErrorTypeAttribute(t *testing.T) {
+	tests := [...]struct {
 		name     string
 		err      error
-		expected []attribute.KeyValue
+		expected attribute.KeyValue
 	}{
-		{
-			name:     "nil error",
-			err:      nil,
-			expected: nil,
-		},
 		{
 			name:     "driver.ErrBadConn",
 			err:      driver.ErrBadConn,
-			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrBadConn")},
+			expected: otelsemconv.ErrorTypeKey.String("database/sql/driver.ErrBadConn"),
 		},
 		{
 			name:     "driver.ErrSkip",
 			err:      driver.ErrSkip,
-			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrSkip")},
+			expected: otelsemconv.ErrorTypeKey.String("database/sql/driver.ErrSkip"),
 		},
 		{
 			name:     "driver.ErrRemoveArgument",
 			err:      driver.ErrRemoveArgument,
-			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrRemoveArgument")},
+			expected: otelsemconv.ErrorTypeKey.String("database/sql/driver.ErrRemoveArgument"),
 		},
 		{
-			name: "custom error type",
-			err:  customError{msg: "test error"},
-			expected: []attribute.KeyValue{
-				semconv.ErrorTypeKey.String("github.com/XSAM/otelsql/internal/semconv.customError"),
-			},
+			name:     "custom error type",
+			err:      customError{msg: "test error"},
+			expected: otelsemconv.ErrorTypeKey.String("github.com/XSAM/otelsql/internal/semconv_test.customError"),
 		},
 		{
 			name:     "built-in error",
 			err:      errors.New("some error"),
-			expected: []attribute.KeyValue{semconv.ErrorTypeKey.String("*errors.errorString")},
+			expected: otelsemconv.ErrorTypeKey.String("*errors.errorString"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ErrorTypeAttributes(tt.err)
+			result := semconv.ErrorTypeAttribute(tt.err)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

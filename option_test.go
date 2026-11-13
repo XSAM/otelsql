@@ -110,6 +110,11 @@ func TestOptions(t *testing.T) {
 			expectedConfig: config{InstrumentErrorAttributesGetter: dummyErrorAttributesGetter},
 		},
 		{
+			name:           "WithSpanErrorAttributesGetter",
+			options:        []Option{WithSpanErrorAttributesGetter(dummyErrorAttributesGetter)},
+			expectedConfig: config{SpanErrorAttributesGetter: dummyErrorAttributesGetter},
+		},
+		{
 			name: "WithAttributes multiple calls should accumulate",
 			options: []Option{
 				WithAttributes(attribute.String("key1", "value1")),
@@ -206,6 +211,12 @@ func TestOptions(t *testing.T) {
 					t,
 					tc.expectedConfig.InstrumentErrorAttributesGetter(assert.AnError),
 					cfg.InstrumentErrorAttributesGetter(assert.AnError),
+				)
+			case tc.expectedConfig.SpanErrorAttributesGetter != nil:
+				assert.Equal(
+					t,
+					tc.expectedConfig.SpanErrorAttributesGetter(assert.AnError),
+					cfg.SpanErrorAttributesGetter(assert.AnError),
 				)
 			default:
 				assert.Equal(t, tc.expectedConfig, cfg)

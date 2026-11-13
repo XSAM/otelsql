@@ -58,7 +58,7 @@ func (s *otStmt) ExecContext(
 		ctx, span = createSpan(ctx, s.cfg, method, true, s.query, args)
 
 		defer span.End()
-		defer recordSpanErrorDeferred(span, s.cfg.SpanOptions, &err)
+		defer recordSpanErrorDeferred(span, s.cfg, &err)
 	}
 
 	if execer, ok := s.Stmt.(driver.StmtExecContext); ok {
@@ -95,7 +95,7 @@ func (s *otStmt) QueryContext(
 	if filterSpan(ctx, s.cfg.SpanOptions, method, s.query, args) {
 		queryCtx, span = createSpan(ctx, s.cfg, method, true, s.query, args)
 		defer span.End()
-		defer recordSpanErrorDeferred(span, s.cfg.SpanOptions, &err)
+		defer recordSpanErrorDeferred(span, s.cfg, &err)
 	} else {
 		queryCtx = ctx
 	}
@@ -123,7 +123,7 @@ func (s *otStmt) QueryContext(
 		}
 	}
 
-	return newRows(ctx, rows, s.cfg), nil
+	return newRows(rowsContext(ctx, queryCtx, s.cfg), rows, s.cfg), nil
 }
 
 func (s *otStmt) CheckNamedValue(namedValue *driver.NamedValue) error {

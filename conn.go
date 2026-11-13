@@ -67,7 +67,7 @@ func (c *otConn) Ping(ctx context.Context) (err error) {
 
 			ctx, span = createSpan(ctx, c.cfg, method, false, "", nil)
 			defer span.End()
-			defer recordSpanErrorDeferred(span, c.cfg.SpanOptions, &err)
+			defer recordSpanErrorDeferred(span, c.cfg, &err)
 		}
 	}
 
@@ -106,7 +106,7 @@ func (c *otConn) ExecContext(
 
 	res, err = execer.ExecContext(ctx, c.cfg.SQLCommenter.withComment(ctx, query), args)
 	if err != nil {
-		recordSpanError(span, c.cfg.SpanOptions, err)
+		recordSpanError(span, c.cfg, err)
 		return nil, err
 	}
 
@@ -145,11 +145,11 @@ func (c *otConn) QueryContext(
 
 	rows, err = queryer.QueryContext(queryCtx, c.cfg.SQLCommenter.withComment(queryCtx, query), args)
 	if err != nil {
-		recordSpanError(span, c.cfg.SpanOptions, err)
+		recordSpanError(span, c.cfg, err)
 		return nil, err
 	}
 
-	return newRows(ctx, rows, c.cfg), nil
+	return newRows(rowsContext(ctx, queryCtx, c.cfg), rows, c.cfg), nil
 }
 
 func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.Stmt, err error) {
@@ -162,7 +162,7 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 	if !c.cfg.SpanOptions.OmitConnPrepare && filterSpan(ctx, c.cfg.SpanOptions, method, query, nil) {
 		ctx, span = createSpan(ctx, c.cfg, method, true, query, nil)
 		defer span.End()
-		defer recordSpanErrorDeferred(span, c.cfg.SpanOptions, &err)
+		defer recordSpanErrorDeferred(span, c.cfg, &err)
 	}
 
 	commentedQuery := c.cfg.SQLCommenter.withComment(ctx, query)
@@ -200,7 +200,7 @@ func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.
 
 		beginTxCtx, span = createSpan(ctx, c.cfg, method, false, "", nil)
 		defer span.End()
-		defer recordSpanErrorDeferred(span, c.cfg.SpanOptions, &err)
+		defer recordSpanErrorDeferred(span, c.cfg, &err)
 	} else {
 		beginTxCtx = ctx
 	}
@@ -261,7 +261,7 @@ func (c *otConn) ResetSession(ctx context.Context) (err error) {
 
 	err = sessionResetter.ResetSession(ctx)
 	if err != nil {
-		recordSpanError(span, c.cfg.SpanOptions, err)
+		recordSpanError(span, c.cfg, err)
 		return err
 	}
 

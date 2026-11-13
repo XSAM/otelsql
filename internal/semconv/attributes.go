@@ -34,36 +34,24 @@ func DBQueryTextAttributes(query string) []attribute.KeyValue {
 	}
 }
 
-// ErrorTypeAttributes converts an error to a slice of attribute.KeyValue.
-func ErrorTypeAttributes(err error) []attribute.KeyValue {
-	if err == nil {
-		return nil
-	}
-
+// ErrorTypeAttribute converts an error to [attribute.KeyValue].
+func ErrorTypeAttribute(err error) attribute.KeyValue {
 	// Handle common driver errors with specific error types
 	switch {
 	case errors.Is(err, driver.ErrBadConn):
-		return []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrBadConn")}
+		return semconv.ErrorTypeKey.String("database/sql/driver.ErrBadConn")
 	case errors.Is(err, driver.ErrSkip):
-		return []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrSkip")}
+		return semconv.ErrorTypeKey.String("database/sql/driver.ErrSkip")
 	case errors.Is(err, driver.ErrRemoveArgument):
-		return []attribute.KeyValue{semconv.ErrorTypeKey.String("database/sql/driver.ErrRemoveArgument")}
+		return semconv.ErrorTypeKey.String("database/sql/driver.ErrRemoveArgument")
 	}
 
 	t := reflect.TypeOf(err)
 
-	var value string
-
 	if t.PkgPath() == "" && t.Name() == "" {
 		// Likely a builtin type.
-		value = t.String()
-	} else {
-		value = fmt.Sprintf("%s.%s", t.PkgPath(), t.Name())
+		return semconv.ErrorTypeKey.String(t.String())
 	}
 
-	if value == "" {
-		return []attribute.KeyValue{semconv.ErrorTypeOther}
-	}
-
-	return []attribute.KeyValue{semconv.ErrorTypeKey.String(value)}
+	return semconv.ErrorTypeKey.String(fmt.Sprintf("%s.%s", t.PkgPath(), t.Name()))
 }

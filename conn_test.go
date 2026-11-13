@@ -28,11 +28,12 @@ import (
 )
 
 const (
-	testSpanFilterOmit = "spanFilterOmit"
-	testSpanFilterNil  = "spanFilterNil"
-	testSpanFilterKeep = "spanFilterKeep"
-	testQueryString    = "query"
-	testLegacy         = "legacy"
+	testSpanFilterOmit   = "spanFilterOmit"
+	testSpanFilterNil    = "spanFilterNil"
+	testSpanFilterKeep   = "spanFilterKeep"
+	testQueryString      = "query"
+	testLegacy           = "legacy"
+	testRowsChildOfQuery = "rowsChildOfQuery"
 )
 
 type MockConn interface {
@@ -389,6 +390,39 @@ func TestOtConn_QueryContext(t *testing.T) {
 	args := []driver.NamedValue{{Value: "foo"}}
 	expectedAttrs := []attribute.KeyValue{semconv.DBQueryTextKey.String(query)}
 
+	testCases := []struct {
+		name             string
+		error            bool
+		noParentSpan     bool
+		disableQuery     bool
+		attrs            []attribute.KeyValue
+		attributesGetter AttributesGetter
+	}{
+		{
+			name:  "no error",
+			attrs: expectedAttrs,
+		},
+		{
+			name:         "no query db.statement",
+			disableQuery: true,
+		},
+		{
+			name:  "with error",
+			error: true,
+			attrs: expectedAttrs,
+		},
+		{
+			name:         "no parent span",
+			noParentSpan: true,
+			attrs:        expectedAttrs,
+		},
+		{
+			name:             "with attribute getter",
+			attributesGetter: getDummyAttributesGetter(),
+			attrs:            expectedAttrs,
+		},
+	}
+
 	for _, omitConnQuery := range []bool{true, false} {
 		var testname string
 		if omitConnQuery {
@@ -396,119 +430,77 @@ func TestOtConn_QueryContext(t *testing.T) {
 		}
 
 		t.Run(testname, func(t *testing.T) {
-			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := testSpanFilterOmit
-				if spanFilterFn == nil {
-					testname = testSpanFilterNil
-				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = testSpanFilterKeep
+			for _, rowsChildOfQuery := range []bool{true, false} {
+				var testname string
+				if rowsChildOfQuery {
+					testname = testRowsChildOfQuery
 				}
 
 				t.Run(testname, func(t *testing.T) {
-					testCases := []struct {
-						name             string
-						error            bool
-						noParentSpan     bool
-						disableQuery     bool
-						attrs            []attribute.KeyValue
-						attributesGetter AttributesGetter
-					}{
-						{
-							name:  "no error",
-							attrs: expectedAttrs,
-						},
-						{
-							name:         "no query db.statement",
-							disableQuery: true,
-						},
-						{
-							name:  "with error",
-							error: true,
-							attrs: expectedAttrs,
-						},
-						{
-							name:         "no parent span",
-							noParentSpan: true,
-							attrs:        expectedAttrs,
-						},
-						{
-							name:             "with attribute getter",
-							attributesGetter: getDummyAttributesGetter(),
-							attrs:            expectedAttrs,
-						},
-					}
+					for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
+						testname := testSpanFilterOmit
+						if spanFilterFn == nil {
+							testname = testSpanFilterNil
+						} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
+							testname = testSpanFilterKeep
+						}
 
-					for _, tc := range testCases {
-						t.Run(tc.name, func(t *testing.T) {
-							// Prepare traces
-							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+						t.Run(testname, func(t *testing.T) {
+							for _, tc := range testCases {
+								t.Run(tc.name, func(t *testing.T) {
+									// Prepare traces
+									ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-							// New conn
-							cfg := newConfig()
-							cfg.Tracer = tracer
-							cfg.SpanOptions.DisableQuery = tc.disableQuery
-							cfg.SpanOptions.OmitConnQuery = omitConnQuery
-							cfg.SpanOptions.SpanFilter = spanFilterFn
-							cfg.AttributesGetter = tc.attributesGetter
-							cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
-							mc := newMockConn(tc.error)
-							otelConn := newConn(mc, cfg)
+									// New conn
+									cfg := newConfig()
+									cfg.Tracer = tracer
+									cfg.SpanOptions.DisableQuery = tc.disableQuery
+									cfg.SpanOptions.OmitConnQuery = omitConnQuery
+									cfg.SpanOptions.RowsChildOfQuery = rowsChildOfQuery
+									cfg.SpanOptions.SpanFilter = spanFilterFn
+									cfg.AttributesGetter = tc.attributesGetter
+									cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
+									mc := newMockConn(tc.error)
+									otelConn := newConn(mc, cfg)
 
-							rows, err := otelConn.QueryContext(ctx, query, args)
-							if tc.error {
-								require.Error(t, err)
-							} else {
-								require.NoError(t, err)
-							}
+									rows, err := otelConn.QueryContext(ctx, query, args)
+									if tc.error {
+										require.Error(t, err)
+									} else {
+										require.NoError(t, err)
+									}
 
-							spanList := sr.Ended()
+									spanList := sr.Ended()
 
-							omit := omitConnQuery
-							if !omit {
-								omit = !filterSpan(ctx, cfg.SpanOptions, MethodConnQuery, query, args)
-							}
+									omit := omitConnQuery
+									if !omit {
+										omit = !filterSpan(ctx, cfg.SpanOptions, MethodConnQuery, query, args)
+									}
 
-							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
-							// One dummy span and one span created in QueryContext
-							require.Len(t, spanList, expectedSpanCount)
+									expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
+									// One dummy span and one span created in QueryContext
+									require.Len(t, spanList, expectedSpanCount)
 
-							assertSpanList(t, spanList, spanAssertionParameter{
-								parentSpan:         dummySpan,
-								error:              tc.error,
-								expectedAttributes: append(cfg.Attributes, tc.attrs...),
-								method:             MethodConnQuery,
-								noParentSpan:       tc.noParentSpan,
-								ctx:                mc.queryContextCtx,
-								omitSpan:           omit,
-								attributesGetter:   tc.attributesGetter,
-								query:              query,
-								args:               args,
-							})
+									assertSpanList(t, spanList, spanAssertionParameter{
+										parentSpan:         dummySpan,
+										error:              tc.error,
+										expectedAttributes: append(cfg.Attributes, tc.attrs...),
+										method:             MethodConnQuery,
+										noParentSpan:       tc.noParentSpan,
+										ctx:                mc.queryContextCtx,
+										omitSpan:           omit,
+										attributesGetter:   tc.attributesGetter,
+										query:              query,
+										args:               args,
+									})
 
-							assert.Equal(t, 1, mc.queryContextCount)
-							assert.Equal(t, "query", mc.queryContextQuery)
+									assert.Equal(t, 1, mc.queryContextCount)
+									assert.Equal(t, "query", mc.queryContextQuery)
 
-							if !tc.error {
-								otelRows, ok := rows.(*otRows)
-								require.True(t, ok)
-
-								if dummySpan != nil && !omit {
-									assert.Equal(
-										t,
-										dummySpan.SpanContext().TraceID(),
-										otelRows.span.SpanContext().TraceID(),
-									)
-
-									// Get a span from started span list
-									startedSpanList := sr.Started()
-									require.Len(t, startedSpanList, expectedSpanCount+1)
-									span := startedSpanList[expectedSpanCount]
-									// Make sure this span is the same as the span from otelRows
-									require.Equal(t, otelRows.span.SpanContext().SpanID(), span.SpanContext().SpanID())
-
-									// The span that creates in newRows() is the child of the dummySpan
-									assert.Equal(t, dummySpan.SpanContext().SpanID(), span.Parent().SpanID())
-								}
+									if !tc.error {
+										assertRowsSpan(ctx, t, sr, cfg, rows, dummySpan, omit)
+									}
+								})
 							}
 						})
 					}

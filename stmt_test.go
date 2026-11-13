@@ -275,71 +275,81 @@ func TestOtStmt_QueryContext(t *testing.T) {
 		}
 
 		t.Run(testname, func(t *testing.T) {
-			for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
-				testname := testSpanFilterOmit
-				if spanFilterFn == nil {
-					testname = testSpanFilterNil
-				} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
-					testname = testSpanFilterKeep
+			for _, rowsChildOfQuery := range []bool{true, false} {
+				var testname string
+				if rowsChildOfQuery {
+					testname = testRowsChildOfQuery
 				}
 
 				t.Run(testname, func(t *testing.T) {
-					for _, tc := range testCases {
-						t.Run(tc.name, func(t *testing.T) {
-							// Prepare traces
-							ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
+					for _, spanFilterFn := range []SpanFilter{nil, omit, keep} {
+						testname := testSpanFilterOmit
+						if spanFilterFn == nil {
+							testname = testSpanFilterNil
+						} else if spanFilterFn(nil, "", "", []driver.NamedValue{}) {
+							testname = testSpanFilterKeep
+						}
 
-							var ms MockStmt
-							if legacy {
-								ms = newMockLegacyStmt(tc.error)
-							} else {
-								ms = newMockStmt(tc.error)
-							}
+						t.Run(testname, func(t *testing.T) {
+							for _, tc := range testCases {
+								t.Run(tc.name, func(t *testing.T) {
+									// Prepare traces
+									ctx, sr, tracer, dummySpan := prepareTraces(tc.noParentSpan)
 
-							// New stmt
-							cfg := newConfig()
-							cfg.Tracer = tracer
-							cfg.SpanOptions.DisableQuery = tc.disableQuery
-							cfg.SpanOptions.SpanFilter = spanFilterFn
-							cfg.AttributesGetter = tc.attributesGetter
-							cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
-							stmt := newStmt(ms, cfg, query, nil)
-							// Query
-							rows, err := stmt.QueryContext(ctx, args)
-							if tc.error {
-								require.Error(t, err)
-							} else {
-								require.NoError(t, err)
-							}
+									var ms MockStmt
+									if legacy {
+										ms = newMockLegacyStmt(tc.error)
+									} else {
+										ms = newMockStmt(tc.error)
+									}
 
-							spanList := sr.Ended()
-							omit := !filterSpan(ctx, cfg.SpanOptions, MethodStmtQuery, query, args)
-							expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
-							// One dummy span and a span created in tx
-							require.Len(t, spanList, expectedSpanCount)
+									// New stmt
+									cfg := newConfig()
+									cfg.Tracer = tracer
+									cfg.SpanOptions.DisableQuery = tc.disableQuery
+									cfg.SpanOptions.RowsChildOfQuery = rowsChildOfQuery
+									cfg.SpanOptions.SpanFilter = spanFilterFn
+									cfg.AttributesGetter = tc.attributesGetter
+									cfg.InstrumentAttributesGetter = InstrumentAttributesGetter(tc.attributesGetter)
+									stmt := newStmt(ms, cfg, query, nil)
+									// Query
+									rows, err := stmt.QueryContext(ctx, args)
+									if tc.error {
+										require.Error(t, err)
+									} else {
+										require.NoError(t, err)
+									}
 
-							assertSpanList(t, spanList, spanAssertionParameter{
-								parentSpan:         dummySpan,
-								error:              tc.error,
-								expectedAttributes: append(cfg.Attributes, tc.attrs...),
-								method:             MethodStmtQuery,
-								noParentSpan:       tc.noParentSpan,
-								attributesGetter:   tc.attributesGetter,
-								omitSpan:           omit,
-								query:              query,
-								args:               args,
-							})
+									spanList := sr.Ended()
+									omit := !filterSpan(ctx, cfg.SpanOptions, MethodStmtQuery, query, args)
+									expectedSpanCount := getExpectedSpanCount(tc.noParentSpan, omit)
+									// One dummy span and a span created in tx
+									require.Len(t, spanList, expectedSpanCount)
 
-							assert.Equal(t, 1, ms.QueryContextCount())
+									assertSpanList(t, spanList, spanAssertionParameter{
+										parentSpan:         dummySpan,
+										error:              tc.error,
+										expectedAttributes: append(cfg.Attributes, tc.attrs...),
+										method:             MethodStmtQuery,
+										noParentSpan:       tc.noParentSpan,
+										attributesGetter:   tc.attributesGetter,
+										omitSpan:           omit,
+										query:              query,
+										args:               args,
+									})
 
-							if ms.QueryContextArgs() != nil {
-								assert.Equal(t, []driver.NamedValue{{Value: "foo"}}, ms.QueryContextArgs())
-							} else {
-								assert.Equal(t, []driver.Value{"foo"}, ms.QueryArgs())
-							}
+									assert.Equal(t, 1, ms.QueryContextCount())
 
-							if !tc.error {
-								assert.IsType(t, &otRows{}, rows)
+									if ms.QueryContextArgs() != nil {
+										assert.Equal(t, []driver.NamedValue{{Value: "foo"}}, ms.QueryContextArgs())
+									} else {
+										assert.Equal(t, []driver.Value{"foo"}, ms.QueryArgs())
+									}
+
+									if !tc.error {
+										assertRowsSpan(ctx, t, sr, cfg, rows, dummySpan, omit)
+									}
+								})
 							}
 						})
 					}

@@ -33,7 +33,7 @@ linters:
     - godot
     - goheader
     - gomoddirectives
-    - gomodguard
+    - gomodguard_v2
     - goprintffuncname
     - gosec
     - gosmopolitan
@@ -108,6 +108,8 @@ linters:
     - spancheck
     - nonamedreturns
   settings:
+    goconst:
+      ignore-tests: true
     gomoddirectives:
       replace-local: true
 formatters:

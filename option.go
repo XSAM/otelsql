@@ -140,3 +140,25 @@ func WithInstrumentErrorAttributesGetter(instrumentErrorAttributesGetter Instrum
 		cfg.InstrumentErrorAttributesGetter = instrumentErrorAttributesGetter
 	})
 }
+
+// WithSpanErrorAttributesGetter takes SpanErrorAttributesGetter that will be called every time an operation returns
+// a non-nil error while a recording span is active. The returned attributes are set on the span.
+//
+// The getter is called for every non-nil error, regardless of SpanOptions.RecordError and SpanOptions.DisableErrSkip,
+// so it can enrich spans with response details (e.g., db.response.status_code) even for errors that are not recorded
+// as span errors. The getter is responsible for ignoring errors it does not care about.
+//
+// For example, to record db.response.status_code from a MySQL driver error:
+//
+//	otelsql.WithSpanErrorAttributesGetter(func(err error) []attribute.KeyValue {
+//		var mysqlErr *mysql.MySQLError
+//		if errors.As(err, &mysqlErr) {
+//			return []attribute.KeyValue{semconv.DBResponseStatusCode(strconv.Itoa(int(mysqlErr.Number)))}
+//		}
+//		return nil
+//	})
+func WithSpanErrorAttributesGetter(spanErrorAttributesGetter SpanErrorAttributesGetter) Option {
+	return OptionFunc(func(cfg *config) {
+		cfg.SpanErrorAttributesGetter = spanErrorAttributesGetter
+	})
+}

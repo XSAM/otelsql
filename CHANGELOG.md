@@ -10,11 +10,42 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- Drop support for [Go 1.25]. (#655)
+
+<!-- Released section -->
+<!-- Don't change this section unless doing release -->
+
+## [0.44.0] - 2026-09-06
+
+This release is the last to support [Go 1.25].
+The next release will require at least [Go 1.26].
+
+### Added
+
+- Support testing of [Go 1.27]. (#650)
+- Add `WithSpanErrorAttributesGetter` option to set additional attributes (e.g., `db.response.status_code`) on spans when an operation returns an error. (#651)
+- Add `SpanOptions.RowsChildOfQuery` to create `sql.rows` spans as children of the `sql.conn.query` or `sql.stmt.query` span that produced them, so concurrent queries can be correlated with their result iteration. (#652)
+- Support `driver.RowsColumnScanner` on [Go 1.27]. (#649)
+
+### Changed
+
+- Replace `ErrorTypeAttributes` with `ErrorTypeAttribute` to avoid allocating an additional slice. (#643)
+- Upgrade OTel to `v1.46.0`. (#644)
+
+### Fixed
+
+- `db.client.operation.duration` histogram now uses the explicit bucket boundaries recommended by the OTel Semantic Conventions (`0.001` to `10` seconds) instead of the SDK defaults, which placed virtually all database operations in the first bucket. (#632)
+
+## [0.43.0] - 2026-07-12
+
+### Removed
+
 - **BREAKING** Remove support for `OTEL_SEMCONV_STABILITY_OPT_IN` environment variable, legacy `db.sql.latency` metric, and `db.statement` span attribute. Only stable Semantic Conventions are now used. (#617)
 
 ### Changed
 
-- Upgrade OTel Semconv to `v1.40.0`. (#606)
+- ~~Upgrade OTel to `v1.40.0`.~~ (#606)
+- Upgrade OTel to `v1.44.0`. (#615)
 
 ### Fixed
 
@@ -531,12 +562,16 @@ It contains instrumentation for trace and depends on OTel `v0.18.0`.
 - Example code for a basic usage.
 - Apache-2.0 license.
 
+<!-- Released section ended -->
+
+[Go 1.27]: https://go.dev/doc/go1.27
 [Go 1.26]: https://go.dev/doc/go1.26
 [Go 1.25]: https://go.dev/doc/go1.25
 [Go 1.24]: https://go.dev/doc/go1.24
 [Go 1.23]: https://go.dev/doc/go1.23
 
-[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.42.0...HEAD
+[Unreleased]: https://github.com/XSAM/otelsql/compare/v0.43.0...HEAD
+[0.43.0]: https://github.com/XSAM/otelsql/releases/tag/v0.43.0
 [0.42.0]: https://github.com/XSAM/otelsql/releases/tag/v0.42.0
 [0.41.0]: https://github.com/XSAM/otelsql/releases/tag/v0.41.0
 [0.40.0]: https://github.com/XSAM/otelsql/releases/tag/v0.40.0
