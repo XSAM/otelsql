@@ -69,12 +69,12 @@ var (
 )
 
 func TestNewDriver(t *testing.T) {
-	d := newDriver(newMockDriver(false), config{Attributes: []attribute.KeyValue{semconv.DBSystemNameMySQL}})
+	d := newDriver(newMockDriver(false), &config{Attributes: []attribute.KeyValue{semconv.DBSystemNameMySQL}})
 
 	otelDriver, ok := d.(*otDriver)
 	require.True(t, ok)
 	assert.Equal(t, newMockDriver(false), otelDriver.driver)
-	assert.Equal(t, config{Attributes: []attribute.KeyValue{semconv.DBSystemNameMySQL}}, otelDriver.cfg)
+	assert.Equal(t, &config{Attributes: []attribute.KeyValue{semconv.DBSystemNameMySQL}}, otelDriver.cfg)
 }
 
 func TestOtDriver_Open(t *testing.T) {
@@ -94,7 +94,7 @@ func TestOtDriver_Open(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			md := newMockDriver(tc.error)
-			d := newDriver(md, config{})
+			d := newDriver(md, &config{})
 
 			conn, err := d.Open("test")
 
@@ -129,7 +129,7 @@ func TestOtDriver_OpenConnector(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			md := newMockDriver(tc.error)
-			d := newDriver(md, config{})
+			d := newDriver(md, &config{})
 
 			otelDriver, ok := d.(*otDriver)
 			require.True(t, ok)

@@ -30,11 +30,7 @@ import (
 
 var timeNow = time.Now
 
-func recordSpanErrorDeferred(span trace.Span, cfg config, err *error) {
-	recordSpanError(span, cfg, *err)
-}
-
-func recordSpanError(span trace.Span, cfg config, err error) {
+func recordSpanError(span trace.Span, cfg *config, err error) {
 	if span == nil || err == nil {
 		return
 	}
@@ -58,102 +54,136 @@ func recordSpanError(span trace.Span, cfg config, err error) {
 	span.SetStatus(codes.Error, "")
 }
 
-func recordDuration(
-	ctx context.Context,
-	instruments *instruments,
-	cfg config,
-	duration time.Duration,
-	attributes []attribute.KeyValue,
-	method Method,
-	err error,
-) {
+// recordSpanErrorDeferred is used when using `defer` to record a span error.
+// It takes a pointer to the caller's error so the value of the error is read correctly.
+func recordSpanErrorDeferred(span trace.Span, cfg *config, errp *error) {
+	recordSpanError(span, cfg, *errp)
+}
+
+type durationMetric struct {
+	ctx       context.Context
+	startTime time.Time
+}
+
+func startDurationMetric(ctx context.Context) durationMetric {
+	return durationMetric{
+		ctx:       ctx,
+		startTime: timeNow(),
+	}
+}
+
+// Record records the duration since the metric was started.
+// It takes a pointer to the caller's error so it can be used with `defer`
+// and still read the final value of the error.
+func (s *durationMetric) Record(cfg *config, method Method, query string, args []driver.NamedValue, errp *error) {
+	// Read the clock before calling any getter, so the time spent in getters
+	// is not part of the recorded duration.
+	duration := timeNow().Sub(s.startTime)
+
+	var err error
+	if errp != nil {
+		err = *errp
+	}
+
+	var getterAttributes []attribute.KeyValue
+	if cfg.InstrumentAttributesGetter != nil {
+		getterAttributes = cfg.InstrumentAttributesGetter(s.ctx, method, query, args)
+	}
+
+	// Fast path: no error and no getter attributes, so the attributes are
+	// exactly the precomputed set of this method.
+	if err == nil && len(getterAttributes) == 0 {
+		if set, ok := cfg.metricMethodSets[method]; ok {
+			cfg.Instruments.duration.RecordSet(s.ctx, duration.Seconds(), set)
+
+			return
+		}
+	}
+
+	var (
+		recordErrorType     bool
+		getterErrAttributes []attribute.KeyValue
+	)
+
+	if err != nil {
+		recordErrorType = !cfg.DisableSkipErrMeasurement || !errors.Is(err, driver.ErrSkip)
+
+		if cfg.InstrumentErrorAttributesGetter != nil {
+			getterErrAttributes = cfg.InstrumentErrorAttributesGetter(err)
+		}
+	}
+
+	// Attributes + InstrumentAttributesGetter + InstrumentErrorAttributesGetter + db.operation.name + error.type.
+	// The order matters: attribute.NewSet keeps the last value of a duplicated key,
+	// so db.operation.name and error.type set here win over the ones from getters.
+	attributes := make(
+		[]attribute.KeyValue,
+		len(cfg.Attributes),
+		len(cfg.Attributes)+len(getterAttributes)+len(getterErrAttributes)+2,
+	)
+	copy(attributes, cfg.Attributes)
+	attributes = append(attributes, getterAttributes...)
+	attributes = append(attributes, getterErrAttributes...)
 	attributes = append(attributes, semconv.DBOperationName(string(method)))
-	if err != nil && (!cfg.DisableSkipErrMeasurement || !errors.Is(err, driver.ErrSkip)) {
+
+	if recordErrorType {
 		attributes = append(attributes, internalsemconv.ErrorTypeAttribute(err))
 	}
 
-	instruments.duration.RecordSet(
-		ctx,
+	cfg.Instruments.duration.RecordSet(
+		s.ctx,
 		duration.Seconds(),
 		attribute.NewSet(attributes...),
 	)
-}
-
-// TODO: remove instruments from arguments.
-func recordMetric(
-	ctx context.Context,
-	instruments *instruments,
-	cfg config,
-	method Method,
-	query string,
-	args []driver.NamedValue,
-) func(error) {
-	startTime := timeNow()
-
-	return func(err error) {
-		duration := timeNow().Sub(startTime)
-
-		var getterAttributes []attribute.KeyValue
-		if cfg.InstrumentAttributesGetter != nil {
-			getterAttributes = cfg.InstrumentAttributesGetter(ctx, method, query, args)
-		}
-
-		var errAttributes []attribute.KeyValue
-
-		if err != nil {
-			if cfg.InstrumentErrorAttributesGetter != nil {
-				errAttributes = cfg.InstrumentErrorAttributesGetter(err)
-			}
-		}
-
-		// number of attributes + InstrumentAttributesGetter + InstrumentErrorAttributesGetter + estimated 2 from recordDuration.
-		attributes := make(
-			[]attribute.KeyValue,
-			len(cfg.Attributes),
-			len(cfg.Attributes)+len(getterAttributes)+len(errAttributes)+2,
-		)
-		copy(attributes, cfg.Attributes)
-		attributes = append(attributes, getterAttributes...)
-		attributes = append(attributes, errAttributes...)
-
-		recordDuration(ctx, instruments, cfg, duration, attributes, method, err)
-	}
 }
 
 var spanKindClientOption = trace.WithSpanKind(trace.SpanKindClient)
 
 func createSpan(
 	ctx context.Context,
-	cfg config,
+	cfg *config,
 	method Method,
 	enableDBStatement bool,
 	query string,
 	args []driver.NamedValue,
 ) (context.Context, trace.Span) {
 	spanCtx, span := cfg.Tracer.Start(ctx, cfg.SpanNameFormatter(ctx, method, query), spanKindClientOption)
-	if span.IsRecording() {
-		var dbStatementAttributes []attribute.KeyValue
-		if enableDBStatement && !cfg.SpanOptions.DisableQuery {
-			dbStatementAttributes = internalsemconv.DBQueryTextAttributes(query)
-		}
-
-		var getterAttributes []attribute.KeyValue
-		if cfg.AttributesGetter != nil {
-			getterAttributes = cfg.AttributesGetter(ctx, method, query, args)
-		}
-
-		// Allocate attributes slice (Attributes + AttributesGetter + DBQueryTextAttributes).
-		attributes := make(
-			[]attribute.KeyValue,
-			len(cfg.Attributes),
-			len(cfg.Attributes)+len(getterAttributes)+len(dbStatementAttributes),
-		)
-		copy(attributes, cfg.Attributes)
-		attributes = append(attributes, dbStatementAttributes...)
-		attributes = append(attributes, getterAttributes...)
-
-		span.SetAttributes(attributes...)
+	if !span.IsRecording() {
+		return spanCtx, span
 	}
+
+	addDBStatement := enableDBStatement && !cfg.SpanOptions.DisableQuery
+
+	// Fast path when we only have to add config attributes
+	if cfg.AttributesGetter == nil && !addDBStatement {
+		if len(cfg.Attributes) > 0 {
+			span.SetAttributes(cfg.Attributes...)
+		}
+
+		return spanCtx, span
+	}
+
+	var dbStatementAttributes []attribute.KeyValue
+	if addDBStatement {
+		dbStatementAttributes = internalsemconv.DBQueryTextAttributes(query)
+	}
+
+	var getterAttributes []attribute.KeyValue
+	if cfg.AttributesGetter != nil {
+		getterAttributes = cfg.AttributesGetter(ctx, method, query, args)
+	}
+
+	// Allocate attributes slice (Attributes + AttributesGetter + DBQueryTextAttributes).
+	attributes := make(
+		[]attribute.KeyValue,
+		len(cfg.Attributes),
+		len(cfg.Attributes)+len(getterAttributes)+len(dbStatementAttributes),
+	)
+	copy(attributes, cfg.Attributes)
+	attributes = append(attributes, dbStatementAttributes...)
+	attributes = append(attributes, getterAttributes...)
+
+	span.SetAttributes(attributes...)
 
 	return spanCtx, span
 }

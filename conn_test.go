@@ -854,7 +854,7 @@ func TestOtConn_ResetSession(t *testing.T) {
 func TestOtConn_IsValid(t *testing.T) {
 	t.Run("delegates to underlying conn", func(t *testing.T) {
 		mc := &mockValidatorConn{valid: true}
-		conn := newConn(mc, config{})
+		conn := newConn(mc, &config{})
 		assert.True(t, conn.IsValid())
 
 		mc.valid = false
@@ -864,7 +864,7 @@ func TestOtConn_IsValid(t *testing.T) {
 
 	t.Run("returns true when underlying conn does not implement Validator", func(t *testing.T) {
 		mc := newMockConn(false)
-		conn := newConn(mc, config{})
+		conn := newConn(mc, &config{})
 		assert.True(t, conn.IsValid())
 	})
 }
@@ -882,7 +882,7 @@ var _ driver.Validator = (*mockValidatorConn)(nil)
 
 func TestOtConn_Raw(t *testing.T) {
 	raw := newMockConn(false)
-	conn := newConn(raw, config{})
+	conn := newConn(raw, &config{})
 
 	assert.Equal(t, raw, conn.Raw())
 }
