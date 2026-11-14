@@ -133,19 +133,15 @@ func (r *otRows) ColumnTypePrecisionScale(index int) (precision, scale int64, ok
 	return 0, 0, false
 }
 
-func (r *otRows) Close() error {
-	err := r.Rows.Close()
-	if r.span != nil {
-		if err != nil {
-			recordSpanError(r.span, r.cfg, err)
-		}
+func (r *otRows) Close() (err error) {
+	defer r.metric.Record(r.cfg, MethodRows, "", nil, &err)
 
-		r.span.End()
+	if r.span != nil {
+		defer r.span.End()
+		defer recordSpanErrorDeferred(r.span, r.cfg, &err)
 	}
 
-	r.metric.Record(r.cfg, MethodRows, "", nil, &err)
-
-	return err
+	return r.Rows.Close()
 }
 
 func (r *otRows) Next(dest []driver.Value) (err error) {
