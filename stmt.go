@@ -51,7 +51,7 @@ func (s *otStmt) ExecContext(
 	method := MethodStmtExec
 
 	metric := startDurationMetric(ctx)
-	defer metric.RecordQuery(s.cfg, method, s.query, args, &err)
+	defer metric.Record(s.cfg, method, s.query, args, &err)
 
 	var span trace.Span
 	if filterSpan(ctx, s.cfg.SpanOptions, method, s.query, args) {
@@ -87,7 +87,7 @@ func (s *otStmt) QueryContext(
 	method := MethodStmtQuery
 
 	metric := startDurationMetric(ctx)
-	defer metric.RecordQuery(s.cfg, method, s.query, args, &err)
+	defer metric.Record(s.cfg, method, s.query, args, &err)
 
 	var span trace.Span
 

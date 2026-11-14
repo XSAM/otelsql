@@ -796,7 +796,7 @@ func TestRecordMetric(t *testing.T) {
 				var metricErr error
 
 				metric := startDurationMetric(context.Background())
-				defer metric.RecordQuery(cfg, tt.method, tt.query, tt.args, &metricErr)
+				defer metric.Record(cfg, tt.method, tt.query, tt.args, &metricErr)
 
 				timeNow = func() time.Time {
 					return time.Unix(3, 0)
@@ -919,4 +919,53 @@ func TestCreateSpan(t *testing.T) {
 			assert.ElementsMatch(t, tt.expectedAttrs, spanData.Attributes())
 		})
 	}
+}
+
+func TestInstrumentAttributesGetterArguments(t *testing.T) {
+	type call struct {
+		query string
+		args  []driver.NamedValue
+	}
+
+	calls := make(map[Method]call)
+	cfg := newConfig(WithInstrumentAttributesGetter(
+		func(_ context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+			calls[method] = call{query: query, args: args}
+
+			return nil
+		},
+	))
+
+	ctx := context.Background()
+	args := []driver.NamedValue{{Ordinal: 1, Value: "foo"}}
+	conn := newConn(benchConn{}, cfg)
+
+	_, err := conn.ExecContext(ctx, "UPDATE foo", args)
+	require.NoError(t, err)
+
+	rows, err := conn.QueryContext(ctx, "SELECT foo", args)
+	require.NoError(t, err)
+	require.NoError(t, rows.Close())
+
+	stmt, err := conn.PrepareContext(ctx, "SELECT bar")
+	require.NoError(t, err)
+
+	otelStmt, ok := stmt.(*otStmt)
+	require.True(t, ok)
+
+	_, err = otelStmt.ExecContext(ctx, args)
+	require.NoError(t, err)
+
+	rows, err = otelStmt.QueryContext(ctx, args)
+	require.NoError(t, err)
+	require.NoError(t, rows.Close())
+
+	assert.Equal(t, map[Method]call{
+		MethodConnExec:    {query: "UPDATE foo", args: args},
+		MethodConnQuery:   {query: "SELECT foo", args: args},
+		MethodConnPrepare: {query: "SELECT bar"},
+		MethodStmtExec:    {query: "SELECT bar", args: args},
+		MethodStmtQuery:   {query: "SELECT bar", args: args},
+		MethodRows:        {},
+	}, calls)
 }

@@ -41,7 +41,7 @@ func (t *otTx) Commit() (err error) {
 	method := MethodTxCommit
 
 	metric := startDurationMetric(t.ctx)
-	defer metric.Record(t.cfg, method, &err)
+	defer metric.Record(t.cfg, method, "", nil, &err)
 
 	var span trace.Span
 	if filterSpan(t.ctx, t.cfg.SpanOptions, method, "", nil) {
@@ -62,7 +62,7 @@ func (t *otTx) Rollback() (err error) {
 	method := MethodTxRollback
 
 	metric := startDurationMetric(t.ctx)
-	defer metric.Record(t.cfg, method, &err)
+	defer metric.Record(t.cfg, method, "", nil, &err)
 
 	var span trace.Span
 	if filterSpan(t.ctx, t.cfg.SpanOptions, method, "", nil) {

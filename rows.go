@@ -143,7 +143,7 @@ func (r *otRows) Close() error {
 		r.span.End()
 	}
 
-	r.metric.Record(r.cfg, MethodRows, &err)
+	r.metric.Record(r.cfg, MethodRows, "", nil, &err)
 
 	return err
 }

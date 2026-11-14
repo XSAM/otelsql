@@ -62,7 +62,7 @@ func BenchmarkRecordMetric(b *testing.B) {
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
 					metric := startDurationMetric(context.Background())
-					metric.RecordQuery(cfg, MethodStmtQuery, "SELECT 1", nil, nil)
+					metric.Record(cfg, MethodStmtQuery, "SELECT 1", nil, nil)
 				}
 			})
 		})
@@ -78,7 +78,7 @@ func BenchmarkRecordMetric(b *testing.B) {
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
 					metric := startDurationMetric(context.Background())
-					metric.RecordQuery(cfg, MethodStmtQuery, "SELECT 1", nil, nil)
+					metric.Record(cfg, MethodStmtQuery, "SELECT 1", nil, nil)
 				}
 			})
 		})
@@ -95,7 +95,7 @@ func BenchmarkRecordMetric(b *testing.B) {
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
 					metric := startDurationMetric(b.Context())
-					metric.RecordQuery(cfg, MethodStmtQuery, "SELECT 1", nil, &err)
+					metric.Record(cfg, MethodStmtQuery, "SELECT 1", nil, &err)
 				}
 			})
 		})

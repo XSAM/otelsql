@@ -45,7 +45,7 @@ func (c *otConnector) Connect(ctx context.Context) (connection driver.Conn, err 
 	method := MethodConnectorConnect
 
 	metric := startDurationMetric(ctx)
-	defer metric.Record(c.cfg, method, &err)
+	defer metric.Record(c.cfg, method, "", nil, &err)
 
 	var span trace.Span
 	if !c.cfg.SpanOptions.OmitConnectorConnect && filterSpan(ctx, c.cfg.SpanOptions, method, "", nil) {

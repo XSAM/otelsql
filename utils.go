@@ -71,22 +71,16 @@ func startDurationMetric(ctx context.Context) durationMetric {
 	}
 }
 
-func (s *durationMetric) Record(cfg *config, method Method, err *error) {
-	var getterAttributes []attribute.KeyValue
-	if cfg.InstrumentAttributesGetter != nil {
-		getterAttributes = cfg.InstrumentAttributesGetter(s.ctx, method, "", nil)
-	}
-
-	s.record(cfg, method, getterAttributes, err)
-}
-
-func (s *durationMetric) RecordQuery(cfg *config, method Method, query string, args []driver.NamedValue, err *error) {
+// Record records the duration since the metric was started.
+// It takes a pointer to the caller's error so it can be used with `defer`
+// and still read the final value of the error.
+func (s *durationMetric) Record(cfg *config, method Method, query string, args []driver.NamedValue, errp *error) {
 	var getterAttributes []attribute.KeyValue
 	if cfg.InstrumentAttributesGetter != nil {
 		getterAttributes = cfg.InstrumentAttributesGetter(s.ctx, method, query, args)
 	}
 
-	s.record(cfg, method, getterAttributes, err)
+	s.record(cfg, method, getterAttributes, errp)
 }
 
 func (s *durationMetric) record(cfg *config, method Method, getterAttributes []attribute.KeyValue, errp *error) {
