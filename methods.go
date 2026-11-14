@@ -14,11 +14,6 @@
 
 package otelsql
 
-import (
-	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
-)
-
 // Method specifics operation in the database/sql package.
 type Method string
 
@@ -70,18 +65,4 @@ var allMethods = []Method{
 	MethodStmtExec,
 	MethodStmtQuery,
 	MethodRows,
-}
-
-func getMethodAttributes(method Method, base []attribute.KeyValue) []attribute.KeyValue {
-	attrs := make([]attribute.KeyValue, 0, len(base)+1)
-	attrs = append(attrs, base...)
-	attrs = append(attrs, semconv.DBOperationName(string(method)))
-
-	return attrs
-}
-
-// methodMetricAttributes holds the precomputed base attributes for a Method.
-type methodMetricAttributes struct {
-	attrs []attribute.KeyValue
-	set   attribute.Set
 }

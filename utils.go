@@ -22,6 +22,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 	"go.opentelemetry.io/otel/trace"
 
 	internalsemconv "github.com/XSAM/otelsql/internal/semconv"
@@ -86,17 +87,19 @@ func (s *durationMetric) Record(cfg *config, method Method, query string, args [
 func (s *durationMetric) record(cfg *config, method Method, getterAttributes []attribute.KeyValue, errp *error) {
 	duration := timeNow().Sub(s.startTime)
 
-	methodBase, methodHasBase := cfg.metricMethodAttrs[method]
-
 	var err error
 	if errp != nil {
 		err = *errp
 	}
 
-	// Fast path: success, no dynamic getters, known method.
-	if methodHasBase && err == nil && len(getterAttributes) == 0 {
-		cfg.Instruments.duration.RecordSet(s.ctx, duration.Seconds(), methodBase.set)
-		return
+	// Fast path: no error and no getter attributes, so the attributes are
+	// exactly the precomputed set of this method.
+	if err == nil && len(getterAttributes) == 0 {
+		if set, ok := cfg.metricMethodSets[method]; ok {
+			cfg.Instruments.duration.RecordSet(s.ctx, duration.Seconds(), set)
+
+			return
+		}
 	}
 
 	var (
@@ -112,19 +115,18 @@ func (s *durationMetric) record(cfg *config, method Method, getterAttributes []a
 		}
 	}
 
-	methodAttrs := methodBase.attrs
-	if !methodHasBase {
-		methodAttrs = getMethodAttributes(method, cfg.Attributes)
-	}
-
+	// Attributes + InstrumentAttributesGetter + InstrumentErrorAttributesGetter + db.operation.name + error.type.
+	// The order matters: attribute.NewSet keeps the last value of a duplicated key,
+	// so db.operation.name and error.type set here win over the ones from getters.
 	attributes := make(
 		[]attribute.KeyValue,
-		len(methodAttrs),
-		len(methodAttrs)+len(getterAttributes)+len(getterErrAttributes)+1,
+		len(cfg.Attributes),
+		len(cfg.Attributes)+len(getterAttributes)+len(getterErrAttributes)+2,
 	)
-	copy(attributes, methodAttrs)
+	copy(attributes, cfg.Attributes)
 	attributes = append(attributes, getterAttributes...)
 	attributes = append(attributes, getterErrAttributes...)
+	attributes = append(attributes, semconv.DBOperationName(string(method)))
 
 	if recordErrorType {
 		attributes = append(attributes, internalsemconv.ErrorTypeAttribute(err))
