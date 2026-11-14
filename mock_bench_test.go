@@ -112,22 +112,17 @@ var benchAttrs = []attribute.KeyValue{
 }
 
 func newBenchConfig() *config {
-	cfg := newConfig()
-	cfg.Tracer = sdktrace.NewTracerProvider().Tracer("benchmark")
-	// Use a fixed-capacity slice so cfg.Attributes header stays stable across
-	// the benchmark and matches the production pattern (set once at startup).
-	cfg.Attributes = make([]attribute.KeyValue, 0, len(benchAttrs))
-	cfg.Attributes = append(cfg.Attributes, benchAttrs...)
-
-	return cfg
+	return newConfig(
+		WithTracerProvider(sdktrace.NewTracerProvider()),
+		WithAttributes(benchAttrs...),
+	)
 }
 
 func newBenchConfigNeverSample() *config {
-	cfg := newBenchConfig()
-	cfg.Tracer = sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.NeverSample())).
-		Tracer("benchmark")
-
-	return cfg
+	return newConfig(
+		WithTracerProvider(sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.NeverSample()))),
+		WithAttributes(benchAttrs...),
+	)
 }
 
 var benchMarkConfigs = map[string]func() *config{
