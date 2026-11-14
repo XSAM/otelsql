@@ -19,6 +19,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -318,4 +319,31 @@ func TestNewRows(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewRowsDurationIncludesSpanCreation(t *testing.T) {
+	now := time.Unix(1, 0)
+	timeNow = func() time.Time { return now }
+
+	t.Cleanup(func() {
+		timeNow = time.Now
+	})
+
+	metricReader, meterProvider := prepareMetrics()
+	cfg := newConfig(
+		WithMeterProvider(meterProvider),
+		// The span of rows is created after the timer of rows starts.
+		WithSpanNameFormatter(func(context.Context, Method, string) string {
+			now = now.Add(4 * time.Second)
+
+			return "rows"
+		}),
+	)
+
+	rows := newRows(context.Background(), newMockRows(false), cfg)
+	now = now.Add(time.Second)
+
+	require.NoError(t, rows.Close())
+
+	assert.InDelta(t, 5.0, collectDurationDataPoint(t, metricReader).Sum, 0)
 }

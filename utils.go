@@ -31,11 +31,11 @@ import (
 var timeNow = time.Now
 
 func recordSpanError(span trace.Span, cfg *config, err error) {
-	if span == nil || err == nil || !span.IsRecording() {
+	if span == nil || err == nil {
 		return
 	}
 
-	if cfg.SpanErrorAttributesGetter != nil {
+	if cfg.SpanErrorAttributesGetter != nil && span.IsRecording() {
 		if attributes := cfg.SpanErrorAttributesGetter(err); len(attributes) > 0 {
 			span.SetAttributes(attributes...)
 		}
@@ -76,20 +76,18 @@ func startDurationMetric(ctx context.Context) durationMetric {
 // It takes a pointer to the caller's error so it can be used with `defer`
 // and still read the final value of the error.
 func (s *durationMetric) Record(cfg *config, method Method, query string, args []driver.NamedValue, errp *error) {
-	var getterAttributes []attribute.KeyValue
-	if cfg.InstrumentAttributesGetter != nil {
-		getterAttributes = cfg.InstrumentAttributesGetter(s.ctx, method, query, args)
-	}
-
-	s.record(cfg, method, getterAttributes, errp)
-}
-
-func (s *durationMetric) record(cfg *config, method Method, getterAttributes []attribute.KeyValue, errp *error) {
+	// Read the clock before calling any getter, so the time spent in getters
+	// is not part of the recorded duration.
 	duration := timeNow().Sub(s.startTime)
 
 	var err error
 	if errp != nil {
 		err = *errp
+	}
+
+	var getterAttributes []attribute.KeyValue
+	if cfg.InstrumentAttributesGetter != nil {
+		getterAttributes = cfg.InstrumentAttributesGetter(s.ctx, method, query, args)
 	}
 
 	// Fast path: no error and no getter attributes, so the attributes are

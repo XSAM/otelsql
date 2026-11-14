@@ -55,6 +55,9 @@ func newRows(ctx context.Context, rows driver.Rows, cfg *config) driver.Rows {
 	var span trace.Span
 
 	method := MethodRows
+	// Start the timer before creating the span, so the duration covers it.
+	metric := startDurationMetric(ctx)
+
 	if !cfg.SpanOptions.OmitRows && filterSpan(ctx, cfg.SpanOptions, method, "", nil) {
 		_, span = createSpan(ctx, cfg, method, false, "", nil)
 	}
@@ -63,7 +66,7 @@ func newRows(ctx context.Context, rows driver.Rows, cfg *config) driver.Rows {
 		Rows:   rows,
 		cfg:    cfg,
 		span:   span,
-		metric: startDurationMetric(ctx),
+		metric: metric,
 	})
 }
 

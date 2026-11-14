@@ -177,10 +177,21 @@ func TestRecordSpanErrorNonRecordingSpan(t *testing.T) {
 	_, span := provider.Tracer("test").Start(context.Background(), "test")
 	require.False(t, span.IsRecording())
 
-	cfg := &config{SpanErrorAttributesGetter: func(_ error) []attribute.KeyValue {
-		panic("should not be called")
-	}}
+	recordErrorCalls := 0
+	cfg := &config{
+		SpanOptions: SpanOptions{RecordError: func(_ error) bool {
+			recordErrorCalls++
+
+			return true
+		}},
+		SpanErrorAttributesGetter: func(_ error) []attribute.KeyValue {
+			panic("should not be called")
+		},
+	}
 	recordSpanError(span, cfg, errors.New("error"))
+
+	// The RecordError callback is called no matter whether the span is recording.
+	assert.Equal(t, 1, recordErrorCalls)
 }
 
 func newTracerProvider() (*tracetest.SpanRecorder, trace.TracerProvider) {
@@ -1124,17 +1135,60 @@ func TestRecordMetricAttributeOrder(t *testing.T) {
 			metric := startDurationMetric(context.Background())
 			metric.Record(cfg, MethodConnExec, "", nil, &tc.err)
 
-			var metricsData metricdata.ResourceMetrics
-			require.NoError(t, metricReader.Collect(context.Background(), &metricsData))
-			require.Len(t, metricsData.ScopeMetrics, 1)
-			require.Len(t, metricsData.ScopeMetrics[0].Metrics, 1)
-
-			histogram, ok := metricsData.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[float64])
-			require.True(t, ok)
-			require.Len(t, histogram.DataPoints, 1)
-
-			assert.Equal(t, tc.wantAttributes, histogram.DataPoints[0].Attributes)
+			dataPoint := collectDurationDataPoint(t, metricReader)
+			assert.Equal(t, tc.wantAttributes, dataPoint.Attributes)
 			assert.Equal(t, !tc.wantNoErrGetter, errGetterCalled)
 		})
 	}
+}
+
+// collectDurationDataPoint returns the only data point of db.client.operation.duration.
+func collectDurationDataPoint(t *testing.T, reader sdkmetric.Reader) metricdata.HistogramDataPoint[float64] {
+	t.Helper()
+
+	var metricsData metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(context.Background(), &metricsData))
+	require.Len(t, metricsData.ScopeMetrics, 1)
+	require.Len(t, metricsData.ScopeMetrics[0].Metrics, 1)
+
+	histogram, ok := metricsData.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[float64])
+	require.True(t, ok)
+	require.Len(t, histogram.DataPoints, 1)
+
+	return histogram.DataPoints[0]
+}
+
+func TestRecordMetricDurationExcludesGetters(t *testing.T) {
+	now := time.Unix(1, 0)
+	timeNow = func() time.Time { return now }
+
+	t.Cleanup(func() {
+		timeNow = time.Now
+	})
+
+	metricReader, meterProvider := prepareMetrics()
+	cfg := newConfig(
+		WithMeterProvider(meterProvider),
+		// The time spent in getters is not part of the operation.
+		WithInstrumentAttributesGetter(
+			func(context.Context, Method, string, []driver.NamedValue) []attribute.KeyValue {
+				now = now.Add(10 * time.Second)
+
+				return nil
+			},
+		),
+		WithInstrumentErrorAttributesGetter(func(error) []attribute.KeyValue {
+			now = now.Add(10 * time.Second)
+
+			return nil
+		}),
+	)
+
+	err := assert.AnError
+	metric := startDurationMetric(context.Background())
+	now = time.Unix(3, 0)
+
+	metric.Record(cfg, MethodConnExec, "", nil, &err)
+
+	assert.InDelta(t, 2.0, collectDurationDataPoint(t, metricReader).Sum, 0)
 }
