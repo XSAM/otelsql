@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -806,6 +807,58 @@ func TestRecordMetric(t *testing.T) {
 			require.NoError(t, err)
 
 			metricdatatest.AssertEqual(t, tt.wantMetricData, metricsData, metricdatatest.IgnoreTimestamp())
+		})
+	}
+}
+
+func TestRecordMetricSkipsDisabledInstrument(t *testing.T) {
+	tests := []struct {
+		name    string
+		options []Option
+	}{
+		{
+			name: "no SDK registered",
+		},
+		{
+			name:    "noop MeterProvider",
+			options: []Option{WithMeterProvider(noop.NewMeterProvider())},
+		},
+		{
+			name: "view drops the instrument",
+			options: []Option{WithMeterProvider(sdkmetric.NewMeterProvider(
+				sdkmetric.WithReader(sdkmetric.NewManualReader()),
+				sdkmetric.WithView(sdkmetric.NewView(
+					sdkmetric.Instrument{Name: "db.client.operation.duration"},
+					sdkmetric.Stream{Aggregation: sdkmetric.AggregationDrop{}},
+				)),
+			))},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := newConfig(append(tt.options,
+				WithInstrumentAttributesGetter(
+					func(_ context.Context, _ Method, _ string, _ []driver.NamedValue) []attribute.KeyValue {
+						t.Error("InstrumentAttributesGetter called for a disabled instrument")
+						return nil
+					},
+				),
+				WithInstrumentErrorAttributesGetter(func(_ error) []attribute.KeyValue {
+					t.Error("InstrumentErrorAttributesGetter called for a disabled instrument")
+					return nil
+				}),
+			)...)
+
+			recordFunc := recordMetric(
+				context.Background(),
+				cfg.Instruments,
+				cfg,
+				MethodConnQuery,
+				"example query",
+				nil,
+			)
+			recordFunc(assert.AnError)
 		})
 	}
 }
