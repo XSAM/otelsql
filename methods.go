@@ -51,3 +51,18 @@ const (
 	// EventRowsNext is triggered during driver.Rows.Next iteration to track each row fetching operation.
 	EventRowsNext Event = "sql.rows.next"
 )
+
+var allMethods = []Method{
+	MethodConnectorConnect,
+	MethodConnPing,
+	MethodConnExec,
+	MethodConnQuery,
+	MethodConnPrepare,
+	MethodConnBeginTx,
+	MethodConnResetSession,
+	MethodTxCommit,
+	MethodTxRollback,
+	MethodStmtExec,
+	MethodStmtQuery,
+	MethodRows,
+}

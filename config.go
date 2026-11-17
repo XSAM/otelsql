@@ -22,6 +22,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -56,6 +57,10 @@ type config struct {
 
 	MeterProvider metric.MeterProvider
 	Meter         metric.Meter
+
+	// metricMethodSets holds the precomputed attribute set per Method. It is used
+	// to record a measurement that has no error and no getter attributes.
+	metricMethodSets map[Method]attribute.Set
 
 	Instruments *instruments
 
@@ -167,14 +172,14 @@ func defaultSpanNameFormatter(_ context.Context, method Method, _ string) string
 }
 
 // newConfig returns a config with all Options set.
-func newConfig(options ...Option) config {
-	cfg := config{
+func newConfig(options ...Option) *config {
+	cfg := &config{
 		TracerProvider:    otel.GetTracerProvider(),
 		MeterProvider:     otel.GetMeterProvider(),
 		SpanNameFormatter: defaultSpanNameFormatter,
 	}
 	for _, opt := range options {
-		opt.Apply(&cfg)
+		opt.Apply(cfg)
 	}
 
 	cfg.Tracer = cfg.TracerProvider.Tracer(
@@ -193,5 +198,21 @@ func newConfig(options ...Option) config {
 		otel.Handle(err)
 	}
 
+	cfg.metricMethodSets = buildMethodSets(cfg.Attributes)
+
 	return cfg
+}
+
+func buildMethodSets(base []attribute.KeyValue) map[Method]attribute.Set {
+	out := make(map[Method]attribute.Set, len(allMethods))
+
+	for _, m := range allMethods {
+		attrs := make([]attribute.KeyValue, 0, len(base)+1)
+		attrs = append(attrs, base...)
+		attrs = append(attrs, semconv.DBOperationName(string(m)))
+
+		out[m] = attribute.NewSet(attrs...)
+	}
+
+	return out
 }

@@ -139,7 +139,7 @@ func TestRecordSpanError(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			cfg := config{SpanOptions: tc.opts, SpanErrorAttributesGetter: tc.getter}
+			cfg := &config{SpanOptions: tc.opts, SpanErrorAttributesGetter: tc.getter}
 
 			if !tc.nilSpan {
 				// Create a span
@@ -177,10 +177,21 @@ func TestRecordSpanErrorNonRecordingSpan(t *testing.T) {
 	_, span := provider.Tracer("test").Start(context.Background(), "test")
 	require.False(t, span.IsRecording())
 
-	cfg := config{SpanErrorAttributesGetter: func(_ error) []attribute.KeyValue {
-		panic("should not be called")
-	}}
+	recordErrorCalls := 0
+	cfg := &config{
+		SpanOptions: SpanOptions{RecordError: func(_ error) bool {
+			recordErrorCalls++
+
+			return true
+		}},
+		SpanErrorAttributesGetter: func(_ error) []attribute.KeyValue {
+			panic("should not be called")
+		},
+	}
 	recordSpanError(span, cfg, errors.New("error"))
+
+	// The RecordError callback is called no matter whether the span is recording.
+	assert.Equal(t, 1, recordErrorCalls)
 }
 
 func newTracerProvider() (*tracetest.SpanRecorder, trace.TracerProvider) {
@@ -274,7 +285,7 @@ func assertRowsSpan(
 	ctx context.Context,
 	t *testing.T,
 	sr *tracetest.SpanRecorder,
-	cfg config,
+	cfg *config,
 	rows driver.Rows,
 	dummySpan trace.Span,
 	querySpanOmitted bool,
@@ -784,21 +795,26 @@ func TestRecordMetric(t *testing.T) {
 			cfg := newConfig(
 				append(tt.cfgOptions, WithMeterProvider(meterProvider), WithAttributes(defaultattribute))...)
 
-			timeNow = func() time.Time {
-				return time.Unix(1, 0)
-			}
-
 			t.Cleanup(func() {
 				timeNow = time.Now
 			})
 
-			recordFunc := recordMetric(context.Background(), cfg.Instruments, cfg, tt.method, tt.query, tt.args)
+			func() {
+				timeNow = func() time.Time {
+					return time.Unix(1, 0)
+				}
 
-			timeNow = func() time.Time {
-				return time.Unix(3, 0)
-			}
+				var metricErr error
 
-			recordFunc(tt.err)
+				metric := startDurationMetric(context.Background())
+				defer metric.Record(cfg, tt.method, tt.query, tt.args, &metricErr)
+
+				timeNow = func() time.Time {
+					return time.Unix(3, 0)
+				}
+
+				metricErr = tt.err
+			}()
 
 			var metricsData metricdata.ResourceMetrics
 
@@ -914,4 +930,265 @@ func TestCreateSpan(t *testing.T) {
 			assert.ElementsMatch(t, tt.expectedAttrs, spanData.Attributes())
 		})
 	}
+}
+
+func TestInstrumentAttributesGetterArguments(t *testing.T) {
+	type call struct {
+		query string
+		args  []driver.NamedValue
+	}
+
+	calls := make(map[Method]call)
+	cfg := newConfig(WithInstrumentAttributesGetter(
+		func(_ context.Context, method Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+			calls[method] = call{query: query, args: args}
+
+			return nil
+		},
+	))
+
+	ctx := context.Background()
+	args := []driver.NamedValue{{Ordinal: 1, Value: "foo"}}
+	conn := newConn(benchConn{}, cfg)
+
+	_, err := conn.ExecContext(ctx, "UPDATE foo", args)
+	require.NoError(t, err)
+
+	rows, err := conn.QueryContext(ctx, "SELECT foo", args)
+	require.NoError(t, err)
+	require.NoError(t, rows.Close())
+
+	stmt, err := conn.PrepareContext(ctx, "SELECT bar")
+	require.NoError(t, err)
+
+	otelStmt, ok := stmt.(*otStmt)
+	require.True(t, ok)
+
+	_, err = otelStmt.ExecContext(ctx, args)
+	require.NoError(t, err)
+
+	rows, err = otelStmt.QueryContext(ctx, args)
+	require.NoError(t, err)
+	require.NoError(t, rows.Close())
+
+	assert.Equal(t, map[Method]call{
+		MethodConnExec:    {query: "UPDATE foo", args: args},
+		MethodConnQuery:   {query: "SELECT foo", args: args},
+		MethodConnPrepare: {query: "SELECT bar"},
+		MethodStmtExec:    {query: "SELECT bar", args: args},
+		MethodStmtQuery:   {query: "SELECT bar", args: args},
+		MethodRows:        {},
+	}, calls)
+}
+
+// TestRecordMetricAttributeOrder locks the order in which the attributes of
+// db.client.operation.duration are assembled:
+//
+//	config attributes, InstrumentAttributesGetter, InstrumentErrorAttributesGetter,
+//	db.operation.name, error.type
+//
+// When a key is set more than once, the later source in this order wins.
+func TestRecordMetricAttributeOrder(t *testing.T) {
+	const (
+		fromConfig      = "config"
+		fromGetter      = "getter"
+		fromErrorGetter = "error getter"
+	)
+
+	operationName := attribute.String("db.operation.name", string(MethodConnExec))
+	errorType := attribute.String("error.type", "*errors.errorString")
+
+	// attrs returns the same keys for every source, so each test case shows which source wins.
+	attrs := func(source string, keys ...string) []attribute.KeyValue {
+		kvs := make([]attribute.KeyValue, 0, len(keys))
+		for _, key := range keys {
+			kvs = append(kvs, attribute.String(key, source))
+		}
+
+		return kvs
+	}
+
+	testCases := []struct {
+		name            string
+		configAttrs     []attribute.KeyValue
+		getterAttrs     []attribute.KeyValue
+		errGetterAttrs  []attribute.KeyValue
+		err             error
+		disableSkipErr  bool
+		wantAttributes  attribute.Set
+		wantNoErrGetter bool
+	}{
+		{
+			name:        "getter wins over config attributes",
+			configAttrs: attrs(fromConfig, "only.config", "shared"),
+			getterAttrs: attrs(fromGetter, "only.getter", "shared"),
+			wantAttributes: attribute.NewSet(
+				attribute.String("only.config", fromConfig),
+				attribute.String("only.getter", fromGetter),
+				attribute.String("shared", fromGetter),
+				operationName,
+			),
+			wantNoErrGetter: true,
+		},
+		{
+			name:        "error getter wins over getter and config attributes",
+			configAttrs: attrs(fromConfig, "only.config", "shared", "shared.config.error"),
+			getterAttrs: attrs(fromGetter, "only.getter", "shared", "shared.getter.error"),
+			errGetterAttrs: attrs(
+				fromErrorGetter,
+				"only.error",
+				"shared",
+				"shared.config.error",
+				"shared.getter.error",
+			),
+			err: assert.AnError,
+			wantAttributes: attribute.NewSet(
+				attribute.String("only.config", fromConfig),
+				attribute.String("only.getter", fromGetter),
+				attribute.String("only.error", fromErrorGetter),
+				attribute.String("shared", fromErrorGetter),
+				attribute.String("shared.config.error", fromErrorGetter),
+				attribute.String("shared.getter.error", fromErrorGetter),
+				operationName,
+				errorType,
+			),
+		},
+		{
+			name:        "db.operation.name of the method wins over config attributes",
+			configAttrs: attrs(fromConfig, "db.operation.name"),
+			wantAttributes: attribute.NewSet(
+				operationName,
+			),
+			wantNoErrGetter: true,
+		},
+		{
+			name:        "db.operation.name of the method wins over getter",
+			configAttrs: attrs(fromConfig, "db.operation.name"),
+			getterAttrs: attrs(fromGetter, "db.operation.name"),
+			wantAttributes: attribute.NewSet(
+				operationName,
+			),
+			wantNoErrGetter: true,
+		},
+		{
+			name:           "db.operation.name of the method wins over error getter",
+			configAttrs:    attrs(fromConfig, "db.operation.name"),
+			getterAttrs:    attrs(fromGetter, "db.operation.name"),
+			errGetterAttrs: attrs(fromErrorGetter, "db.operation.name"),
+			err:            assert.AnError,
+			wantAttributes: attribute.NewSet(
+				operationName,
+				errorType,
+			),
+		},
+		{
+			name:           "error.type of the error wins over config attributes, getter and error getter",
+			configAttrs:    attrs(fromConfig, "error.type"),
+			getterAttrs:    attrs(fromGetter, "error.type"),
+			errGetterAttrs: attrs(fromErrorGetter, "error.type"),
+			err:            assert.AnError,
+			wantAttributes: attribute.NewSet(
+				operationName,
+				errorType,
+			),
+		},
+		{
+			name:           "error.type from error getter is kept when the skip error is not measured",
+			configAttrs:    attrs(fromConfig, "error.type"),
+			getterAttrs:    attrs(fromGetter, "error.type"),
+			errGetterAttrs: attrs(fromErrorGetter, "error.type"),
+			err:            driver.ErrSkip,
+			disableSkipErr: true,
+			wantAttributes: attribute.NewSet(
+				operationName,
+				attribute.String("error.type", fromErrorGetter),
+			),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			metricReader, meterProvider := prepareMetrics()
+
+			errGetterCalled := false
+			options := []Option{
+				WithMeterProvider(meterProvider),
+				WithAttributes(tc.configAttrs...),
+				WithDisableSkipErrMeasurement(tc.disableSkipErr),
+				WithInstrumentErrorAttributesGetter(func(error) []attribute.KeyValue {
+					errGetterCalled = true
+
+					return tc.errGetterAttrs
+				}),
+			}
+
+			if tc.getterAttrs != nil {
+				options = append(options, WithInstrumentAttributesGetter(
+					func(context.Context, Method, string, []driver.NamedValue) []attribute.KeyValue {
+						return tc.getterAttrs
+					},
+				))
+			}
+
+			cfg := newConfig(options...)
+
+			metric := startDurationMetric(context.Background())
+			metric.Record(cfg, MethodConnExec, "", nil, &tc.err)
+
+			dataPoint := collectDurationDataPoint(t, metricReader)
+			assert.Equal(t, tc.wantAttributes, dataPoint.Attributes)
+			assert.Equal(t, !tc.wantNoErrGetter, errGetterCalled)
+		})
+	}
+}
+
+// collectDurationDataPoint returns the only data point of db.client.operation.duration.
+func collectDurationDataPoint(t *testing.T, reader sdkmetric.Reader) metricdata.HistogramDataPoint[float64] {
+	t.Helper()
+
+	var metricsData metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(context.Background(), &metricsData))
+	require.Len(t, metricsData.ScopeMetrics, 1)
+	require.Len(t, metricsData.ScopeMetrics[0].Metrics, 1)
+
+	histogram, ok := metricsData.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[float64])
+	require.True(t, ok)
+	require.Len(t, histogram.DataPoints, 1)
+
+	return histogram.DataPoints[0]
+}
+
+func TestRecordMetricDurationExcludesGetters(t *testing.T) {
+	now := time.Unix(1, 0)
+	timeNow = func() time.Time { return now }
+
+	t.Cleanup(func() {
+		timeNow = time.Now
+	})
+
+	metricReader, meterProvider := prepareMetrics()
+	cfg := newConfig(
+		WithMeterProvider(meterProvider),
+		// The time spent in getters is not part of the operation.
+		WithInstrumentAttributesGetter(
+			func(context.Context, Method, string, []driver.NamedValue) []attribute.KeyValue {
+				now = now.Add(10 * time.Second)
+
+				return nil
+			},
+		),
+		WithInstrumentErrorAttributesGetter(func(error) []attribute.KeyValue {
+			now = now.Add(10 * time.Second)
+
+			return nil
+		}),
+	)
+
+	err := assert.AnError
+	metric := startDurationMetric(context.Background())
+	now = time.Unix(3, 0)
+
+	metric.Record(cfg, MethodConnExec, "", nil, &err)
+
+	assert.InDelta(t, 2.0, collectDurationDataPoint(t, metricReader).Sum, 0)
 }

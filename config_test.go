@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -39,7 +40,7 @@ func TestNewConfig(t *testing.T) {
 	// Ignore function compares for test equality check
 	cfg.SpanNameFormatter = nil
 
-	assert.Equal(t, config{
+	assert.Equal(t, &config{
 		TracerProvider: otel.GetTracerProvider(),
 		Tracer: otel.GetTracerProvider().Tracer(
 			instrumentationName,
@@ -51,12 +52,31 @@ func TestNewConfig(t *testing.T) {
 			metric.WithInstrumentationVersion(Version()),
 		),
 		// No need to check values of instruments in this part.
-		Instruments: cfg.Instruments,
-		SpanOptions: SpanOptions{Ping: true},
+		Instruments:      cfg.Instruments,
+		metricMethodSets: buildMethodSets([]attribute.KeyValue{semconv.DBSystemNameMySQL}),
+		SpanOptions:      SpanOptions{Ping: true},
 		Attributes: []attribute.KeyValue{
 			semconv.DBSystemNameMySQL,
 		},
 		SQLCommenter: newCommenter(false, otel.GetTextMapPropagator()),
 	}, cfg)
 	assert.NotNil(t, cfg.Instruments)
+}
+
+func TestBuildMethodSets(t *testing.T) {
+	base := []attribute.KeyValue{
+		semconv.DBSystemNameMySQL,
+		// The operation name of the method wins over the one from the base attributes.
+		semconv.DBOperationName("base"),
+	}
+
+	sets := buildMethodSets(base)
+	require.Len(t, sets, len(allMethods))
+
+	for _, method := range allMethods {
+		assert.Equal(t, attribute.NewSet(
+			semconv.DBSystemNameMySQL,
+			semconv.DBOperationName(string(method)),
+		), sets[method], method)
+	}
 }
