@@ -59,7 +59,10 @@ func newRows(ctx context.Context, rows driver.Rows, cfg *config) driver.Rows {
 	metric := startDurationMetric(ctx)
 
 	if !cfg.SpanOptions.OmitRows && filterSpan(ctx, cfg.SpanOptions, method, "", nil) {
-		_, span = createSpan(ctx, cfg, method, false, "", nil)
+		var spanCtx context.Context
+
+		spanCtx, span = createSpan(ctx, cfg, method, false, "", nil)
+		metric.linkSpan(spanCtx)
 	}
 
 	return wrapRowsColumnScanner(&otRows{

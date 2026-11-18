@@ -61,13 +61,17 @@ func recordSpanErrorDeferred(span trace.Span, cfg *config, errp *error) {
 }
 
 type durationMetric struct {
-	ctx       context.Context
+	// ctx is the context the duration is recorded with.
+	ctx context.Context
+	// callerCtx is the context of the caller, passed to getters.
+	callerCtx context.Context
 	startTime time.Time
 }
 
 func startDurationMetric(ctx context.Context) durationMetric {
 	return durationMetric{
 		ctx:       ctx,
+		callerCtx: ctx,
 		startTime: timeNow(),
 	}
 }
@@ -87,7 +91,7 @@ func (s *durationMetric) Record(cfg *config, method Method, query string, args [
 
 	var getterAttributes []attribute.KeyValue
 	if cfg.InstrumentAttributesGetter != nil {
-		getterAttributes = cfg.InstrumentAttributesGetter(s.ctx, method, query, args)
+		getterAttributes = cfg.InstrumentAttributesGetter(s.callerCtx, method, query, args)
 	}
 
 	// Fast path: no error and no getter attributes, so the attributes are
@@ -135,6 +139,19 @@ func (s *durationMetric) Record(cfg *config, method Method, query string, args [
 		duration.Seconds(),
 		attribute.NewSet(attributes...),
 	)
+}
+
+// linkSpan sets the context of the span created for the call as the context
+// the duration is recorded with, so an exemplar links to that span rather
+// than to its parent. A span that is not sampled is not linked: the duration
+// keeps the caller's context, so the exemplar still points at a span that is
+// exported. Getters always receive the caller's context.
+func (s *durationMetric) linkSpan(ctx context.Context) {
+	if !trace.SpanContextFromContext(ctx).IsSampled() {
+		return
+	}
+
+	s.ctx = ctx
 }
 
 var spanKindClientOption = trace.WithSpanKind(trace.SpanKindClient)

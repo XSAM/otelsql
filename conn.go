@@ -66,6 +66,8 @@ func (c *otConn) Ping(ctx context.Context) (err error) {
 			var span trace.Span
 
 			ctx, span = createSpan(ctx, c.cfg, method, false, "", nil)
+			metric.linkSpan(ctx)
+
 			defer span.End()
 			defer recordSpanErrorDeferred(span, c.cfg, &err)
 		}
@@ -101,6 +103,8 @@ func (c *otConn) ExecContext(
 	var span trace.Span
 	if filterSpan(ctx, c.cfg.SpanOptions, method, query, args) {
 		ctx, span = createSpan(ctx, c.cfg, method, true, query, args)
+		metric.linkSpan(ctx)
+
 		defer span.End()
 	}
 
@@ -140,6 +144,8 @@ func (c *otConn) QueryContext(
 	queryCtx := ctx
 	if !c.cfg.SpanOptions.OmitConnQuery && filterSpan(ctx, c.cfg.SpanOptions, method, query, args) {
 		queryCtx, span = createSpan(ctx, c.cfg, method, true, query, args)
+		metric.linkSpan(queryCtx)
+
 		defer span.End()
 	}
 
@@ -161,6 +167,8 @@ func (c *otConn) PrepareContext(ctx context.Context, query string) (stmt driver.
 	var span trace.Span
 	if !c.cfg.SpanOptions.OmitConnPrepare && filterSpan(ctx, c.cfg.SpanOptions, method, query, nil) {
 		ctx, span = createSpan(ctx, c.cfg, method, true, query, nil)
+		metric.linkSpan(ctx)
+
 		defer span.End()
 		defer recordSpanErrorDeferred(span, c.cfg, &err)
 	}
@@ -199,6 +207,8 @@ func (c *otConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.
 		var span trace.Span
 
 		beginTxCtx, span = createSpan(ctx, c.cfg, method, false, "", nil)
+		metric.linkSpan(beginTxCtx)
+
 		defer span.End()
 		defer recordSpanErrorDeferred(span, c.cfg, &err)
 	} else {
@@ -256,6 +266,8 @@ func (c *otConn) ResetSession(ctx context.Context) (err error) {
 	var span trace.Span
 	if !c.cfg.SpanOptions.OmitConnResetSession && filterSpan(ctx, c.cfg.SpanOptions, method, "", nil) {
 		ctx, span = createSpan(ctx, c.cfg, method, false, "", nil)
+		metric.linkSpan(ctx)
+
 		defer span.End()
 	}
 
