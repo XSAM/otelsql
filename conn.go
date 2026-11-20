@@ -135,6 +135,7 @@ func (c *otConn) QueryContext(
 	metric := startDurationMetric(ctx)
 	defer metric.Record(c.cfg, method, query, args, &err)
 
+	query = c.cfg.SQLCommenter.withComment(ctx, query)
 	var span trace.Span
 
 	queryCtx := ctx
@@ -143,7 +144,7 @@ func (c *otConn) QueryContext(
 		defer span.End()
 	}
 
-	rows, err = queryer.QueryContext(queryCtx, c.cfg.SQLCommenter.withComment(queryCtx, query), args)
+	rows, err = queryer.QueryContext(queryCtx, query, args)
 	if err != nil {
 		recordSpanError(span, c.cfg, err)
 		return nil, err
