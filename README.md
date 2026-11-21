@@ -117,7 +117,7 @@ The project follows the [Release Policy](https://golang.org/doc/devel/release#po
 
 ## Development
 
-This project uses [mise](https://mise.jdx.dev) to install Go and golangci-lint and to run tasks, both locally and in CI. After installing mise, run `mise install`, then:
+This project uses [mise](https://mise.jdx.dev) to install Go and golangci-lint and to run tasks, both locally and in CI. After installing mise, run any task; mise installs the tools it needs on first use:
 
 ```sh
 mise run precommit   # tidy, lint (with fixes), build, and test every module
