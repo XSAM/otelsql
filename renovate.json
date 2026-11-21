@@ -6,7 +6,7 @@
   ],
   "ignorePaths": [],
   "postUpdateOptions": [
-    "gomodTidy"
+    "gomodTidyAll"
   ],
   "packageRules": [
     {
