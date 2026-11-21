@@ -53,20 +53,5 @@
         "/^go\\.opentelemetry\\.io//"
       ]
     }
-  ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "description": "Update the mise version that jdx/mise-action installs in CI",
-      "managerFilePatterns": [
-        "/^\\.github/workflows/[^/]+\\.ya?ml$/"
-      ],
-      "matchStrings": [
-        "\\s+version: (?<currentValue>\\d{4}\\.\\d+\\.\\d+)"
-      ],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "jdx/mise",
-      "extractVersionTemplate": "^v(?<version>.+)$"
-    }
   ]
 }
