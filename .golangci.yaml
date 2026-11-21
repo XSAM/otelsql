@@ -1,4 +1,8 @@
 version: "2"
+run:
+  # `mise run '//...:lint'` lints every Go module at once. Each run only lints
+  # (and fixes) its own module, so they don't need golangci-lint's lock.
+  allow-parallel-runners: true
 linters:
   default: none
   enable:

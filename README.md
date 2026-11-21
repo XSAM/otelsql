@@ -115,6 +115,22 @@ are made for those systems currently.
 
 The project follows the [Release Policy](https://golang.org/doc/devel/release#policy) to support major Go releases.
 
+## Development
+
+This project uses [mise](https://mise.jdx.dev) to install Go and golangci-lint and to run tasks, both locally and in CI. After installing mise, run any task; mise installs the tools it needs on first use:
+
+```sh
+mise run precommit   # tidy, lint (with fixes), build, and test every module
+mise run test        # run tests with the race detector
+mise run lint        # license header check and golangci-lint; --fix applies fixes and formatting
+mise run build       # compile all packages, including tests
+mise tasks --all     # list every task
+```
+
+Run `mise run <task> --help` to see a task's flags, e.g. `mise run test --short --no-race -- -run TestOpen`.
+
+The library and each example are separate Go modules. `go:mod:tidy`, `lint` and `build` exist in every module: `mise run lint` runs in the current one, and `mise run '//...:lint'` runs in all of them.
+
 ## Why port this?
 
 Based on [this comment](https://github.com/open-telemetry/opentelemetry-go-contrib/pull/505#issuecomment-800452510), OpenTelemetry SIG team like to see broader usage and community consensus on an approach before they commit to the level of support that would be required of a package in contrib. But it is painful for users without a stable version, and they have to use replacement in `go.mod` to use this instrumentation.

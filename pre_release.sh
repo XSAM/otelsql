@@ -77,7 +77,7 @@ rm -f ./version.go.bak
 git checkout -b pre_release_${TAG} main
 
 # Run precommit
-make precommit
+mise run precommit
 
 # Add changes and commit.
 git add --all
