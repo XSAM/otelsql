@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - Reduce allocations and improve performance when creating spans and recording metrics. (#629)
+- Upgrade OTel to `v1.47.0`. (#661)
 
 ### Removed
 
