@@ -1,0 +1,123 @@
+# Copyright Sam Xie
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Development tools and tasks. `mise tasks --all` lists the tasks and
+# `mise run <task> --help` shows a task's options.
+#
+# The library and each example are separate Go modules. The tasks every module
+# has (go:mod:tidy, lint, build) are defined once below, under
+# [monorepo.task_defaults]; each module's mise.toml only declares them.
+# `mise run lint` runs in the current module; `mise run '//...:lint'` runs in
+# every module.
+
+monorepo_root = true
+
+[monorepo]
+config_roots = [".", "example/*"]
+
+[tools]
+# The latest Go release; CI runs older supported releases by setting
+# MISE_GO_VERSION (see .github/workflows/ci.yaml).
+go = "1.27"
+"aqua:golangci/golangci-lint" = "2.15.0"
+
+# ---------------------------------------------------------------------------
+# Per-module tasks
+# ---------------------------------------------------------------------------
+
+[monorepo.task_defaults."go:mod:tidy"]
+description = "Tidy go.mod and go.sum"
+run = "go mod tidy"
+
+[monorepo.task_defaults.lint]
+description = "Run golangci-lint and the license header check"
+usage = 'flag "--fix" help="Apply fixes, including formatting"'
+depends = ["//:license"]
+wait_for = [":go:mod:tidy"]
+run = '''
+{% set args = "" %}
+{% if usage.fix %}{% set args = "--fix" %}{% endif %}
+golangci-lint run {{ args }}
+'''
+
+[monorepo.task_defaults.build]
+description = "Compile all packages"
+wait_for = [":go:mod:tidy", ":lint"]
+run = "go build ./..."
+
+[tasks."go:mod:tidy"]
+[tasks.lint]
+[tasks.build]
+
+# ---------------------------------------------------------------------------
+# Library tasks (the examples have no tests)
+# ---------------------------------------------------------------------------
+
+[tasks.test]
+description = "Run tests"
+usage = '''
+flag "--short" help="Skip long-running tests"
+flag "--race" negate="--no-race" default=#true help="Use the race detector (--no-race where unsupported, e.g. GOARCH=386)"
+flag "--coverage" help="Write a coverage profile to coverage.out"
+arg "[args]" var=#true double_dash="required" help="Extra go test arguments, e.g. -- -run TestOpen -count=1"
+'''
+wait_for = [":go:mod:tidy", ":lint"]
+run = '''
+{% set flags = "-timeout=60s" %}
+{% if usage.race %}{% set flags = flags ~ " -race" %}{% endif %}
+{% if usage.short %}{% set flags = flags ~ " -short" %}{% endif %}
+{% if usage.coverage %}{% set flags = flags ~ " -covermode=atomic -coverpkg=./... -coverprofile=coverage.out" %}{% endif %}
+{% for arg in usage.args %}{% set quoted = arg | quote %}{% set_global flags = flags ~ " " ~ quoted %}{% endfor %}
+go test {{ flags }} ./...
+'''
+
+[tasks.bench]
+description = "Run benchmarks (arguments go to go test, e.g. -benchtime=1x)"
+run = "go test -run=NONE -bench=. -benchmem ./..."
+
+# ---------------------------------------------------------------------------
+# Repository tasks
+# ---------------------------------------------------------------------------
+
+[tasks.license]
+description = "Check that every Go and shell file has a license header"
+shell = "bash -c"
+run = '''
+set -euo pipefail
+missing=$(git ls-files --cached --others --exclude-standard -- '*.go' '*.sh' | while IFS= read -r f; do
+  [[ -f "$f" ]] || continue
+  awk 'NR <= 3 && /Copyright Sam Xie|generated|GENERATED/ { found = 1; exit } END { if (!found) print FILENAME }' "$f"
+done)
+if [[ -n "$missing" ]]; then
+  echo "Missing license header:"
+  echo "$missing"
+  exit 1
+fi
+'''
+
+[tasks.precommit]
+description = "Tidy, lint (with fixes), build, and test every module"
+depends = ["//...:go:mod:tidy", "//...:lint --fix", "//...:build", "test"]
+
+[tasks.check-clean-work-tree]
+description = "Fail if files changed; CI runs it after go:mod:tidy and lint --fix"
+shell = "bash -c"
+run = '''
+if [[ -n $(git status --porcelain) ]]; then
+  echo 'Working tree is not clean. Run "mise run precommit" and commit the changes:'
+  git status --short
+  git diff
+  exit 1
+fi
+'''
