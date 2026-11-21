@@ -83,3 +83,20 @@ jobs:
           GOARCH: ${{ matrix.arch }}
         # The race detector does not support 386.
         run: mise run test --short --no-race
+
+  # A stable check name for branch protection, so the required checks do not
+  # change when the Go versions in the compatibility-test matrix are bumped.
+  compatibility-test-result:
+    name: Compatibility tests
+    # Run even if a matrix entry failed or was cancelled. Without this the job
+    # is skipped, and GitHub treats a skipped required check as passing.
+    if: always()
+    needs: [compatibility-test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all compatibility tests passed
+        env:
+          RESULT: ${{ needs.compatibility-test.result }}
+        run: |
+          echo "compatibility-test result: $RESULT"
+          test "$RESULT" = "success"
