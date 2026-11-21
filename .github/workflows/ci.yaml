@@ -16,6 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          version: 2026.11.10
       - name: Tidy go.mod files
         run: mise run '//...:go:mod:tidy'
       - name: Run linters (applying fixes, including formatting)
@@ -30,6 +32,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          version: 2026.11.10
       - name: Run tests with race detector
         run: mise run test
       - name: Run each benchmark once with race detector
@@ -40,6 +44,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          version: 2026.11.10
       - name: Run coverage tests
         run: mise run test --coverage --no-race
       - name: Upload coverage report
@@ -76,6 +82,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
         with:
+          version: 2026.11.10
           # Tool caches are per OS; keep one per Go version too.
           cache_key_prefix: mise-go${{ matrix.go-version }}
       - name: Run tests

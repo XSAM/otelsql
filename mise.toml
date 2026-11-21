@@ -21,6 +21,7 @@
 # `mise run lint` runs in the current module; `mise run '//...:lint'` runs in
 # every module.
 
+min_version = "2026.10.17"
 monorepo_root = true
 
 [monorepo]
@@ -41,7 +42,7 @@ description = "Tidy go.mod and go.sum"
 run = "go mod tidy"
 
 [monorepo.task_defaults.lint]
-description = "Run golangci-lint and the license header check"
+description = "Run golangci-lint"
 usage = 'flag "--fix" help="Apply fixes, including formatting"'
 depends = ["//:license"]
 wait_for = [":go:mod:tidy"]
