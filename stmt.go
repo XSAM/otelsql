@@ -56,6 +56,7 @@ func (s *otStmt) ExecContext(
 	var span trace.Span
 	if filterSpan(ctx, s.cfg.SpanOptions, method, s.query, args) {
 		ctx, span = createSpan(ctx, s.cfg, method, true, s.query, args)
+		metric.linkSpan(ctx)
 
 		defer span.End()
 		defer recordSpanErrorDeferred(span, s.cfg, &err)
@@ -94,6 +95,8 @@ func (s *otStmt) QueryContext(
 	var queryCtx context.Context
 	if filterSpan(ctx, s.cfg.SpanOptions, method, s.query, args) {
 		queryCtx, span = createSpan(ctx, s.cfg, method, true, s.query, args)
+		metric.linkSpan(queryCtx)
+
 		defer span.End()
 		defer recordSpanErrorDeferred(span, s.cfg, &err)
 	} else {

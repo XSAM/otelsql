@@ -44,8 +44,12 @@ func (t *otTx) Commit() (err error) {
 	defer metric.Record(t.cfg, method, "", nil, &err)
 
 	var span trace.Span
+
 	if filterSpan(t.ctx, t.cfg.SpanOptions, method, "", nil) {
-		_, span = createSpan(t.ctx, t.cfg, method, false, "", nil)
+		ctx := t.ctx
+		ctx, span = createSpan(ctx, t.cfg, method, false, "", nil)
+		metric.linkSpan(ctx)
+
 		defer span.End()
 	}
 
@@ -65,8 +69,12 @@ func (t *otTx) Rollback() (err error) {
 	defer metric.Record(t.cfg, method, "", nil, &err)
 
 	var span trace.Span
+
 	if filterSpan(t.ctx, t.cfg.SpanOptions, method, "", nil) {
-		_, span = createSpan(t.ctx, t.cfg, method, false, "", nil)
+		ctx := t.ctx
+		ctx, span = createSpan(ctx, t.cfg, method, false, "", nil)
+		metric.linkSpan(ctx)
+
 		defer span.End()
 	}
 

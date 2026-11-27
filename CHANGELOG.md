@@ -17,6 +17,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Drop support for [Go 1.25]. (#655)
 
+### Fixed
+
+- Record `db.client.operation.duration` in the context of the span created for the call, so its exemplars link to that span instead of the parent span. (#670)
+
 <!-- Released section -->
 <!-- Don't change this section unless doing release -->
 
